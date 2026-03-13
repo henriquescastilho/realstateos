@@ -1,0 +1,24 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: realestateos-api
+spec:
+  template:
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/REPOSITORY/realestateos-api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DATABASE_URL
+              value: "REPLACE_WITH_DATABASE_URL"
+            - name: REDIS_URL
+              value: "REPLACE_WITH_REDIS_URL"
+            - name: JWT_SECRET
+              value: "REPLACE_WITH_JWT_SECRET"
+            - name: CORS_ALLOWED_ORIGINS
+              value: "https://your-vercel-app.vercel.app"
