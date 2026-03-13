@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "realestateos-api"
+version = "0.1.0"
+description = "FastAPI backend for Real Estate OS"
+requires-python = ">=3.10"
+dependencies = [
+  "alembic>=1.13.2",
+  "boto3>=1.35.0",
+  "celery[redis]>=5.4.0",
+  "fastapi>=0.115.0",
+  "google-adk",
+  "pgvector>=0.3.5",
+  "psycopg[binary]>=3.2.0",
+  "pydantic-settings>=2.6.0",
+  "pypdf>=5.0.0",
+  "python-jose[cryptography]>=3.3.0",
+  "python-multipart>=0.0.9",
+  "redis>=5.0.8",
+  "sqlalchemy>=2.0.36",
+  "uvicorn[standard]>=0.32.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27.2",
+  "pytest>=8.3.3",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

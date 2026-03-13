@@ -1,0 +1,90 @@
+# Local development only. Do not use this file as a Railway deploy manifest.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-realestateos}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/realestateos}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      PORT: ${API_PORT:-8000}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-2}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      SANTANDER_SANDBOX_ENABLED: ${SANTANDER_SANDBOX_ENABLED:-true}
+      PAYMENT_MOCK_FALLBACK_ENABLED: ${PAYMENT_MOCK_FALLBACK_ENABLED:-true}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-realestateos}
+    volumes:
+      - ./apps/api:/app
+    command: sh scripts/start-api.sh
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      - db
+      - redis
+      - minio
+
+  worker:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile.worker
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/realestateos}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      PORT: ${WORKER_PORT:-8081}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-2}
+      SANTANDER_SANDBOX_ENABLED: ${SANTANDER_SANDBOX_ENABLED:-true}
+      PAYMENT_MOCK_FALLBACK_ENABLED: ${PAYMENT_MOCK_FALLBACK_ENABLED:-true}
+    volumes:
+      - ./apps/api:/app
+    ports:
+      - "${WORKER_PORT:-8081}:8081"
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build:
+      context: ./apps/web
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
+    command: npm run dev -- --hostname 0.0.0.0 --port 3000
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
