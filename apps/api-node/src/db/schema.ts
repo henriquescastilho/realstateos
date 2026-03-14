@@ -151,6 +151,12 @@ export const charges = pgTable("charges", {
   secondCopyCount: integer("second_copy_count").default(0).notNull(),
   dueDate: date("due_date").notNull(),
   issuedAt: timestamp("issued_at", { withTimezone: true }),
+  // ─── Boleto fields (populated on issue) ───
+  boletoId: varchar("boleto_id", { length: 100 }),
+  barcode: varchar("barcode", { length: 60 }),
+  digitableLine: varchar("digitavel_line", { length: 60 }),
+  boletoStatus: varchar("boleto_status", { length: 20 }).default("pending"), // pending | generated | failed
+  boletoError: text("boleto_error"),
   ...timestamps(),
 }, (t) => [
   index("charges_org_id_idx").on(t.orgId),
@@ -249,6 +255,27 @@ export const agentTasks = pgTable("agent_tasks", {
   index("agent_tasks_org_id_idx").on(t.orgId),
   index("agent_tasks_status_idx").on(t.status),
   index("agent_tasks_entity_idx").on(t.relatedEntityType, t.relatedEntityId),
+]);
+
+// ─── Bank Credentials (per org — Santander mTLS) ───
+export const bankCredentials = pgTable("bank_credentials", {
+  id: id(),
+  orgId: orgId(),
+  provider: varchar("provider", { length: 50 }).default("santander").notNull(),
+  environment: varchar("environment", { length: 20 }).default("sandbox").notNull(), // sandbox | production
+  clientId: varchar("client_id", { length: 255 }).notNull(),
+  clientSecret: varchar("client_secret", { length: 255 }).notNull(),
+  workspaceId: varchar("workspace_id", { length: 255 }),
+  certPath: varchar("cert_path", { length: 500 }), // relative to certs/ root
+  keyPath: varchar("key_path", { length: 500 }),  // relative to certs/ root
+  baseUrl: varchar("base_url", { length: 500 }).default("https://trust-sandbox.api.santander.com.br").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastHealthCheck: timestamp("last_health_check", { withTimezone: true }),
+  lastHealthStatus: varchar("last_health_status", { length: 20 }), // healthy | degraded | down
+  ...timestamps(),
+}, (t) => [
+  uniqueIndex("bank_credentials_org_provider_idx").on(t.orgId, t.provider),
+  index("bank_credentials_org_id_idx").on(t.orgId),
 ]);
 
 // ─── Integration Connectors ───

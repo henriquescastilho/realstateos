@@ -23,6 +23,10 @@ app.get("/health", (_req: Request, res: Response) => {
 // ─── Auth (no auth required) ───
 app.use("/api/v1", authRouter);
 
+// ─── Webhooks (no auth — called by external services) ───
+import { webhooksRouter } from "./modules/webhooks/router";
+app.use("/api/v1", webhooksRouter);
+
 // ─── Module routers (auth + org-scoping) ───
 import { onboardingRouter } from "./modules/onboarding/router";
 import { billingRouter } from "./modules/billing/router";

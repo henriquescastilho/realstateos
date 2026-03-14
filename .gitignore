@@ -10,6 +10,7 @@ node_modules/
 # Build output
 dist/
 build/
+.next/
 
 # Drizzle (meta snapshots are auto-generated, only track SQL migrations)
 **/drizzle/meta/
@@ -30,5 +31,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# Certificates / secrets
+certs/
+
 # Logs
 *.log
+.logs/
