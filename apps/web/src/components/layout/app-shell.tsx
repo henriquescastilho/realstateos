@@ -15,6 +15,7 @@ const navigation = [
   { href: "/payments", label: "Pagamentos" },
   { href: "/communications", label: "Comunicações" },
   { href: "/reports", label: "Relatórios" },
+  { href: "/settings", label: "Configurações" },
   { href: "/documents", label: "Documentos" },
   { href: "/tasks", label: "Tarefas" },
   { href: "/agents", label: "Agentes" },
