@@ -231,7 +231,7 @@
 
 - [x] 103. Anomaly detection for payments: create `apps/api/app/ml/anomaly_detector.py` — detect unusual payment patterns (sudden large payment, payment from new account, timing anomaly). Flag for human review. Use Isolation Forest on payment features.
 
-- [ ] 104. Smart charge composition: enhance billing agent — LlmAgent analyzes contract terms + applicable indices + late fees + discounts to compute charge composition. Explains each line item in plain Portuguese for owner statement.
+- [x] 104. Smart charge composition: enhance billing agent — LlmAgent analyzes contract terms + applicable indices + late fees + discounts to compute charge composition. Explains each line item in plain Portuguese for owner statement.
 
 - [ ] 105. Maintenance cost estimator: create `apps/api/app/agents/maintenance_agent/cost_estimator.py` — LlmAgent that estimates repair cost from ticket description + historical similar tickets via pgvector. Returns range (min/expected/max) with confidence.
 
