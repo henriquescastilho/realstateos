@@ -14,12 +14,14 @@ export interface Column<T> {
   align?: "left" | "center" | "right";
 }
 
-export interface TableProps<T> {
+export interface TableProps<T extends Record<string, unknown>> {
   columns: Column<T>[];
   data: T[];
   /** Unique key extractor (defaults to index) */
   rowKey?: (row: T, index: number) => string | number;
   /** Message shown when data is empty */
+  emptyText?: string;
+  /** @deprecated use emptyText */
   emptyMessage?: string;
   loading?: boolean;
   /** Callback for row clicks */
@@ -32,22 +34,26 @@ export interface TableProps<T> {
 // Component
 // ---------------------------------------------------------------------------
 
-export function Table<T>({
+export function Table<T extends Record<string, unknown>>({
   columns,
   data,
   rowKey,
+  emptyText,
   emptyMessage = "No data to display.",
   loading = false,
   onRowClick,
   className,
   style,
 }: TableProps<T>) {
-  const cellAlign = (align?: "left" | "center" | "right"): React.CSSProperties =>
+  const resolvedEmptyText = emptyText ?? emptyMessage;
+  const cellAlign = (
+    align?: "left" | "center" | "right",
+  ): React.CSSProperties =>
     align === "center"
       ? { textAlign: "center" }
       : align === "right"
-      ? { textAlign: "right" }
-      : { textAlign: "left" };
+        ? { textAlign: "right" }
+        : { textAlign: "left" };
 
   return (
     <div
@@ -93,7 +99,11 @@ export function Table<T>({
             <tr>
               <td
                 colSpan={columns.length}
-                style={{ textAlign: "center", padding: "32px 16px", color: "rgba(31,41,55,0.45)" }}
+                style={{
+                  textAlign: "center",
+                  padding: "32px 16px",
+                  color: "rgba(31,41,55,0.45)",
+                }}
               >
                 <span
                   style={{
