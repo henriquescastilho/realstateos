@@ -1,0 +1,5 @@
+# Ignore generated Locust output — keep directory structure
+*.csv
+*.html
+*.json
+!.gitkeep

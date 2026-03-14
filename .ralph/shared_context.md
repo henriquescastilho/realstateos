@@ -22,7 +22,7 @@
 - Wave 7 COMPLETE: OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), GraphQL layer (task 49), nginx API gateway (task 50)
 - Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60), settings UI (61), real-time notifications WebSocket (62), mobile-responsive layout with hamburger nav (63), onboarding wizard (64), Playwright E2E tests (65)
 - Wave 9 COMPLETE (74-80): analytics router, agent-tasks router, WebSocket notifications server, StorageService (MinIO S3 wrapper with fallback), BullMQ background workers (billing/reminders/DLQ/reports/embeddings), Vitest test suite (145 tests), Node.js Docker service + parity-check.sh script
-- Wave 10 (81-86 done): k8s/ manifests, helm/realstateos/ chart, GitHub Actions CI/CD, Docker optimization (uv + multi-stage + non-root), settings enhancement (env-specific defaults + Vault stub), migration safety checker + CI integration
+- Wave 10 (81-87 done): k8s/ manifests, helm/realstateos/ chart, GitHub Actions CI/CD, Docker optimization (uv + multi-stage + non-root), settings enhancement (env-specific defaults + Vault stub), migration safety checker + CI integration, Locust load test suite
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -94,5 +94,7 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Migration checker: `apps/api/scripts/check_migrations.py` — detects DROP/TRUNCATE in upgrade() only (downgrade() is exempt). `--strict` elevates warnings to errors. `--changed-only FILE` for CI diff mode. Exit 1 on errors, 0 on warnings-only. `# MANUAL_APPROVAL` comment suppresses errors.
 - CI migration-check job: runs checker on changed migration files (PR mode) or all files (main push). Strict check on main with continue-on-error. Added to ci-gate required jobs.
 
+- Load testing: `tests/load/locustfile.py` — 3 user profiles: BrowseUser (read-heavy, weight=4), BillingUser (charge generation, weight=2), WebhookUser (high-freq webhook, weight=1). `RampUpShape`: 60s ramp → 240s steady → 60s ramp-down. `locust.conf`: 150 users, 10/s spawn, 6m run. `slo_check.py`: parses Locust CSV, asserts p95 < 200ms + error rate < 1%, exit 1 on breach. Results written to `tests/load/results/`.
+
 ## Last Updated
-Loop: 68 | Timestamp: 2026-03-14
+Loop: 69 | Timestamp: 2026-03-14

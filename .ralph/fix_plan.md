@@ -193,7 +193,7 @@
 
 - [x] 86. Database migration CI: add migration safety checks to CI — detect destructive migrations (DROP, ALTER without DEFAULT), require manual approval. Run migrations in staging before prod. Rollback test on every migration.
 
-- [ ] 87. Load testing: create `tests/load/` — Locust scenarios for: 100 concurrent users browsing, 50 concurrent billing generations, 200 req/s on payment webhook endpoint. SLO targets: <200ms p95, <1% error rate under load.
+- [x] 87. Load testing: create `tests/load/` — Locust scenarios for: 100 concurrent users browsing, 50 concurrent billing generations, 200 req/s on payment webhook endpoint. SLO targets: <200ms p95, <1% error rate under load.
 
 - [ ] 88. Monitoring stack: add to docker-compose — Prometheus (scrapes /metrics), Grafana (dashboards: API latency, agent throughput, DB pool, Redis hit rate, error rate), AlertManager (PagerDuty webhook stub for SLO breaches).
 
