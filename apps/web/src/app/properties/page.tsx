@@ -265,13 +265,7 @@ export default function PropertiesPage() {
 
       {/* Filters */}
       <Card>
-        <div
-          style={{
-            display: "grid",
-            gap: 12,
-            gridTemplateColumns: "2fr 1fr 1fr",
-          }}
-        >
+        <div className="filter-grid" style={{ display: "grid", gap: 12 }}>
           <Input
             placeholder="Buscar por endereço, cidade, proprietário, IPTU…"
             value={search}

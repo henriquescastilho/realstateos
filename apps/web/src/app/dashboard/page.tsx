@@ -339,14 +339,7 @@ export default function DashboardPage() {
       )}
 
       {/* Charts + Activity */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 18,
-          alignItems: "start",
-        }}
-      >
+      <div className="grid-2col" style={{ gap: 18, alignItems: "start" }}>
         <Card title="Tendência de cobranças (últimos 6 meses)">
           <div style={{ marginTop: 8 }}>
             <BillingChart months={billing} />

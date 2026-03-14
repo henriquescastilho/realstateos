@@ -433,13 +433,79 @@ a:focus {
   max-width: 420px;
 }
 
-@media (max-width: 960px) {
+/* ── Hamburger button (hidden on desktop) ─────────────────── */
+.hamburger-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0.375rem;
+  color: var(--ink);
+  line-height: 1;
+  border-radius: var(--radius, 8px);
+}
+
+/* ── Table scroll wrapper for touch devices ────────────────── */
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Responsive filter grid ────────────────────────────────── */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── 2-column detail grid ──────────────────────────────────── */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ── Tablet breakpoint (< 960px) ────────────────────────────── */
+@media (max-width: 959px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 200;
+    overflow-y: auto;
     gap: 24px;
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.18);
+  }
+
+  .sidebar.sidebar-open {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 199;
+  }
+
+  .sidebar-overlay.visible {
+    display: block;
+  }
+
+  .hamburger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .page-frame {
@@ -459,6 +525,53 @@ a:focus {
   .detail-stack {
     justify-items: start;
     text-align: left;
+  }
+
+  .grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Mobile breakpoint (< 600px) ─────────────────────────── */
+@media (max-width: 599px) {
+  .page-frame {
+    padding: 16px;
+  }
+
+  .page-header h2 {
+    font-size: 1.6rem;
+  }
+
+  .filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .modal-inner {
+    padding: 1.25rem;
+    margin: 0.75rem;
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+  }
+
+  .list-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .list-actions > * {
+    width: 100%;
+    justify-content: center;
   }
 }
 

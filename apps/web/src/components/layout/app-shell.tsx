@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { NotificationBell } from "./NotificationBell";
 
@@ -26,10 +27,18 @@ const navigation = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {/* Mobile overlay */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? " visible" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside className={`sidebar${sidebarOpen ? " sidebar-open" : ""}`}>
         <div className="sidebar-top">
           <p className="eyebrow">REAL ESTATE OS</p>
           <h1 className="brand">Enterprise</h1>
@@ -69,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           style={{
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
             padding: "0.625rem 2.5rem",
             borderBottom: "1px solid var(--line)",
             background: "rgba(254, 250, 242, 0.72)",
@@ -80,6 +89,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             gap: "0.75rem",
           }}
         >
+          <button
+            className="hamburger-btn"
+            aria-label="Abrir menu"
+            onClick={() => setSidebarOpen((v) => !v)}
+          >
+            {sidebarOpen ? "✕" : "☰"}
+          </button>
           <NotificationBell />
         </header>
         <main className="page-frame">{children}</main>

@@ -57,8 +57,8 @@ export function Table<T extends Record<string, unknown>>({
 
   return (
     <div
-      className={className}
-      style={{ overflowX: "auto", width: "100%", ...style }}
+      className={`table-scroll${className ? ` ${className}` : ""}`}
+      style={{ ...style }}
     >
       <table
         style={{
