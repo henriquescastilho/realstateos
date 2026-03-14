@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.auth import router as auth_router
 from app.graphql.schema import get_graphql_router
-from app.routes import agent_tasks, analytics, bulk, charges, contracts, demo, documents, exports, health, metrics, owners, properties, renters, search, tasks, uploads, webhooks
+from app.routes import agent_tasks, analytics, bulk, charges, contracts, demo, documents, exports, health, metrics, nl_query, owners, properties, renters, search, tasks, uploads, webhooks
 
 hackathon_router = APIRouter()
 hackathon_router.include_router(auth_router)
@@ -28,3 +28,4 @@ hackathon_router.include_router(search.router, tags=["search"])
 hackathon_router.include_router(webhooks.router, tags=["webhooks"])
 hackathon_router.include_router(uploads.router, tags=["uploads"])
 hackathon_router.include_router(exports.router, tags=["exports"])
+hackathon_router.include_router(nl_query.router, tags=["Natural Language Query"])

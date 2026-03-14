@@ -237,7 +237,7 @@
 
 - [x] 106. Contract renewal recommender: create `apps/api/app/agents/portfolio_agent/renewal_recommender.py` — LlmAgent that analyzes expiring contracts and recommends: renew (good payer), renegotiate (late payer with reason), terminate (chronic default). Sends draft email to owner.
 
-- [ ] 107. Natural language query API: create `apps/api/app/routes/nl_query.py` — `POST /query` accepts plain Portuguese question, converts to SQL via LlmAgent (text-to-SQL with schema context), executes read-only, returns structured results + explanation.
+- [x] 107. Natural language query API: create `apps/api/app/routes/nl_query.py` — `POST /query` accepts plain Portuguese question, converts to SQL via LlmAgent (text-to-SQL with schema context), executes read-only, returns structured results + explanation.
 
 - [ ] 108. Document comparison agent: create `apps/api/app/agents/document_agent/` — LlmAgent that compares two contract versions and highlights changes in plain Portuguese. Tool: `extract_contract_clauses(pdf_path)`, `diff_clauses(v1, v2)`, `summarize_changes(diff)`.
 
