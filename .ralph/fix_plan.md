@@ -75,23 +75,23 @@
 
 - [x] 31. Alembic migrations for all new tables: create migration files for agent_tasks, audit_log, dlq_items, vector_embeddings, scheduled_jobs tables. Ensure idempotent UP/DOWN migrations. Add migration runner to startup.
 
-- [ ] 32. Repository pattern for agent_tasks: create `apps/api/app/repositories/agent_tasks.py` — full CRUD with filters (status, agent_type, org_id, date range), pagination, bulk status updates. Replace any raw SQL with SQLAlchemy ORM.
+- [x] 32. Repository pattern for agent_tasks: create `apps/api/app/repositories/agent_tasks.py` — full CRUD with filters (status, agent_type, org_id, date range), pagination, bulk status updates. Replace any raw SQL with SQLAlchemy ORM.
 
-- [ ] 33. Repository pattern for audit_log: create `apps/api/app/repositories/audit_log.py` — append-only audit trail. Query by entity_id, agent_id, action_type, time range. Support export to CSV/JSON for compliance.
+- [x] 33. Repository pattern for audit_log: create `apps/api/app/repositories/audit_log.py` — append-only audit trail. Query by entity_id, agent_id, action_type, time range. Support export to CSV/JSON for compliance.
 
-- [ ] 34. Connection pool tuning: configure `apps/api/app/database.py` — pool_size=20, max_overflow=10, pool_timeout=30, pool_recycle=3600. Add pool event listeners for monitoring. Async SQLAlchemy with asyncpg driver.
+- [x] 34. Connection pool tuning: configure `apps/api/app/database.py` — pool_size=20, max_overflow=10, pool_timeout=30, pool_recycle=3600. Add pool event listeners for monitoring. Async SQLAlchemy with asyncpg driver.
 
-- [ ] 35. Redis cache layer: create `apps/api/app/cache/redis_cache.py` — decorator `@cache(ttl=300, key_fn=...)` for expensive queries. Cache: portfolio KPIs (5min), contract lists (1min), analytics aggregates (10min). Invalidate on mutations.
+- [x] 35. Redis cache layer: create `apps/api/app/cache/redis_cache.py` — decorator `@cache(ttl=300, key_fn=...)` for expensive queries. Cache: portfolio KPIs (5min), contract lists (1min), analytics aggregates (10min). Invalidate on mutations.
 
-- [ ] 36. Query optimization — N+1 audit: scan all repositories for N+1 patterns. Add `selectinload`/`joinedload` for relationships. Add EXPLAIN ANALYZE comments on slow queries. Target: <50ms p95 for all list endpoints.
+- [x] 36. Query optimization — N+1 audit: scan all repositories for N+1 patterns. Add `selectinload`/`joinedload` for relationships. Add EXPLAIN ANALYZE comments on slow queries. Target: <50ms p95 for all list endpoints.
 
-- [ ] 37. Full-text search: add PostgreSQL `tsvector` columns to contracts, maintenance_tickets, communications tables. Create `GIN` indexes. Expose `GET /search?q=` endpoint that searches across all entities with ranking.
+- [x] 37. Full-text search: add PostgreSQL `tsvector` columns to contracts, maintenance_tickets, communications tables. Create `GIN` indexes. Expose `GET /search?q=` endpoint that searches across all entities with ranking.
 
-- [ ] 38. Database seeder: create `apps/api/scripts/seed.py` — generates realistic Brazilian real estate data: 5 orgs, 50 properties, 200 contracts, 2 years of billing history, payments, maintenance tickets. Used for demo and load testing.
+- [x] 38. Database seeder: create `apps/api/scripts/seed.py` — generates realistic Brazilian real estate data: 5 orgs, 50 properties, 200 contracts, 2 years of billing history, payments, maintenance tickets. Used for demo and load testing.
 
-- [ ] 39. Soft delete pattern: add `deleted_at` column to contracts, properties, renters, owners tables. Update all repositories to filter `deleted_at IS NULL` by default. Add `DELETE /resource/{id}` that soft-deletes, `POST /resource/{id}/restore` to restore.
+- [x] 39. Soft delete pattern: add `deleted_at` column to contracts, properties, renters, owners tables. Update all repositories to filter `deleted_at IS NULL` by default. Add `DELETE /resource/{id}` that soft-deletes, `POST /resource/{id}/restore` to restore.
 
-- [ ] 40. Database backup strategy: create `apps/api/scripts/backup.py` — pg_dump to MinIO with timestamp. Retention: daily 7 days, weekly 4 weeks, monthly 12 months. Backup verification: restore to temp DB and run smoke test.
+- [x] 40. Database backup strategy: create `apps/api/scripts/backup.py` — pg_dump to MinIO with timestamp. Retention: daily 7 days, weekly 4 weeks, monthly 12 months. Backup verification: restore to temp DB and run smoke test.
 
 ## WAVE 7 — API Hardening & Documentation (loops 41-50)
 

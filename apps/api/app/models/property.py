@@ -2,10 +2,10 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
-from app.models.mixins import UUIDPrimaryKeyMixin
+from app.models.mixins import SoftDeleteMixin, UUIDPrimaryKeyMixin
 
 
-class Property(UUIDPrimaryKeyMixin, Base):
+class Property(UUIDPrimaryKeyMixin, SoftDeleteMixin, Base):
     __tablename__ = "properties"
 
     tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), nullable=False, index=True)

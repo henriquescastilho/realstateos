@@ -10,16 +10,23 @@ from __future__ import annotations
 
 import logging
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_current_org
 from app.models.task import Task
 from app.schemas.task import TaskRead
 from app.services.task_service import create_task_record
+
+
+class ResolveTaskRequest(BaseModel):
+    resolution: Literal["approved", "rejected"]
+    notes: str = ""
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/agent-tasks", tags=["agent-tasks"])
@@ -98,7 +105,7 @@ def retry_agent_task(
 @router.post("/{task_id}/resolve", response_model=TaskRead, status_code=status.HTTP_200_OK)
 def resolve_agent_task(
     task_id: str,
-    resolution: dict,
+    body: ResolveTaskRequest,
     org: OrgContext = Depends(get_current_org),
     db: Session = Depends(get_db),
 ) -> Task:
@@ -113,18 +120,13 @@ def resolve_agent_task(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot resolve task with status '{task.status}'. Only ESCALATED tasks can be resolved.",
         )
-    decision = resolution.get("resolution", "approved").lower()
-    if decision not in ("approved", "rejected"):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="resolution must be 'approved' or 'rejected'",
-        )
+    decision = body.resolution
     task.status = "DONE" if decision == "approved" else "FAILED"
     task.payload = {
         **task.payload,
         "human_resolution": decision,
         "resolved_by": org.user_id,
-        "resolution_notes": resolution.get("notes", ""),
+        "resolution_notes": body.notes,
     }
     db.add(task)
     db.commit()
