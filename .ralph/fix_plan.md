@@ -249,7 +249,7 @@
 
 - [x] 111. Unit test suite — Python: achieve 80% coverage on `apps/api/app/services/` and `apps/api/app/repositories/`. Use pytest + pytest-asyncio. Mock external integrations. Test all error paths.
 
-- [ ] 112. Unit test suite — Node.js: achieve 80% coverage on `apps/api-node/src/services/` and `apps/api-node/src/repositories/`. Vitest + vi.mock. Test all Zod validation schemas.
+- [x] 112. Unit test suite — Node.js: achieve 80% coverage on `apps/api-node/src/services/` and `apps/api-node/src/repositories/`. Vitest + vi.mock. Test all Zod validation schemas.
 
 - [ ] 113. Integration tests — Python: create `apps/api/tests/integration/` — tests against real PostgreSQL + Redis (testcontainers). Test: full billing cycle, payment reconciliation, agent task lifecycle. No mocks for DB/cache.
 
