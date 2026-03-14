@@ -125,7 +125,7 @@
 
 - [x] 54. Contract management UI: create `apps/web/src/app/contracts/` — list with search/filter (status, owner, renter, property), detail view with full history timeline, create/edit form with PDF upload, status workflow buttons (activate/suspend/terminate).
 
-- [ ] 55. Property registry UI: create `apps/web/src/app/properties/` — property list with map view (Google Maps embed), property detail with photo gallery, linked contracts history, maintenance history, financial summary.
+- [x] 55. Property registry UI: create `apps/web/src/app/properties/` — property list with map view (Google Maps embed), property detail with photo gallery, linked contracts history, maintenance history, financial summary.
 
 - [ ] 56. Renter & owner management: create `apps/web/src/app/renters/` and `apps/web/src/app/owners/` — CRUD forms with CPF/CNPJ validation, contact info, linked contracts, payment history, document uploads.
 
