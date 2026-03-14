@@ -25,6 +25,7 @@ app.use("/api/v1", authRouter);
 
 // ─── Module routers (auth + org-scoping) ───
 import { onboardingRouter } from "./modules/onboarding/router";
+import { contractsRouter } from "./modules/contracts/router";
 import { billingRouter } from "./modules/billing/router";
 import { paymentsRouter } from "./modules/payments/router";
 import { communicationsRouter } from "./modules/communications/router";
@@ -32,6 +33,7 @@ import { maintenanceRouter } from "./modules/maintenance/router";
 import { integrationsRouter } from "./modules/integrations/router";
 
 app.use("/api/v1", requireAuth, requireOrgMatch, onboardingRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, contractsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, billingRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, paymentsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, communicationsRouter);
