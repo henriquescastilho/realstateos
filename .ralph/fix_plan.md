@@ -241,7 +241,7 @@
 
 - [x] 108. Document comparison agent: create `apps/api/app/agents/document_agent/` — LlmAgent that compares two contract versions and highlights changes in plain Portuguese. Tool: `extract_contract_clauses(pdf_path)`, `diff_clauses(v1, v2)`, `summarize_changes(diff)`.
 
-- [ ] 109. Gemini multimodal for maintenance: enhance maintenance agent — accept photo uploads, use Gemini Vision to classify damage type, estimate severity, suggest repair category. Auto-populate ticket fields from photo analysis.
+- [x] 109. Gemini multimodal for maintenance: enhance maintenance agent — accept photo uploads, use Gemini Vision to classify damage type, estimate severity, suggest repair category. Auto-populate ticket fields from photo analysis.
 
 - [ ] 110. ADK evaluation framework: create `apps/api/tests/agents/eval/` — golden dataset of 50 agent scenarios with expected outputs. Use ADK `evaluate()` to score: tool selection accuracy, output quality, escalation precision. Run in CI, alert if score drops >5%.
 
