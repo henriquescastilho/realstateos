@@ -253,7 +253,7 @@
 
 - [x] 113. Integration tests — Python: create `apps/api/tests/integration/` — tests against real PostgreSQL + Redis (testcontainers). Test: full billing cycle, payment reconciliation, agent task lifecycle. No mocks for DB/cache.
 
-- [ ] 114. Contract property-based tests: add hypothesis tests for billing calculation — `@given(rent=st.decimals(), days=st.integers())` — verify: no negative charges, IGPM adjustment bounds, partial payment calculations are always consistent.
+- [x] 114. Contract property-based tests: add hypothesis tests for billing calculation — `@given(rent=st.decimals(), days=st.integers())` — verify: no negative charges, IGPM adjustment bounds, partial payment calculations are always consistent.
 
 - [ ] 115. Security penetration tests: create `tests/security/` — automated security tests using OWASP ZAP Python API. Test: SQL injection on all filter params, JWT algorithm confusion, tenant isolation (cross-org data access attempts), rate limit bypass.
 
