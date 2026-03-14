@@ -1,10 +1,16 @@
 from fastapi import APIRouter
 
 from app.api.auth import router as auth_router
+from app.graphql.schema import get_graphql_router
 from app.routes import agent_tasks, analytics, bulk, charges, contracts, demo, documents, exports, health, metrics, owners, properties, renters, search, tasks, uploads, webhooks
 
 hackathon_router = APIRouter()
 hackathon_router.include_router(auth_router)
+
+# GraphQL — mounted at /graphql (HTTP + WebSocket subscriptions)
+_graphql_router = get_graphql_router()
+if _graphql_router is not None:
+    hackathon_router.include_router(_graphql_router, prefix="/graphql", tags=["graphql"])
 hackathon_router.include_router(owners.router, prefix="/owners", tags=["owners"])
 hackathon_router.include_router(renters.router, prefix="/renters", tags=["renters"])
 hackathon_router.include_router(properties.router, prefix="/properties", tags=["properties"])

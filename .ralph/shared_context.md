@@ -19,7 +19,7 @@
 - Wave 4: Portfolio agent, analytics API, pgvector search, APScheduler, document intelligence
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
-- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), nginx API gateway (task 50)
+- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), GraphQL layer (task 49), nginx API gateway (task 50)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -36,6 +36,7 @@
 - File uploads: `app.routes.uploads` — POST /uploads (multipart/form-data). Max 50MB, allowed MIME: PDF/JPEG/PNG/WebP/HEIC. Key: `{tenant_id}/{folder}/{uuid}-{filename}`. Returns presigned URL (1h TTL). StorageService in `app.services.storage`.
 - Webhook delivery: `app.services.webhook_service.dispatch_webhook_event(db, tenant_id, event, data)` — finds matching active endpoints for tenant, signs body with HMAC-SHA256, delivers via urllib POST. Returns count of endpoints notified. Never raises.
 - Storage service: `app.services.storage.StorageService` — boto3 S3 wrapper for MinIO. Configured via settings.s3_*. Methods: upload, presigned_url, delete, copy. Falls back if boto3 missing.
+- GraphQL layer: `app.graphql` — strawberry-graphql alongside REST. Schema: `Query` (contracts, charges, agent_tasks with N+1-safe dataloaders), `Subscription` (agentTaskUpdates — 2s polling). Mounted at `/graphql` via `get_graphql_router()` in `app.graphql.schema`. GraphiQL IDE enabled. Graceful fallback if strawberry missing. Context: `GraphQLContext(tenant_id, db)` via `app.graphql.context`.
 
 ## BUGS — DO NOT REINTRODUCE (being fixed in fix/critical-bugs-wave6 branch)
 - **scheduler.py 74-88**: charge commit and audit commit are NOT atomic — wrap create_task_record in try/except
@@ -67,4 +68,4 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Nginx API gateway: `nginx/api-gateway.conf` — rate limiting zones (per_token by Authorization header at 100r/m, per_ip_auth for /auth/ at 10r/m, per_token_agents for /agents+bulk at 20r/m). HTTP→HTTPS redirect. HTTPS with TLS 1.2/1.3, HSTS, X-Frame-Options DENY, X-Content-Type-Options. Structured JSON log_format. Gzip for JSON/JS/CSS/XLSX. Opt-in via `docker compose --profile gateway up`. Dev certs via `bash nginx/gen-dev-certs.sh`.
 
 ## Last Updated
-Loop: 50 | Timestamp: 2026-03-14
+Loop: 51 | Timestamp: 2026-03-14
