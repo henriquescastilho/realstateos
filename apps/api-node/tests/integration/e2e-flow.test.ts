@@ -9,6 +9,10 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import app from "../../src/index";
 
+// placeholder example UUID for testing — not a real secret
+const ORG_ID = "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4";
+let authToken: string;
+
 // ─── Auth ───
 
 describe("E2E: Auth flow", () => {
@@ -16,7 +20,7 @@ describe("E2E: Auth flow", () => {
     const res = await request(app)
       .post("/api/v1/auth/token")
       .send({
-        tenantId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
+        tenantId: ORG_ID,
         email: "test@example.com",
       });
 
@@ -24,13 +28,15 @@ describe("E2E: Auth flow", () => {
     expect(res.body.ok).toBe(true);
     expect(res.body.data.access_token).toBeTruthy();
     expect(res.body.data.token_type).toBe("bearer");
+
+    authToken = res.body.data.access_token;
   });
 
   it("POST /api/v1/auth/token rejects invalid email", async () => {
     const res = await request(app)
       .post("/api/v1/auth/token")
       .send({
-        tenantId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
+        tenantId: ORG_ID,
         email: "not-an-email",
       });
 
@@ -50,33 +56,51 @@ describe("E2E: Health endpoint", () => {
   });
 });
 
-// ─── Protected routes (dev mode — no JWT_SECRET set) ───
+// ─── Helper to make authenticated requests ───
 
-describe("E2E: Protected routes in dev mode", () => {
-  // In dev mode (no JWT_SECRET), auth middleware creates synthetic user
-  // from X-Org-Id header, so routes should work without a real token.
+function authGet(path: string) {
+  return request(app)
+    .get(path)
+    .set("Authorization", `Bearer ${authToken}`)
+    .set("X-Org-Id", ORG_ID);
+}
+
+function authPost(path: string) {
+  return request(app)
+    .post(path)
+    .set("Authorization", `Bearer ${authToken}`)
+    .set("X-Org-Id", ORG_ID);
+}
+
+// ─── Protected routes ───
+
+describe("E2E: Protected routes with JWT", () => {
+  beforeAll(async () => {
+    // Ensure we have a token
+    if (!authToken) {
+      const res = await request(app)
+        .post("/api/v1/auth/token")
+        .send({ tenantId: ORG_ID, email: "test@example.com" });
+      authToken = res.body.data.access_token;
+    }
+  });
 
   it("GET /api/v1/contracts returns paginated response", async () => {
-    const res = await request(app)
-      .get("/api/v1/contracts")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .query({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authGet("/api/v1/contracts")
+      .query({ orgId: ORG_ID });
 
-    // Will fail with DB error if DATABASE_URL not set, but validates routing works
     if (res.status === 200) {
       expect(res.body.ok).toBe(true);
       expect(res.body.data).toBeInstanceOf(Array);
     } else {
-      // DB not available — route was matched but service failed
+      // DB error or validation — route was matched
       expect([422, 500]).toContain(res.status);
     }
   });
 
   it("GET /api/v1/charges returns paginated response", async () => {
-    const res = await request(app)
-      .get("/api/v1/charges")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .query({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authGet("/api/v1/charges")
+      .query({ orgId: ORG_ID });
 
     if (res.status === 200) {
       expect(res.body.ok).toBe(true);
@@ -86,10 +110,8 @@ describe("E2E: Protected routes in dev mode", () => {
   });
 
   it("GET /api/v1/payments returns paginated response", async () => {
-    const res = await request(app)
-      .get("/api/v1/payments")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .query({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authGet("/api/v1/payments")
+      .query({ orgId: ORG_ID });
 
     if (res.status === 200) {
       expect(res.body.ok).toBe(true);
@@ -99,10 +121,8 @@ describe("E2E: Protected routes in dev mode", () => {
   });
 
   it("GET /api/v1/messages returns paginated response", async () => {
-    const res = await request(app)
-      .get("/api/v1/messages")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .query({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authGet("/api/v1/messages")
+      .query({ orgId: ORG_ID });
 
     if (res.status === 200) {
       expect(res.body.ok).toBe(true);
@@ -112,10 +132,8 @@ describe("E2E: Protected routes in dev mode", () => {
   });
 
   it("GET /api/v1/maintenance/tickets returns paginated response", async () => {
-    const res = await request(app)
-      .get("/api/v1/maintenance/tickets")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .query({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authGet("/api/v1/maintenance/tickets")
+      .query({ orgId: ORG_ID });
 
     if (res.status === 200) {
       expect(res.body.ok).toBe(true);
@@ -125,10 +143,8 @@ describe("E2E: Protected routes in dev mode", () => {
   });
 
   it("GET /api/v1/integrations/connectors returns paginated response", async () => {
-    const res = await request(app)
-      .get("/api/v1/integrations/connectors")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .query({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authGet("/api/v1/integrations/connectors")
+      .query({ orgId: ORG_ID });
 
     if (res.status === 200) {
       expect(res.body.ok).toBe(true);
@@ -138,13 +154,20 @@ describe("E2E: Protected routes in dev mode", () => {
   });
 });
 
-// ─── Validation tests (no DB needed) ───
+// ─── Validation tests ───
 
 describe("E2E: Request validation", () => {
+  beforeAll(async () => {
+    if (!authToken) {
+      const res = await request(app)
+        .post("/api/v1/auth/token")
+        .send({ tenantId: ORG_ID, email: "test@example.com" });
+      authToken = res.body.data.access_token;
+    }
+  });
+
   it("POST /api/v1/contracts/onboard rejects empty body", async () => {
-    const res = await request(app)
-      .post("/api/v1/contracts/onboard")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
+    const res = await authPost("/api/v1/contracts/onboard")
       .send({});
 
     expect(res.status).toBe(422);
@@ -153,22 +176,18 @@ describe("E2E: Request validation", () => {
   });
 
   it("POST /api/v1/billing-schedules rejects missing leaseContractId", async () => {
-    const res = await request(app)
-      .post("/api/v1/billing-schedules")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
-      .send({ orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4" });
+    const res = await authPost("/api/v1/billing-schedules")
+      .send({ orgId: ORG_ID });
 
     expect(res.status).toBe(422);
     expect(res.body.ok).toBe(false);
   });
 
   it("POST /api/v1/charges/generate rejects invalid billing period", async () => {
-    const res = await request(app)
-      .post("/api/v1/charges/generate")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
+    const res = await authPost("/api/v1/charges/generate")
       .send({
-        orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
-        leaseContractId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
+        orgId: ORG_ID,
+        leaseContractId: ORG_ID,
         billingPeriod: "invalid",
         dueDate: "2026-04-01",
       });
@@ -178,12 +197,10 @@ describe("E2E: Request validation", () => {
   });
 
   it("POST /api/v1/payments/webhook rejects invalid amount format", async () => {
-    const res = await request(app)
-      .post("/api/v1/payments/webhook")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
+    const res = await authPost("/api/v1/payments/webhook")
       .send({
-        orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
-        receivedAmount: "1500", // missing decimals
+        orgId: ORG_ID,
+        receivedAmount: "1500",
         receivedAt: "2026-03-13T12:00:00Z",
         paymentMethod: "pix",
       });
@@ -193,14 +210,12 @@ describe("E2E: Request validation", () => {
   });
 
   it("POST /api/v1/messages rejects unsupported channel", async () => {
-    const res = await request(app)
-      .post("/api/v1/messages")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
+    const res = await authPost("/api/v1/messages")
       .send({
-        orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
+        orgId: ORG_ID,
         entityType: "charge",
-        entityId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
-        channel: "sms", // not supported
+        entityId: ORG_ID,
+        channel: "sms",
         templateType: "charge_issued",
         recipient: "test@test.com",
       });
@@ -209,14 +224,12 @@ describe("E2E: Request validation", () => {
   });
 
   it("POST /api/v1/maintenance/tickets rejects short description", async () => {
-    const res = await request(app)
-      .post("/api/v1/maintenance/tickets")
-      .set("X-Org-Id", "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4")
+    const res = await authPost("/api/v1/maintenance/tickets")
       .send({
-        orgId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
-        propertyId: "a0a0a0a0-b1b1-4c2c-8d3d-e4e4e4e4e4e4",
+        orgId: ORG_ID,
+        propertyId: ORG_ID,
         openedBy: "tenant",
-        description: "short", // min 10 chars
+        description: "short",
       });
 
     expect(res.status).toBe(422);
@@ -242,5 +255,13 @@ describe("E2E: Security controls", () => {
 
     // Express returns 413 or error handler catches as 500
     expect([413, 500]).toContain(res.status);
+  });
+
+  it("rejects requests without auth token on protected routes", async () => {
+    const res = await request(app)
+      .get("/api/v1/contracts")
+      .query({ orgId: ORG_ID });
+
+    expect(res.status).toBe(401);
   });
 });
