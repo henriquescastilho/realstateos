@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.task import Task

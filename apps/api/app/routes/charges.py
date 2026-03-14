@@ -1,9 +1,10 @@
-from datetime import date
-
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.charge import Charge
@@ -14,6 +15,7 @@ from app.services.santander import generate_payment_payload
 from app.services.task_service import create_task_record
 
 router = APIRouter()
+billing_limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("", response_model=list[ChargeRead])
@@ -25,7 +27,9 @@ def list_charges(
 
 
 @router.post("/generate-monthly", response_model=list[ChargeRead], status_code=status.HTTP_201_CREATED)
+@billing_limiter.limit("10/minute")
 def generate_monthly_charge(
+    request: Request,
     payload: GenerateMonthlyChargeRequest,
     org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
@@ -36,14 +40,16 @@ def generate_monthly_charge(
         tenant_id=org.tenant_id,
         task_type="GENERATE_MONTHLY_CHARGE",
         status_value="DONE",
-        message="Cobrança mensal gerada automaticamente",
+        message="Cobranca mensal gerada automaticamente",
         payload={"contract_id": payload.contract_id, "reference_month": payload.reference_month.isoformat()},
     )
     return charges
 
 
 @router.post("/consolidate", response_model=ConsolidatedChargeRead, status_code=status.HTTP_201_CREATED)
+@billing_limiter.limit("10/minute")
 def consolidate_charge_month(
+    request: Request,
     payload: GenerateMonthlyChargeRequest,
     org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
@@ -54,14 +60,16 @@ def consolidate_charge_month(
         tenant_id=org.tenant_id,
         task_type="CONSOLIDATE_CHARGES",
         status_value="DONE",
-        message="Consolidação realizada",
+        message="Consolidacao realizada",
         payload={"contract_id": payload.contract_id, "reference_month": payload.reference_month.isoformat()},
     )
     return charge
 
 
 @router.post("/{charge_id}/generate-payment", status_code=status.HTTP_200_OK)
+@billing_limiter.limit("10/minute")
 def generate_payment(
+    request: Request,
     charge_id: str,
     org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
@@ -72,7 +80,7 @@ def generate_payment(
         tenant_id=org.tenant_id,
         task_type="GENERATE_PAYMENT",
         status_value="DONE",
-        message="Boleto Santander emitido" if payment["provider"] == "santander" else "Falha ao emitir boleto; usar mock",
+        message="Boleto Santander emitido" if payment["provider"] == "santander" else "Pagamento mock gerado",
         payload={"charge_id": charge_id, "provider": payment["provider"]},
     )
     return payment

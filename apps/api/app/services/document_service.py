@@ -1,10 +1,46 @@
-from pathlib import Path
+import logging
+from io import BytesIO
 from uuid import uuid4
 
+import boto3
+from botocore.exceptions import ClientError
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.integrations.ocr import parse_pdf_document
 from app.models.document import Document
+
+logger = logging.getLogger("realestateos.document_service")
+
+
+def _get_s3_client():
+    return boto3.client(
+        "s3",
+        endpoint_url=settings.s3_endpoint_url,
+        aws_access_key_id=settings.s3_access_key_id,
+        aws_secret_access_key=settings.s3_secret_access_key,
+    )
+
+
+def _ensure_bucket_exists(client, bucket_name: str) -> None:
+    try:
+        client.head_bucket(Bucket=bucket_name)
+    except ClientError:
+        logger.info("Creating S3 bucket: %s", bucket_name)
+        client.create_bucket(Bucket=bucket_name)
+
+
+def _upload_to_s3(file_key: str, file_bytes: bytes) -> str:
+    client = _get_s3_client()
+    bucket = settings.s3_bucket_name
+    _ensure_bucket_exists(client, bucket)
+    client.upload_fileobj(
+        BytesIO(file_bytes),
+        bucket,
+        file_key,
+        ExtraArgs={"ContentType": "application/pdf"},
+    )
+    return f"s3://{bucket}/{file_key}"
 
 
 def create_document_record(
@@ -16,7 +52,10 @@ def create_document_record(
     file_bytes: bytes,
 ) -> Document:
     file_key = f"{tenant_id}/{property_id}/{uuid4()}-{filename}"
-    file_url = f"s3://realestateos/{file_key}"
+
+    # Upload to S3/MinIO
+    file_url = _upload_to_s3(file_key, file_bytes)
+
     parsed_data = parse_pdf_document(filename=filename, file_bytes=file_bytes)
 
     document = Document(
