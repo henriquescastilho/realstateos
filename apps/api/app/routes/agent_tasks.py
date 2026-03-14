@@ -13,7 +13,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser, get_current_user
@@ -21,6 +21,7 @@ from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_current_org
 from app.models.task import Task
 from app.openapi import AUTH_RESPONSES, RESPONSES_404, RESPONSES_409, RESPONSES_422
+from app.schemas.pagination import PaginatedResponse, PaginationParams
 from app.schemas.task import TaskRead
 from app.services.task_service import create_task_record
 
@@ -42,31 +43,31 @@ def _get_task_or_404(db: Session, task_id: str, tenant_id: str) -> Task:
 
 @router.get(
     "",
-    response_model=list[TaskRead],
+    response_model=PaginatedResponse[TaskRead],
     summary="List agent tasks",
     description=(
         "List agent tasks for the authenticated tenant, newest first. "
         "Filter by `status` (PENDING, RUNNING, DONE, FAILED, ESCALATED) and/or `type` "
-        "to narrow results. Use `limit`/`offset` for pagination."
+        "to narrow results. Use `page` and `per_page` query parameters to paginate results."
     ),
     responses={**AUTH_RESPONSES},
 )
 def list_agent_tasks(
     task_status: str | None = Query(None, alias="status", description="Filter by status (PENDING, RUNNING, DONE, FAILED, ESCALATED)"),
     task_type: str | None = Query(None, alias="type", description="Filter by task type"),
-    limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0),
+    p: PaginationParams = Depends(),
     org: OrgContext = Depends(get_current_org),
     db: Session = Depends(get_db),
-) -> list[TaskRead]:
+) -> PaginatedResponse[TaskRead]:
     """List agent tasks for the authenticated tenant, newest first."""
-    q = select(Task).where(Task.tenant_id == org.tenant_id)
+    base = select(Task).where(Task.tenant_id == org.tenant_id)
     if task_status:
-        q = q.where(Task.status == task_status.upper())
+        base = base.where(Task.status == task_status.upper())
     if task_type:
-        q = q.where(Task.type == task_type.upper())
-    q = q.order_by(Task.created_at.desc()).offset(offset).limit(limit)
-    return list(db.scalars(q).all())
+        base = base.where(Task.type == task_type.upper())
+    total = db.scalar(select(func.count()).select_from(base.subquery()))
+    items = list(db.scalars(base.order_by(Task.created_at.desc()).offset(p.offset).limit(p.limit)).all())
+    return PaginatedResponse.build(items=items, total=total or 0, params=p)
 
 
 @router.get(

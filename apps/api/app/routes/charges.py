@@ -1,7 +1,7 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -9,6 +9,7 @@ from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.charge import Charge
 from app.openapi import AUTH_RESPONSES, RESPONSES_404, RESPONSES_422
 from app.schemas.charge import ChargeRead, ConsolidatedChargeRead, GenerateMonthlyChargeRequest
+from app.schemas.pagination import PaginatedResponse, PaginationParams
 from app.services.consolidation import consolidate_pending_charges
 from app.services.monthly_billing import create_monthly_rent_charge
 from app.services.santander import generate_payment_payload
@@ -19,20 +20,28 @@ router = APIRouter()
 
 @router.get(
     "",
-    response_model=list[ChargeRead],
+    response_model=PaginatedResponse[ChargeRead],
     summary="List charges",
     description=(
-        "Return all billing charges for the authenticated tenant. "
+        "Return billing charges for the authenticated tenant, paginated. "
         "Each charge represents a billing line item (monthly rent, fee, adjustment). "
-        "Filter by status on the client side: `pending`, `paid`, `overdue`, `partial`."
+        "Optionally filter by `status` (pending, paid, overdue, partial). "
+        "Use `page` and `per_page` query parameters to paginate results."
     ),
     responses={**AUTH_RESPONSES},
 )
 def list_charges(
+    charge_status: str | None = Query(None, alias="status", description="Filter by charge status"),
+    p: PaginationParams = Depends(),
     org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
-):
-    return list(db.scalars(select(Charge).where(Charge.tenant_id == org.tenant_id)).all())
+) -> PaginatedResponse[ChargeRead]:
+    base = select(Charge).where(Charge.tenant_id == org.tenant_id)
+    if charge_status:
+        base = base.where(Charge.status == charge_status.lower())
+    total = db.scalar(select(func.count()).select_from(base.subquery()))
+    items = list(db.scalars(base.offset(p.offset).limit(p.limit)).all())
+    return PaginatedResponse.build(items=items, total=total or 0, params=p)
 
 
 @router.post(

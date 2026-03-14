@@ -99,7 +99,7 @@
 
 - [x] 42. API versioning: add `/v1/` prefix to all existing routes. Create `apps/api/app/versioning.py` — version negotiation via header `Accept: application/vnd.realstateos.v1+json`. Maintain backwards compat shim for unversioned routes.
 
-- [ ] 43. Pagination standardization: create `apps/api/app/schemas/pagination.py` — `PaginatedResponse[T]` generic with `items`, `total`, `page`, `per_page`, `pages`. Apply to ALL list endpoints consistently.
+- [x] 43. Pagination standardization: create `apps/api/app/schemas/pagination.py` — `PaginatedResponse[T]` generic with `items`, `total`, `page`, `per_page`, `pages`. Apply to ALL list endpoints consistently.
 
 - [ ] 44. Error catalog: create `apps/api/app/errors.py` — typed error classes (ContractNotFound, PaymentDivergence, AgentTimeout, TenantQuotaExceeded). Each has code, message template, HTTP status, documentation link. Replace bare HTTPException throughout.
 
