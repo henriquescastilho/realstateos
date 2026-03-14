@@ -26,6 +26,19 @@ services:
       - "${MINIO_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
 
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
+      mc mb --ignore-existing local/${S3_BUCKET_NAME:-realestateos};
+      echo 'bucket ready';
+      "
+
   api:
     build:
       context: ./apps/api
@@ -33,10 +46,13 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/realestateos}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       PORT: ${API_PORT:-8000}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-unsafe-secret-replace-in-production}
       WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-2}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       SANTANDER_SANDBOX_ENABLED: ${SANTANDER_SANDBOX_ENABLED:-true}
+      SANTANDER_CLIENT_ID: ${SANTANDER_CLIENT_ID:-sandbox-client-id}
+      SANTANDER_CLIENT_SECRET: ${SANTANDER_CLIENT_SECRET:-sandbox-client-secret}
       PAYMENT_MOCK_FALLBACK_ENABLED: ${PAYMENT_MOCK_FALLBACK_ENABLED:-true}
       S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-http://minio:9000}
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-minioadmin}
@@ -60,9 +76,12 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/realestateos}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       PORT: ${WORKER_PORT:-8081}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-unsafe-secret-replace-in-production}
       WORKER_POLL_INTERVAL_SECONDS: ${WORKER_POLL_INTERVAL_SECONDS:-2}
       SANTANDER_SANDBOX_ENABLED: ${SANTANDER_SANDBOX_ENABLED:-true}
+      SANTANDER_CLIENT_ID: ${SANTANDER_CLIENT_ID:-sandbox-client-id}
+      SANTANDER_CLIENT_SECRET: ${SANTANDER_CLIENT_SECRET:-sandbox-client-secret}
       PAYMENT_MOCK_FALLBACK_ENABLED: ${PAYMENT_MOCK_FALLBACK_ENABLED:-true}
     volumes:
       - ./apps/api:/app
