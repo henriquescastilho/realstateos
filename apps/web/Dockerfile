@@ -2,8 +2,8 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-COPY package.json /app/package.json
-RUN npm install
+COPY package.json package-lock.json* /app/
+RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 FROM node:22-alpine AS builder
 
@@ -22,8 +22,14 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-COPY --from=builder /app/.next/standalone /app/
-COPY --from=builder /app/.next/static /app/.next/static
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs \
+    && adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone /app/
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static /app/.next/static
+
+USER nextjs
 
 EXPOSE 3000
 

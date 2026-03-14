@@ -1,9 +1,10 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.common import ORMModel
 
 
 class PropertyCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     address: str
     city: str
     state: str

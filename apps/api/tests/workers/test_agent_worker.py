@@ -96,8 +96,8 @@ def test_worker_writes_safe_failure_message_when_payment_generation_raises(db_se
 
     assert result["ok"] is False
     assert result["operation"] == "generate_payment"
-    assert result["message"] == "Falha ao emitir boleto; usar mock"
-    assert result["error"] == "sandbox down"
+    assert result["message"] == "Falha ao processar tarefa de billing"
+    assert result["error"] == "internal_error"
 
 
 def test_worker_rejects_unknown_operation_explicitly(db_session):

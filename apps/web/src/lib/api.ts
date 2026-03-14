@@ -1,5 +1,20 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
+// In-memory token store (for MVP — replace with cookie/session in production)
+let _accessToken: string | null = null;
+
+export function setAccessToken(token: string) {
+  _accessToken = token;
+}
+
+export function getAccessToken(): string | null {
+  return _accessToken;
+}
+
+export function clearAccessToken() {
+  _accessToken = null;
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -33,10 +48,22 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (_accessToken) {
+    headers["Authorization"] = `Bearer ${_accessToken}`;
+  }
+  return headers;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
     cache: "no-store",
     ...init,
+    headers: {
+      ...authHeaders(),
+      ...init?.headers,
+    },
   });
   return parseResponse<T>(response);
 }
@@ -58,4 +85,13 @@ export function apiUpload<T>(path: string, formData: FormData) {
     method: "POST",
     body: formData,
   });
+}
+
+export async function login(tenantId: string, email: string): Promise<string> {
+  const data = await apiPost<{ access_token: string }>("/auth/token", {
+    tenant_id: tenantId,
+    email,
+  });
+  setAccessToken(data.access_token);
+  return data.access_token;
 }
