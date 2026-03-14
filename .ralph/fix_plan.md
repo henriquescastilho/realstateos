@@ -123,7 +123,7 @@
 
 - [x] 53. Dashboard home: create `apps/web/src/app/dashboard/page.tsx` — KPI cards (active contracts, monthly revenue, default rate, open tickets), charts (billing trend 12mo, payment rate by month), recent activity feed, quick action buttons.
 
-- [ ] 54. Contract management UI: create `apps/web/src/app/contracts/` — list with search/filter (status, owner, renter, property), detail view with full history timeline, create/edit form with PDF upload, status workflow buttons (activate/suspend/terminate).
+- [x] 54. Contract management UI: create `apps/web/src/app/contracts/` — list with search/filter (status, owner, renter, property), detail view with full history timeline, create/edit form with PDF upload, status workflow buttons (activate/suspend/terminate).
 
 - [ ] 55. Property registry UI: create `apps/web/src/app/properties/` — property list with map view (Google Maps embed), property detail with photo gallery, linked contracts history, maintenance history, financial summary.
 
