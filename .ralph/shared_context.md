@@ -19,7 +19,7 @@
 - Wave 4: Portfolio agent, analytics API, pgvector search, APScheduler, document intelligence
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
-- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46)
+- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -62,4 +62,4 @@ After completing each task:
 This creates a compounding knowledge loop — each iteration is smarter than the last.
 
 ## Last Updated
-Loop: 46 | Timestamp: 2026-03-14
+Loop: 47 | Timestamp: 2026-03-14

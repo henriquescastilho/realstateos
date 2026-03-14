@@ -107,7 +107,7 @@
 
 - [x] 46. Bulk operations API: add bulk endpoints — `POST /contracts/bulk` (create many), `PATCH /charges/bulk-status` (update many), `POST /agents/bulk-trigger` (trigger agent for list of contracts). All return job_id for async tracking.
 
-- [ ] 47. File upload API: create `apps/api/app/routes/uploads.py` — `POST /uploads` streams to MinIO. Support: contract PDFs, maintenance photos, owner statements. Return presigned URL. Virus scan stub (pluggable). Max 50MB.
+- [x] 47. File upload API: create `apps/api/app/routes/uploads.py` — `POST /uploads` streams to MinIO. Support: contract PDFs, maintenance photos, owner statements. Return presigned URL. Virus scan stub (pluggable). Max 50MB.
 
 - [ ] 48. Export API: create `apps/api/app/routes/exports.py` — `POST /exports` triggers async export job. Formats: CSV, XLSX, PDF. Entities: contracts, billing_history, payment_history, maintenance_report. Download via presigned MinIO URL when ready.
 

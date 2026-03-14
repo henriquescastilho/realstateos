@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.auth import router as auth_router
-from app.routes import agent_tasks, analytics, bulk, charges, contracts, demo, documents, health, metrics, owners, properties, renters, search, tasks, webhooks
+from app.routes import agent_tasks, analytics, bulk, charges, contracts, demo, documents, health, metrics, owners, properties, renters, search, tasks, uploads, webhooks
 
 hackathon_router = APIRouter()
 hackathon_router.include_router(auth_router)
@@ -20,3 +20,4 @@ hackathon_router.include_router(metrics.router, tags=["metrics"])
 hackathon_router.include_router(analytics.router, tags=["analytics"])
 hackathon_router.include_router(search.router, tags=["search"])
 hackathon_router.include_router(webhooks.router, tags=["webhooks"])
+hackathon_router.include_router(uploads.router, tags=["uploads"])

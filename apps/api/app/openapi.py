@@ -227,4 +227,11 @@ OPENAPI_TAGS: list[dict] = [
             "Partial success is supported — failed items are reported individually."
         ),
     },
+    {
+        "name": "uploads",
+        "description": (
+            "File uploads — stream contract PDFs, maintenance photos, and owner statements to MinIO object storage. "
+            "Returns a presigned download URL valid for 1 hour. Max file size: 50 MB."
+        ),
+    },
 ]
