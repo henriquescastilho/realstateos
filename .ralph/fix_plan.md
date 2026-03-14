@@ -243,7 +243,7 @@
 
 - [x] 109. Gemini multimodal for maintenance: enhance maintenance agent — accept photo uploads, use Gemini Vision to classify damage type, estimate severity, suggest repair category. Auto-populate ticket fields from photo analysis.
 
-- [ ] 110. ADK evaluation framework: create `apps/api/tests/agents/eval/` — golden dataset of 50 agent scenarios with expected outputs. Use ADK `evaluate()` to score: tool selection accuracy, output quality, escalation precision. Run in CI, alert if score drops >5%.
+- [x] 110. ADK evaluation framework: create `apps/api/tests/agents/eval/` — golden dataset of 50 agent scenarios with expected outputs. Use ADK `evaluate()` to score: tool selection accuracy, output quality, escalation precision. Run in CI, alert if score drops >5%.
 
 ## WAVE 13 — Quality, Testing & Documentation (loops 111-120)
 
