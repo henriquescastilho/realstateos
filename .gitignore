@@ -1,8 +1,16 @@
+<<<<<<< HEAD
+=======
+# Dependencies
+node_modules/
+.pnp.*
+
+>>>>>>> origin/main
 # Environment
 .env
 .env.*
 !.env.example
 
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.pyc
@@ -25,11 +33,26 @@ out/
 *.swp
 *.swo
 *~
+=======
+# Build output
+dist/
+build/
+
+# Drizzle (meta snapshots are auto-generated, only track SQL migrations)
+**/drizzle/meta/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+>>>>>>> origin/main
 
 # OS
 .DS_Store
 Thumbs.db
 
+<<<<<<< HEAD
 # Docker volumes
 postgres_data/
 
@@ -38,3 +61,13 @@ postgres_data/
 *.key
 *.p12
 credentials.json
+=======
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+
+# Logs
+*.log
+>>>>>>> origin/main

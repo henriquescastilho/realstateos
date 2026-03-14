@@ -1,12 +1,14 @@
 # Real Estate OS
 
+[![API Node CI](https://github.com/henriquescastilho/realstateos/actions/workflows/api-node-ci.yml/badge.svg)](https://github.com/henriquescastilho/realstateos/actions/workflows/api-node-ci.yml)
+
 Real Estate OS e uma plataforma de gestao operacional para imobiliarias e administradoras. O foco inicial e a operacao que comeca depois que um contrato de locacao ja esta assinado, transformando rotinas manuais e fragmentadas em um sistema estruturado, auditavel e operado por humanos e agentes de IA.
 
 ## Estado Atual da Arquitetura
 
-- `apps/api` — backend ativo para demo/hackathon, FastAPI + SQLAlchemy + Alembic
-- `apps/api-node` — skeleton Node.js + Express em migração, ainda não produtivo
-- `apps/web` — frontend Next.js consumindo `apps/api` via HTTP
+- `apps/api-node` — **backend principal** Node.js + Express + TypeScript strict + Drizzle ORM (24 endpoints, 127 testes)
+- `apps/api` — backend legado FastAPI (demo/hackathon)
+- `apps/web` — frontend Next.js
 - Orquestração de agentes via Paperclip configurada em `.agents/`
 
 ### Rodar localmente
