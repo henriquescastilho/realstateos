@@ -1,0 +1,86 @@
+# Loki Configuration — Real Estate OS
+# Single-binary mode (suitable for development and small production deployments)
+# Log retention: 30 days
+#
+# Access: http://localhost:3100
+# Grafana datasource: http://loki:3100 (internal Docker network)
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+  grpc_listen_port: 9096
+  log_level: warn
+
+# ── Common storage path ───────────────────────────────────────────────────────
+common:
+  instance_addr: 127.0.0.1
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory:  /loki/rules
+  replication_factor: 1
+  ring:
+    kvstore:
+      store: inmemory
+
+# ── Query range limits ────────────────────────────────────────────────────────
+query_range:
+  results_cache:
+    cache:
+      embedded_cache:
+        enabled: true
+        max_size_mb: 100
+
+# ── Schema config ─────────────────────────────────────────────────────────────
+schema_config:
+  configs:
+    - from: 2024-01-01
+      store:    tsdb
+      object_store: filesystem
+      schema:   v13
+      index:
+        prefix: index_
+        period: 24h
+
+# ── Ruler (alerting rules for logs) ──────────────────────────────────────────
+ruler:
+  alertmanager_url: http://alertmanager:9093
+
+# ── Retention (30 days) ──────────────────────────────────────────────────────
+# Loki 2.9+ uses compactor for retention enforcement
+compactor:
+  working_directory: /loki/compactor
+  delete_request_store: filesystem
+
+limits_config:
+  # Retention period — logs older than 30 days are deleted
+  retention_period: 720h   # 30 days × 24h
+
+  # Ingestion limits (suitable for development)
+  ingestion_rate_mb:         16
+  ingestion_burst_size_mb:   32
+  per_stream_rate_limit:     3MB
+  per_stream_rate_limit_burst: 15MB
+
+  # Query limits
+  max_entries_limit_per_query: 5000
+  max_query_length:            721h    # slightly > retention to cover edge cases
+  max_cache_freshness_per_query: 10m
+
+  # Allow structured metadata (used by Promtail to attach Docker labels)
+  allow_structured_metadata: true
+
+# ── Ingester ─────────────────────────────────────────────────────────────────
+ingester:
+  chunk_idle_period:   5m
+  chunk_retain_period: 30s
+  max_chunk_age:       1h
+  wal:
+    enabled:  true
+    dir:      /loki/wal
+
+# ── Analytics ────────────────────────────────────────────────────────────────
+analytics:
+  reporting_enabled: false

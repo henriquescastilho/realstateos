@@ -167,6 +167,50 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # ── Log aggregation (Loki + Promtail) ────────────────────────────────────────
+  # Opt-in: docker compose --profile logging up
+  # Or combine: docker compose --profile monitoring --profile logging up
+  #
+  # Structlog already outputs single-line JSON to stdout (apps/api/app/utils/logging.py).
+  # Promtail scrapes Docker container logs via /var/run/docker.sock and ships to Loki.
+  # Loki: 30-day retention. Access: http://localhost:3100
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  loki:
+    image: grafana/loki:2.9.5
+    profiles:
+      - logging
+    command:
+      - -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki_data:/loki
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  promtail:
+    image: grafana/promtail:2.9.5
+    profiles:
+      - logging
+    command:
+      - -config.file=/etc/promtail/promtail.yml
+    volumes:
+      - ./monitoring/promtail/promtail.yml:/etc/promtail/promtail.yml:ro
+      # Docker socket for container auto-discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Container log files (read-only)
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      - loki
+    restart: unless-stopped
+
   # ── Monitoring stack (Prometheus + Grafana + AlertManager) ───────────────────
   # Opt-in: docker compose --profile monitoring up
   # Access:
@@ -280,3 +324,4 @@ volumes:
   prometheus_data:
   grafana_data:
   alertmanager_data:
+  loki_data:

@@ -197,7 +197,7 @@
 
 - [x] 88. Monitoring stack: add to docker-compose — Prometheus (scrapes /metrics), Grafana (dashboards: API latency, agent throughput, DB pool, Redis hit rate, error rate), AlertManager (PagerDuty webhook stub for SLO breaches).
 
-- [ ] 89. Log aggregation: add Loki to docker-compose. Configure structlog JSON output to stdout, Promtail to ship to Loki. Grafana dashboards for log exploration. Log retention: 30 days.
+- [x] 89. Log aggregation: add Loki to docker-compose. Configure structlog JSON output to stdout, Promtail to ship to Loki. Grafana dashboards for log exploration. Log retention: 30 days.
 
 - [ ] 90. Disaster recovery runbook: create `docs/runbook/` — DR procedures: DB restore from backup, Redis flush recovery, MinIO bucket restore, full cluster rebuild from IaC. RTO target: <4h, RPO target: <1h.
 
