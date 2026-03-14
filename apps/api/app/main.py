@@ -13,13 +13,40 @@ from app.utils.logging import CorrelationIdMiddleware, configure_logging
 configure_logging(level="INFO")
 
 
+def _run_migrations() -> None:
+    """Run Alembic migrations to head on startup."""
+    import logging  # noqa: PLC0415
+    import os  # noqa: PLC0415
+
+    log = logging.getLogger(__name__)
+    try:
+        from alembic import command  # noqa: PLC0415
+        from alembic.config import Config  # noqa: PLC0415
+
+        # Resolve alembic.ini relative to this file's location
+        here = os.path.dirname(os.path.abspath(__file__))
+        alembic_cfg_path = os.path.join(here, "..", "alembic.ini")
+        alembic_cfg = Config(alembic_cfg_path)
+        # Override script_location to the actual alembic/ directory
+        alembic_cfg.set_main_option(
+            "script_location", os.path.join(here, "..", "alembic")
+        )
+        command.upgrade(alembic_cfg, "head")
+        log.info("Alembic migrations applied successfully")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Alembic migration failed (non-fatal): %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    import logging  # noqa: PLC0415
+
     from app.db import SessionLocal  # noqa: PLC0415
     from app.workers.dlq_worker import init_dlq_worker  # noqa: PLC0415
     from app.workers.scheduler import start_scheduler  # noqa: PLC0415
 
+    _run_migrations()
     dlq = init_dlq_worker(redis_url=settings.redis_url, db_factory=SessionLocal)
     start_scheduler()
     yield
