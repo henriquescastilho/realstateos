@@ -234,4 +234,22 @@ OPENAPI_TAGS: list[dict] = [
             "Returns a presigned download URL valid for 1 hour. Max file size: 50 MB."
         ),
     },
+    {
+        "name": "exports",
+        "description": (
+            "Data exports — trigger async background jobs to export tenant data as CSV, XLSX, or PDF. "
+            "Poll `GET /exports/{job_id}` for status; when DONE the response includes a presigned MinIO download URL. "
+            "Supported datasets: contracts, billing_history, payment_history, maintenance_report."
+        ),
+    },
+    {
+        "name": "graphql",
+        "description": (
+            "GraphQL API — Strawberry schema mounted at `/graphql`. "
+            "Covers: contracts, charges, agentTasks, maintenanceTickets. "
+            "N+1-safe dataloaders for nested queries. "
+            "WebSocket subscription: `agentTaskUpdates` (real-time task stream). "
+            "GraphiQL IDE available at `/graphql` in the browser."
+        ),
+    },
 ]

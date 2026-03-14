@@ -68,4 +68,4 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Nginx API gateway: `nginx/api-gateway.conf` — rate limiting zones (per_token by Authorization header at 100r/m, per_ip_auth for /auth/ at 10r/m, per_token_agents for /agents+bulk at 20r/m). HTTP→HTTPS redirect. HTTPS with TLS 1.2/1.3, HSTS, X-Frame-Options DENY, X-Content-Type-Options. Structured JSON log_format. Gzip for JSON/JS/CSS/XLSX. Opt-in via `docker compose --profile gateway up`. Dev certs via `bash nginx/gen-dev-certs.sh`.
 
 ## Last Updated
-Loop: 51 | Timestamp: 2026-03-14
+Loop: 48 | Timestamp: 2026-03-14

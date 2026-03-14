@@ -167,6 +167,14 @@ app.add_middleware(VersionNegotiationMiddleware, default_version="/v1")
 # Mount all routes:  /v1/ (canonical)  /api/ (legacy)  / (root shim)
 include_versioned_routes(app, hackathon_router)
 
+# Mount GraphQL at /graphql (HTTP + WebSocket for subscriptions)
+# Falls back gracefully when strawberry-graphql is not installed.
+from app.graphql.schema import get_graphql_router  # noqa: E402, PLC0415
+
+_graphql_router = get_graphql_router()
+if _graphql_router is not None:
+    app.include_router(_graphql_router, prefix="/graphql")
+
 
 @app.exception_handler(AppError)
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:

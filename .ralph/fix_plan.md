@@ -111,7 +111,7 @@
 
 - [x] 48. Export API: create `apps/api/app/routes/exports.py` — `POST /exports` triggers async export job. Formats: CSV, XLSX, PDF. Entities: contracts, billing_history, payment_history, maintenance_report. Download via presigned MinIO URL when ready.
 
-- [ ] 49. GraphQL layer: add `strawberry-graphql` alongside REST. Schema covers: contracts, charges, payments, maintenance_tickets, agent_tasks. Supports N+1-safe dataloaders. Subscription for real-time agent task updates via WebSocket.
+- [x] 49. GraphQL layer: add `strawberry-graphql` alongside REST. Schema covers: contracts, charges, payments, maintenance_tickets, agent_tasks. Supports N+1-safe dataloaders. Subscription for real-time agent task updates via WebSocket.
 
 - [x] 50. API gateway config: create `nginx/api-gateway.conf` — rate limiting by org_id (not just IP), request/response logging, SSL termination, upstream health checks, gzip compression. Docker Compose update to include nginx service.
 
