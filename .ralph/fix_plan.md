@@ -53,19 +53,19 @@
 
 - [x] 22. Analytics routes: create `apps/api/app/routes/analytics.py` — `GET /analytics/portfolio` (KPIs: default rate, avg billing cycle, escalation rate), `GET /analytics/billing` (monthly totals, payment rates), `GET /analytics/maintenance` (avg resolution time, category breakdown), `GET /analytics/agents` (automation rate, escalation rate by agent).
 
-- [ ] 23. pgvector semantic search: create `apps/api/app/services/vector_search.py` — use pgvector extension already in docker-compose. Embed contract text, maintenance descriptions, communications using Gemini embeddings. Enable: "find similar maintenance tickets", "search contracts by description", semantic duplicate detection.
+- [x] 23. pgvector semantic search: create `apps/api/app/services/vector_search.py` — use pgvector extension already in docker-compose. Embed contract text, maintenance descriptions, communications using Gemini embeddings. Enable: "find similar maintenance tickets", "search contracts by description", semantic duplicate detection.
 
 - [x] 24. Scheduled tasks: create `apps/api/app/workers/scheduler.py` — APScheduler integration. Jobs: monthly billing generation (1st of month, 6am), payment reminder D-3 (charge due date - 3 days), overdue escalation (daily at 9am for charges past due > 5 days), portfolio report generation (monthly). All jobs create agent_tasks records.
 
-- [ ] 25. Document intelligence: expand `apps/api/app/services/document_ingestion.py` — use Gemini multimodal to extract structured data from contract PDFs. Fields: parties (names, CPF, addresses), property description, rent amount, due day, duration, special clauses. Confidence score per field. Low confidence → escalation task.
+- [x] 25. Document intelligence: expand `apps/api/app/services/document_ingestion.py` — use Gemini multimodal to extract structured data from contract PDFs. Fields: parties (names, CPF, addresses), property description, rent amount, due day, duration, special clauses. Confidence score per field. Low confidence → escalation task.
 
 ## WAVE 5 — Frontend & Integration Polish (loops 26-30)
 
-- [ ] 26. Agent activity dashboard (Next.js): create `apps/web/src/app/agents/page.tsx` — real-time dashboard showing: active agent tasks, recent completions, escalations requiring human action, agent performance metrics. Poll `/agent-tasks` API every 10 seconds.
+- [x] 26. Agent activity dashboard (Next.js): create `apps/web/src/app/agents/page.tsx` — real-time dashboard showing: active agent tasks, recent completions, escalations requiring human action, agent performance metrics. Poll `/agent-tasks` API every 10 seconds.
 
-- [ ] 27. Escalation inbox (Next.js): create `apps/web/src/app/escalations/page.tsx` — inbox for human operators to review and resolve escalated agent tasks. Show: context, what agent tried, why it escalated, action buttons (approve/reject/retry). Connect to `POST /agent-tasks/{id}/resolve`.
+- [x] 27. Escalation inbox (Next.js): create `apps/web/src/app/escalations/page.tsx` — inbox for human operators to review and resolve escalated agent tasks. Show: context, what agent tried, why it escalated, action buttons (approve/reject/retry). Connect to `POST /agent-tasks/{id}/resolve`.
 
-- [ ] 28. Maintenance workflow UI (Next.js): create `apps/web/src/app/maintenance/page.tsx` — full maintenance ticket management. List with status/priority filters, detail view with history, create ticket form, update status. Connects to maintenance API routes.
+- [x] 28. Maintenance workflow UI (Next.js): create `apps/web/src/app/maintenance/page.tsx` — full maintenance ticket management. List with status/priority filters, detail view with history, create ticket form, update status. Connects to maintenance API routes.
 
 - [ ] 29. Node.js API parity: complete `apps/api-node/` skeleton — implement all routers (onboarding, billing, payments, communications, maintenance) with full Drizzle ORM integration. Ensure 1:1 endpoint parity with FastAPI. Add JWT auth middleware. This is the migration target.
 
