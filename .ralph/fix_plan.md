@@ -109,7 +109,7 @@
 
 - [x] 47. File upload API: create `apps/api/app/routes/uploads.py` — `POST /uploads` streams to MinIO. Support: contract PDFs, maintenance photos, owner statements. Return presigned URL. Virus scan stub (pluggable). Max 50MB.
 
-- [ ] 48. Export API: create `apps/api/app/routes/exports.py` — `POST /exports` triggers async export job. Formats: CSV, XLSX, PDF. Entities: contracts, billing_history, payment_history, maintenance_report. Download via presigned MinIO URL when ready.
+- [x] 48. Export API: create `apps/api/app/routes/exports.py` — `POST /exports` triggers async export job. Formats: CSV, XLSX, PDF. Entities: contracts, billing_history, payment_history, maintenance_report. Download via presigned MinIO URL when ready.
 
 - [ ] 49. GraphQL layer: add `strawberry-graphql` alongside REST. Schema covers: contracts, charges, payments, maintenance_tickets, agent_tasks. Supports N+1-safe dataloaders. Subscription for real-time agent task updates via WebSocket.
 
