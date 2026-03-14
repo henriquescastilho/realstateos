@@ -20,7 +20,7 @@
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
 - Wave 7 COMPLETE: OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), GraphQL layer (task 49), nginx API gateway (task 50)
-- Wave 8 (partial): Design system components (task 51)
+- Wave 8 (partial): Design system components (task 51), auth flow (task 52)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -39,6 +39,7 @@
 - Storage service: `app.services.storage.StorageService` — boto3 S3 wrapper for MinIO. Configured via settings.s3_*. Methods: upload, presigned_url, delete, copy. Falls back if boto3 missing.
 - GraphQL layer: `app.graphql` — strawberry-graphql alongside REST. Schema: `Query` (contracts, charges, agent_tasks with N+1-safe dataloaders), `Subscription` (agentTaskUpdates — 2s polling). Mounted at `/graphql` via `get_graphql_router()` in `app.graphql.schema`. GraphiQL IDE enabled. Graceful fallback if strawberry missing. Context: `GraphQLContext(tenant_id, db)` via `app.graphql.context`.
 - Design system: `apps/web/src/components/ui/` — 9 components: Button (primary/ghost/danger, sm/md/lg), Input (label/error/hint), Select (options array, placeholder), Modal (native dialog, backdrop-dismiss), Table (generic Column<T>, clickable rows), Badge (statusVariant() helper), Card (title/description/actions), Spinner + PageSpinner, Toast (ToastProvider + useToast hook, 4 variants). Barrel: `@/components/ui`. Dark mode via prefers-color-scheme in globals.css.
+- Auth flow: `apps/web/src/lib/auth.ts` — module-level store (`useSyncExternalStore`), JWT tokens in localStorage/sessionStorage, remember-me toggle, auto-refresh on 401. Pages: `/login`, `/register`, `/forgot-password` in `(auth)` route group (no sidebar layout). Org switcher: `OrgSwitcher.tsx` with dropdown for multi-tenant switch + logout. Middleware: `src/middleware.ts` — Edge middleware checks `ro_auth` cookie, redirects unauthenticated to /login, redirects authenticated away from auth pages.
 
 ## BUGS — DO NOT REINTRODUCE (being fixed in fix/critical-bugs-wave6 branch)
 - **scheduler.py 74-88**: charge commit and audit commit are NOT atomic — wrap create_task_record in try/except
@@ -70,4 +71,4 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Nginx API gateway: `nginx/api-gateway.conf` — rate limiting zones (per_token by Authorization header at 100r/m, per_ip_auth for /auth/ at 10r/m, per_token_agents for /agents+bulk at 20r/m). HTTP→HTTPS redirect. HTTPS with TLS 1.2/1.3, HSTS, X-Frame-Options DENY, X-Content-Type-Options. Structured JSON log_format. Gzip for JSON/JS/CSS/XLSX. Opt-in via `docker compose --profile gateway up`. Dev certs via `bash nginx/gen-dev-certs.sh`.
 
 ## Last Updated
-Loop: 51 | Timestamp: 2026-03-14
+Loop: 52 | Timestamp: 2026-03-14

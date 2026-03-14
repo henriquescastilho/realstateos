@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { OrgSwitcher } from "./OrgSwitcher";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard" },
@@ -23,16 +24,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sidebar">
         <div className="sidebar-top">
           <p className="eyebrow">REAL ESTATE OS</p>
-          <h1 className="brand">Billing MVP</h1>
+          <h1 className="brand">Enterprise</h1>
           <p className="sidebar-copy">
-            Um fluxo enxuto para demonstrar contrato, cobrança mensal, upload de
-            encargos, consolidação e emissão de boleto/PIX.
+            Plataforma multi-tenant para gestão de portfólio imobiliário com IA.
           </p>
         </div>
 
-        <nav className="nav" aria-label="Main navigation">
+        <nav className="nav" aria-label="Navegação principal">
           {navigation.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}
@@ -45,15 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="session-box">
-          <p className="session-label">Demo flow</p>
-          <p className="session-value">
-            Imóvel → Contrato → Cobrança → Upload → Consolidação
-          </p>
-          <p className="session-caption">
-            Boleto/PIX e task log aparecem no painel.
-          </p>
-        </div>
+        <OrgSwitcher />
       </aside>
 
       <main className="page-frame">{children}</main>

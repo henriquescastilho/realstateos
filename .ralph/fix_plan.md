@@ -119,7 +119,7 @@
 
 - [x] 51. Design system: create `apps/web/src/components/ui/` — Button, Input, Select, Modal, Table, Badge, Card, Spinner, Toast components. Use Tailwind CSS + shadcn/ui. Dark mode support. Storybook stories for each.
 
-- [ ] 52. Authentication flow (Next.js): create `apps/web/src/app/(auth)/login/page.tsx` and `register/page.tsx` — JWT-based login with refresh token rotation. Protected route middleware. Org switcher for multi-tenant. Remember me. Forgot password flow.
+- [x] 52. Authentication flow (Next.js): create `apps/web/src/app/(auth)/login/page.tsx` and `register/page.tsx` — JWT-based login with refresh token rotation. Protected route middleware. Org switcher for multi-tenant. Remember me. Forgot password flow.
 
 - [ ] 53. Dashboard home: create `apps/web/src/app/dashboard/page.tsx` — KPI cards (active contracts, monthly revenue, default rate, open tickets), charts (billing trend 12mo, payment rate by month), recent activity feed, quick action buttons.
 

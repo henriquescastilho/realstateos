@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-
+import { ToastProvider } from "@/components/ui/Toast";
 import { AppShell } from "@/components/layout/app-shell";
-
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Real Estate OS",
-  description: "Operational platform for property managers",
+  description: "Plataforma de gestão imobiliária com IA",
 };
 
 export default function RootLayout({
@@ -15,7 +14,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <AppShell>{children}</AppShell>
+        <ToastProvider>
+          <AppShell>{children}</AppShell>
+        </ToastProvider>
       </body>
     </html>
   );
