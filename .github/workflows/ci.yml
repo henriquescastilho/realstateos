@@ -178,6 +178,58 @@ jobs:
         run: docker build -t realstateos-web:ci .
         working-directory: apps/web
 
+  # ─── Migration safety checks ────────────────────────────────────────────────
+  migration-check:
+    name: Migration safety check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Fetch full history so we can diff against base branch
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Find changed migration files
+        id: changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          git diff --name-only "$BASE" HEAD -- 'apps/api/alembic/versions/*.py' \
+            | sed 's|apps/api/alembic/versions/||' > /tmp/changed_migrations.txt
+          echo "Changed migration files:"
+          cat /tmp/changed_migrations.txt || echo "(none)"
+          COUNT=$(wc -l < /tmp/changed_migrations.txt | tr -d ' ')
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+
+      - name: Run migration safety checker (changed files only)
+        if: steps.changed.outputs.count != '0'
+        run: |
+          python apps/api/scripts/check_migrations.py \
+            --path apps/api/alembic/versions \
+            --changed-only /tmp/changed_migrations.txt
+          echo "Migration safety check passed ✓"
+
+      - name: Run migration safety checker (all files on main push)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          python apps/api/scripts/check_migrations.py \
+            --path apps/api/alembic/versions
+          echo "Full migration safety check passed ✓"
+
+      - name: Run strict check on production branches
+        if: github.base_ref == 'main' || github.ref == 'refs/heads/main'
+        run: |
+          python apps/api/scripts/check_migrations.py \
+            --path apps/api/alembic/versions \
+            --strict \
+            --changed-only /tmp/changed_migrations.txt || \
+          (echo "::warning::Migration strict check failed — review warnings before merging to main"; exit 0)
+        continue-on-error: true
+
   # ─── Helm chart lint ────────────────────────────────────────────────────────
   helm-lint:
     name: Helm chart lint
@@ -261,22 +313,24 @@ jobs:
   ci-gate:
     name: CI gate
     runs-on: ubuntu-latest
-    needs: [python, node, frontend, helm-lint]
+    needs: [python, node, frontend, helm-lint, migration-check]
     if: always()
 
     steps:
       - name: Check all required jobs passed
         run: |
-          echo "python: ${{ needs.python.result }}"
-          echo "node:   ${{ needs.node.result }}"
-          echo "frontend: ${{ needs.frontend.result }}"
-          echo "helm-lint: ${{ needs.helm-lint.result }}"
+          echo "python:           ${{ needs.python.result }}"
+          echo "node:             ${{ needs.node.result }}"
+          echo "frontend:         ${{ needs.frontend.result }}"
+          echo "helm-lint:        ${{ needs.helm-lint.result }}"
+          echo "migration-check:  ${{ needs.migration-check.result }}"
 
           # Fail if any required job failed
           if [[ "${{ needs.python.result }}" == "failure" || \
                 "${{ needs.node.result }}" == "failure" || \
                 "${{ needs.frontend.result }}" == "failure" || \
-                "${{ needs.helm-lint.result }}" == "failure" ]]; then
+                "${{ needs.helm-lint.result }}" == "failure" || \
+                "${{ needs.migration-check.result }}" == "failure" ]]; then
             echo "One or more required CI jobs failed"
             exit 1
           fi

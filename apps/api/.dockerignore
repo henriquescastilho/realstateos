@@ -1,5 +1,38 @@
-.pytest_cache
-.venv
-__pycache__
-*.pyc
-tests
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Test & dev artifacts
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+tests/
+
+# Virtualenvs (we build fresh in Docker)
+.venv/
+venv/
+
+# Environment files (secrets must never enter the image)
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+logs/

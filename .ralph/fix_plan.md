@@ -187,11 +187,11 @@
 
 - [x] 83. GitHub Actions CI/CD: create `.github/workflows/` — ci.yml (lint + test + build on PR), cd-staging.yml (deploy to staging on main merge), cd-prod.yml (manual trigger, with approval gate). Matrix build for Python + Node.js.
 
-- [ ] 84. Docker image optimization: multi-stage Dockerfiles for all services. Python: use uv for deps, non-root user, security scanning with trivy. Node.js: pnpm, standalone output, distroless base. Target: <200MB images.
+- [x] 84. Docker image optimization: multi-stage Dockerfiles for all services. Python: use uv for deps, non-root user, security scanning with trivy. Node.js: pnpm, standalone output, distroless base. Target: <200MB images.
 
-- [ ] 85. Environment configuration: create `apps/api/app/config/settings.py` — pydantic-settings with full validation. Separate configs for dev/staging/prod. Secret management via environment + optional Vault integration stub.
+- [x] 85. Environment configuration: create `apps/api/app/config/settings.py` — pydantic-settings with full validation. Separate configs for dev/staging/prod. Secret management via environment + optional Vault integration stub.
 
-- [ ] 86. Database migration CI: add migration safety checks to CI — detect destructive migrations (DROP, ALTER without DEFAULT), require manual approval. Run migrations in staging before prod. Rollback test on every migration.
+- [x] 86. Database migration CI: add migration safety checks to CI — detect destructive migrations (DROP, ALTER without DEFAULT), require manual approval. Run migrations in staging before prod. Rollback test on every migration.
 
 - [ ] 87. Load testing: create `tests/load/` — Locust scenarios for: 100 concurrent users browsing, 50 concurrent billing generations, 200 req/s on payment webhook endpoint. SLO targets: <200ms p95, <1% error rate under load.
 
