@@ -25,9 +25,6 @@ export type { TableProps, Column } from "./Table";
 export { Spinner, PageSpinner } from "./Spinner";
 export type { SpinnerProps } from "./Spinner";
 
-export { Select } from "./Select";
-export type { SelectProps, SelectOption } from "./Select";
-
 // Toast: component, container, provider, hook
 export { Toast, ToastContainer, ToastProvider, useToast } from "./Toast";
 export type { ToastProps, ToastItem, ToastVariant } from "./Toast";
