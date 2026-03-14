@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.config import settings
+from app.errors import AppError
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.openapi import OPENAPI_TAGS
@@ -164,6 +166,21 @@ app.add_middleware(VersionNegotiationMiddleware, default_version="/v1")
 
 # Mount all routes:  /v1/ (canonical)  /api/ (legacy)  / (root shim)
 include_versioned_routes(app, hackathon_router)
+
+
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    """Serialize AppError subclasses into a structured JSON error envelope."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+                "documentation_url": exc.documentation_url,
+            }
+        },
+    )
 
 
 @app.get(

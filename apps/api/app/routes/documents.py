@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
@@ -9,6 +9,7 @@ from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.document import Document
 from app.openapi import AUTH_RESPONSES, RESPONSES_422
 from app.schemas.document import DocumentRead
+from app.schemas.pagination import PaginatedResponse, PaginationParams
 from app.services.document_ingestion import upload_monthly_bill
 
 router = APIRouter()
@@ -16,19 +17,24 @@ router = APIRouter()
 
 @router.get(
     "",
-    response_model=list[DocumentRead],
+    response_model=PaginatedResponse[DocumentRead],
     summary="List documents",
     description=(
         "Return all documents stored for the authenticated tenant. "
-        "Documents include contract PDFs, monthly bill scans, and maintenance photos."
+        "Documents include contract PDFs, monthly bill scans, and maintenance photos. "
+        "Use `page` and `per_page` query parameters to paginate results."
     ),
     responses={**AUTH_RESPONSES},
 )
 def list_documents(
+    p: PaginationParams = Depends(),
     org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
-):
-    return list(db.scalars(select(Document).where(Document.tenant_id == org.tenant_id)).all())
+) -> PaginatedResponse[DocumentRead]:
+    base = select(Document).where(Document.tenant_id == org.tenant_id)
+    total = db.scalar(select(func.count()).select_from(base.subquery()))
+    items = list(db.scalars(base.offset(p.offset).limit(p.limit)).all())
+    return PaginatedResponse.build(items=items, total=total or 0, params=p)
 
 
 @router.post(

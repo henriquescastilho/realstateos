@@ -11,13 +11,14 @@ from __future__ import annotations
 import logging
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
+from app.errors import AgentTaskNotFoundError, TaskStateConflictError
 from app.middleware.tenant import OrgContext, get_current_org
 from app.models.task import Task
 from app.openapi import AUTH_RESPONSES, RESPONSES_404, RESPONSES_409, RESPONSES_422
@@ -37,7 +38,7 @@ router = APIRouter(prefix="/agent-tasks", tags=["agent-tasks"])
 def _get_task_or_404(db: Session, task_id: str, tenant_id: str) -> Task:
     task = db.scalar(select(Task).where(Task.id == task_id, Task.tenant_id == tenant_id))
     if task is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
+        raise AgentTaskNotFoundError(task_id=task_id)
     return task
 
 
@@ -113,9 +114,11 @@ def retry_agent_task(
     """
     task = _get_task_or_404(db, task_id, org.tenant_id)
     if task.status not in ("FAILED", "ESCALATED"):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Cannot retry task with status '{task.status}'. Only FAILED or ESCALATED tasks can be retried.",
+        raise TaskStateConflictError(
+            action="retry",
+            task_id=task_id,
+            current_status=task.status,
+            allowed_statuses="FAILED, ESCALATED",
         )
     task.status = "PENDING"
     task.payload = {
@@ -161,9 +164,11 @@ def resolve_agent_task(
     """
     task = _get_task_or_404(db, task_id, org.tenant_id)
     if task.status != "ESCALATED":
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"Cannot resolve task with status '{task.status}'. Only ESCALATED tasks can be resolved.",
+        raise TaskStateConflictError(
+            action="resolve",
+            task_id=task_id,
+            current_status=task.status,
+            allowed_statuses="ESCALATED",
         )
     task.status = "DONE" if body.resolution == "approved" else "FAILED"
     task.payload = {
