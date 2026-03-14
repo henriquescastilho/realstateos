@@ -129,7 +129,7 @@
 
 - [x] 56. Renter & owner management: create `apps/web/src/app/renters/` and `apps/web/src/app/owners/` — CRUD forms with CPF/CNPJ validation, contact info, linked contracts, payment history, document uploads.
 
-- [ ] 57. Billing management UI: create `apps/web/src/app/billing/` — charge list with status (pending/paid/overdue/partial), monthly calendar view, bulk charge generation trigger, charge detail with composition breakdown (rent + fees + adjustments).
+- [x] 57. Billing management UI: create `apps/web/src/app/billing/` — charge list with status (pending/paid/overdue/partial), monthly calendar view, bulk charge generation trigger, charge detail with composition breakdown (rent + fees + adjustments).
 
 - [ ] 58. Payments UI: create `apps/web/src/app/payments/` — payment list with reconciliation status, manual reconciliation interface (match payment to charge), divergence review queue, bank statement import (CSV upload).
 

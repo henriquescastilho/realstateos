@@ -11,6 +11,7 @@ const navigation = [
   { href: "/renters", label: "Locatários" },
   { href: "/owners", label: "Proprietários" },
   { href: "/charges", label: "Cobranças" },
+  { href: "/billing", label: "Faturas" },
   { href: "/documents", label: "Documentos" },
   { href: "/tasks", label: "Tarefas" },
   { href: "/agents", label: "Agentes" },
