@@ -221,7 +221,7 @@
 
 - [x] 99. IGPM/IPCA index integration: implement `apps/api/app/integrations/indices.py` — fetch monthly IGPM/IPCA from FGV/IBGE public APIs. Cache in DB table. Used by billing engine for annual rent adjustments. Alert when index unavailable.
 
-- [ ] 100. Notification orchestrator: create `apps/api/app/services/notification_orchestrator.py` — unified service that decides channel (email/WhatsApp/push) per renter preference, time of day, message type. Deduplication: no duplicate notifications within 24h for same event.
+- [x] 100. Notification orchestrator: create `apps/api/app/services/notification_orchestrator.py` — unified service that decides channel (email/WhatsApp/push) per renter preference, time of day, message type. Deduplication: no duplicate notifications within 24h for same event.
 
 ## WAVE 12 — AI/ML Enhancements (loops 101-110)
 
