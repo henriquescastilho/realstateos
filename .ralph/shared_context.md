@@ -23,7 +23,7 @@
 - Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60), settings UI (61), real-time notifications WebSocket (62), mobile-responsive layout with hamburger nav (63), onboarding wizard (64), Playwright E2E tests (65)
 - Wave 9 COMPLETE (74-80): analytics router, agent-tasks router, WebSocket notifications server, StorageService (MinIO S3 wrapper with fallback), BullMQ background workers (billing/reminders/DLQ/reports/embeddings), Vitest test suite (145 tests), Node.js Docker service + parity-check.sh script
 - Wave 10 COMPLETE (81-90): k8s/ manifests, helm/realstateos/ chart, GitHub Actions CI/CD, Docker optimization, settings enhancement, migration safety checker, Locust load test suite, monitoring stack (Prometheus/Grafana/AlertManager), log aggregation (Loki+Promtail, `logging` profile, 30-day retention), DR runbook (docs/runbook/)
-- Wave 11 (91-98 done): Santander, Itaú, WhatsApp, SendGrid email, ViaCEP, ReceitaWS CPF/CNPJ, Google Calendar, Clicksign/DocuSign e-signature (ESignProvider interface, envelope + signers + webhook + MinIO download)
+- Wave 11 COMPLETE (91-99): Santander, Itaú, WhatsApp, SendGrid email, ViaCEP, ReceitaWS CPF/CNPJ, Google Calendar, Clicksign/DocuSign e-signature, IGPM/IPCA index integration (BCB primary + IPEADATA/IBGE SIDRA fallbacks, EconomicIndex DB model, annual compounding for rent adjustments)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -102,5 +102,7 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - DR runbook: `docs/runbook/` — 5 files. README.md (RTO <4h, RPO <1h, severity matrix, quick-reference index). db-restore.md (pg_dump→MinIO→restore via `python -m scripts.backup --restore`, smoke tests, alembic upgrade). redis-recovery.md (OOM/flush/BullMQ recovery, cache warm-up, eviction policy). minio-restore.md (mc mirror from backup, PV rebuild, StorageService fallback). cluster-rebuild.md (9-phase full rebuild: GKE provision→secrets→infra→DB restore→MinIO restore→app deploy→monitoring→smoke tests→DNS cutover; estimated ~3h total).
 - Itaú integration: `apps/api/app/integrations/itau.py` — `ItauClient.from_env()` singleton via `get_itau_client()`. `parse_webhook(raw_body, sig)` validates HMAC-SHA256 (`x-itau-signature: sha256=<hex>`), maps Pix/Boleto/TED payloads to `PaymentWebhook`. `poll_statements(account_id, date_from, date_to)` paginates Open Finance v2 API. OAuth2 client credentials with auto-refresh (`TOKEN_REFRESH_HEADROOM_SECS=60`). Redis idempotency (TTL 24h) with in-memory fallback. Circuit breaker via `resilience.py`. Sandbox mode via `ITAU_SANDBOX=true`. Graceful fallback if httpx/redis not installed.
 
+- Economic indices: `app.integrations.indices` — `IndexFetcher` with BCB API primary (series 189=IGPM, 433=IPCA), IPEADATA OData fallback (IGPM), IBGE SIDRA fallback (IPCA). DB cache via `EconomicIndex` model (`economic_indices` table, uq on indicator+year+month). `get_monthly_rate(db, indicator, year, month)` returns `Decimal`. `get_annual_accumulated(db, indicator, year)` compounds 12 monthly rates via `as_multiplier()` for annual rent adjustment. Alert logging when all providers fail.
+
 ## Last Updated
-Loop: 77 | Timestamp: 2026-03-14
+Loop: 78 | Timestamp: 2026-03-14

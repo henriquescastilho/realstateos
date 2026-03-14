@@ -1,4 +1,5 @@
 from app.models.agent_task import AgentTask
+from app.models.economic_index import EconomicIndex
 from app.models.audit_log import AuditLog
 from app.models.charge import Charge
 from app.models.contract import Contract
@@ -15,6 +16,7 @@ from app.models.webhook import WebhookEndpoint
 
 __all__ = [
     "AgentTask",
+    "EconomicIndex",
     "AuditLog",
     "Charge",
     "Contract",
