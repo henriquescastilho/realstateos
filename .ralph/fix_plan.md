@@ -81,7 +81,7 @@
 
 - [x] 34. Connection pool tuning: configure `apps/api/app/database.py` — pool_size=20, max_overflow=10, pool_timeout=30, pool_recycle=3600. Add pool event listeners for monitoring. Async SQLAlchemy with asyncpg driver.
 
-- [ ] 35. Redis cache layer: create `apps/api/app/cache/redis_cache.py` — decorator `@cache(ttl=300, key_fn=...)` for expensive queries. Cache: portfolio KPIs (5min), contract lists (1min), analytics aggregates (10min). Invalidate on mutations.
+- [x] 35. Redis cache layer: create `apps/api/app/cache/redis_cache.py` — decorator `@cache(ttl=300, key_fn=...)` for expensive queries. Cache: portfolio KPIs (5min), contract lists (1min), analytics aggregates (10min). Invalidate on mutations.
 
 - [ ] 36. Query optimization — N+1 audit: scan all repositories for N+1 patterns. Add `selectinload`/`joinedload` for relationships. Add EXPLAIN ANALYZE comments on slow queries. Target: <50ms p95 for all list endpoints.
 
