@@ -87,7 +87,7 @@
 
 - [x] 37. Full-text search: add PostgreSQL `tsvector` columns to contracts, maintenance_tickets, communications tables. Create `GIN` indexes. Expose `GET /search?q=` endpoint that searches across all entities with ranking.
 
-- [ ] 38. Database seeder: create `apps/api/scripts/seed.py` — generates realistic Brazilian real estate data: 5 orgs, 50 properties, 200 contracts, 2 years of billing history, payments, maintenance tickets. Used for demo and load testing.
+- [x] 38. Database seeder: create `apps/api/scripts/seed.py` — generates realistic Brazilian real estate data: 5 orgs, 50 properties, 200 contracts, 2 years of billing history, payments, maintenance tickets. Used for demo and load testing.
 
 - [ ] 39. Soft delete pattern: add `deleted_at` column to contracts, properties, renters, owners tables. Update all repositories to filter `deleted_at IS NULL` by default. Add `DELETE /resource/{id}` that soft-deletes, `POST /resource/{id}/restore` to restore.
 
