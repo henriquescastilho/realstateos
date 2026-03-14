@@ -105,5 +105,7 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Economic indices: `app.integrations.indices` — `IndexFetcher` with BCB API primary (series 189=IGPM, 433=IPCA), IPEADATA OData fallback (IGPM), IBGE SIDRA fallback (IPCA). DB cache via `EconomicIndex` model (`economic_indices` table, uq on indicator+year+month). `get_monthly_rate(db, indicator, year, month)` returns `Decimal`. `get_annual_accumulated(db, indicator, year)` compounds 12 monthly rates via `as_multiplier()` for annual rent adjustment. Alert logging when all providers fail.
 - Notification orchestrator: `app.services.notification_orchestrator` — `NotificationOrchestrator` singleton. Channel selection: renter preferred_channel → event defaults (WhatsApp-first for billing, Email-first for docs). WhatsApp gated to BRT 08:00–21:00. Redis dedup with `SET NX TTL 86400` (SHA-256 key of renter_id+event+suffix); in-memory fallback. `send(payload)` → `NotificationResult`. `send_bulk(payloads)`. `notify_charge_due()`, `notify_payment_confirmed()`, `notify_maintenance_update()` convenience functions.
 
+- Wave 12 (101 done): ContractQAAgent (`app.agents.contract_qa_agent`) — LlmAgent RAG over pgvector `contract_chunks`. Tools: `search_contract_chunks(db, contract_id, query, limit)` (pgvector cosine + full-text fallback), `get_contract_metadata(db, contract_id)`. Non-ADK fallback: `answer_question_fallback()` returns raw chunks + metadata dict.
+
 ## Last Updated
-Loop: 79 | Timestamp: 2026-03-14
+Loop: 80 | Timestamp: 2026-03-14

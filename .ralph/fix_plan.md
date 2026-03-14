@@ -225,7 +225,7 @@
 
 ## WAVE 12 — AI/ML Enhancements (loops 101-110)
 
-- [ ] 101. RAG for contract Q&A: create `apps/api/app/agents/contract_qa_agent/` — LlmAgent that answers natural language questions about a specific contract using RAG over pgvector embeddings. Tool: `search_contract_chunks(contract_id, query)`.
+- [x] 101. RAG for contract Q&A: create `apps/api/app/agents/contract_qa_agent/` — LlmAgent that answers natural language questions about a specific contract using RAG over pgvector embeddings. Tool: `search_contract_chunks(contract_id, query)`.
 
 - [ ] 102. Predictive default scoring: create `apps/api/app/ml/default_predictor.py` — feature engineering from payment history (days late, partial payment frequency, maintenance correlation). Train with scikit-learn LogisticRegression. Score per renter monthly. Store in DB.
 
