@@ -23,7 +23,7 @@
 - Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60), settings UI (61), real-time notifications WebSocket (62), mobile-responsive layout with hamburger nav (63), onboarding wizard (64), Playwright E2E tests (65)
 - Wave 9 COMPLETE (74-80): analytics router, agent-tasks router, WebSocket notifications server, StorageService (MinIO S3 wrapper with fallback), BullMQ background workers (billing/reminders/DLQ/reports/embeddings), Vitest test suite (145 tests), Node.js Docker service + parity-check.sh script
 - Wave 10 COMPLETE (81-90): k8s/ manifests, helm/realstateos/ chart, GitHub Actions CI/CD, Docker optimization, settings enhancement, migration safety checker, Locust load test suite, monitoring stack (Prometheus/Grafana/AlertManager), log aggregation (Loki+Promtail, `logging` profile, 30-day retention), DR runbook (docs/runbook/)
-- Wave 11 (91-95 done): Santander webhook integration, Itaú Open Finance integration, WhatsApp Business API, SendGrid email, ViaCEP address lookup (Redis cache, city/state validation)
+- Wave 11 (91-96 done): Santander, Itaú, WhatsApp, SendGrid email, ViaCEP, ReceitaWS CPF/CNPJ (checksum + API, LGPD-compliant masking, Redis cache)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -103,4 +103,4 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Itaú integration: `apps/api/app/integrations/itau.py` — `ItauClient.from_env()` singleton via `get_itau_client()`. `parse_webhook(raw_body, sig)` validates HMAC-SHA256 (`x-itau-signature: sha256=<hex>`), maps Pix/Boleto/TED payloads to `PaymentWebhook`. `poll_statements(account_id, date_from, date_to)` paginates Open Finance v2 API. OAuth2 client credentials with auto-refresh (`TOKEN_REFRESH_HEADROOM_SECS=60`). Redis idempotency (TTL 24h) with in-memory fallback. Circuit breaker via `resilience.py`. Sandbox mode via `ITAU_SANDBOX=true`. Graceful fallback if httpx/redis not installed.
 
 ## Last Updated
-Loop: 74 | Timestamp: 2026-03-14
+Loop: 75 | Timestamp: 2026-03-14

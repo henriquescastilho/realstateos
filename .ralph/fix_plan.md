@@ -213,7 +213,7 @@
 
 - [x] 95. ViaCEP integration: implement `apps/api/app/integrations/viacep.py` — CEP lookup for address normalization. Cache results in Redis (TTL 24h). Fallback to manual entry on API failure. Validate state/city consistency.
 
-- [ ] 96. ReceitaWS / CPF validation: implement `apps/api/app/integrations/receita.py` — CPF/CNPJ validation via ReceitaWS API. Cache valid CPFs (24h). Checksum validation as fallback. LGPD-compliant: no storing full CPF in logs.
+- [x] 96. ReceitaWS / CPF validation: implement `apps/api/app/integrations/receita.py` — CPF/CNPJ validation via ReceitaWS API. Cache valid CPFs (24h). Checksum validation as fallback. LGPD-compliant: no storing full CPF in logs.
 
 - [ ] 97. Google Calendar integration: implement `apps/api/app/integrations/google_calendar.py` — create calendar events for: contract renewals (60 days prior), inspection dates, maintenance appointments. OAuth2 per org. Sync bidirectionally.
 
