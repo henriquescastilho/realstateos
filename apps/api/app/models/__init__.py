@@ -11,6 +11,7 @@ from app.models.scheduled_job import ScheduledJob
 from app.models.task import Task
 from app.models.tenant import Tenant
 from app.models.user import User
+from app.models.webhook import WebhookEndpoint
 
 __all__ = [
     "AgentTask",
@@ -26,4 +27,5 @@ __all__ = [
     "Task",
     "Tenant",
     "User",
+    "WebhookEndpoint",
 ]

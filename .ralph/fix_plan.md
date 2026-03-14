@@ -101,9 +101,9 @@
 
 - [x] 43. Pagination standardization: create `apps/api/app/schemas/pagination.py` — `PaginatedResponse[T]` generic with `items`, `total`, `page`, `per_page`, `pages`. Apply to ALL list endpoints consistently.
 
-- [ ] 44. Error catalog: create `apps/api/app/errors.py` — typed error classes (ContractNotFound, PaymentDivergence, AgentTimeout, TenantQuotaExceeded). Each has code, message template, HTTP status, documentation link. Replace bare HTTPException throughout.
+- [x] 44. Error catalog: create `apps/api/app/errors.py` — typed error classes (ContractNotFound, PaymentDivergence, AgentTimeout, TenantQuotaExceeded). Each has code, message template, HTTP status, documentation link. Replace bare HTTPException throughout.
 
-- [ ] 45. Webhook system: create `apps/api/app/routes/webhooks.py` — `POST /webhooks` (register endpoint), `GET /webhooks` (list), `DELETE /webhooks/{id}`. Deliver events: contract.created, payment.reconciled, maintenance.escalated, agent.completed. HMAC signature validation.
+- [x] 45. Webhook system: create `apps/api/app/routes/webhooks.py` — `POST /webhooks` (register endpoint), `GET /webhooks` (list), `DELETE /webhooks/{id}`. Deliver events: contract.created, payment.reconciled, maintenance.escalated, agent.completed. HMAC signature validation.
 
 - [ ] 46. Bulk operations API: add bulk endpoints — `POST /contracts/bulk` (create many), `PATCH /charges/bulk-status` (update many), `POST /agents/bulk-trigger` (trigger agent for list of contracts). All return job_id for async tracking.
 
