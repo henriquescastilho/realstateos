@@ -207,7 +207,7 @@
 
 - [x] 92. Itaú bank integration: implement `apps/api/app/integrations/itau.py` — Itaú Open Finance webhook parser. OAuth2 token management. Account statement polling as fallback. Circuit breaker + retry.
 
-- [ ] 93. WhatsApp Business API: implement `apps/api/app/integrations/whatsapp.py` — Meta WhatsApp Business API client. Template message sending, media messages, delivery receipts. Rate limiting (1000 msg/day on free tier). Sandbox mode for dev.
+- [x] 93. WhatsApp Business API: implement `apps/api/app/integrations/whatsapp.py` — Meta WhatsApp Business API client. Template message sending, media messages, delivery receipts. Rate limiting (1000 msg/day on free tier). Sandbox mode for dev.
 
 - [ ] 94. Email provider: implement `apps/api/app/integrations/email.py` — SendGrid client wrapper. Transactional emails: charge notice, payment confirmation, owner statement, maintenance update. HTML templates with Jinja2. Bounce handling webhook.
 
