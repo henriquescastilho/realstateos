@@ -472,6 +472,55 @@ a:focus {
   }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ── Dark mode ───────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    background: #0f0e0c;
+    color: #e8e4dc;
+    --sand: #0f0e0c;
+    --card: rgba(24, 22, 18, 0.85);
+    --ink: #e8e4dc;
+    --accent: #d98a53;
+    --accent-dark: #f0a96e;
+    --line: rgba(232, 228, 220, 0.08);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(180, 90, 42, 0.18), transparent 30%),
+      linear-gradient(180deg, #131210 0%, #0f0e0c 100%);
+  }
+
+  .sidebar {
+    background: rgba(20, 18, 14, 0.8);
+  }
+
+  input, select, textarea {
+    background: rgba(30, 28, 22, 0.9);
+    color: #e8e4dc;
+    border-color: rgba(232, 228, 220, 0.12);
+  }
+
+  .ghost-button {
+    background: rgba(30, 28, 22, 0.8);
+    color: #e8e4dc;
+  }
+
+  .output-box, .mini-json {
+    background: rgba(8, 7, 5, 0.95);
+  }
+}
+
 /* ── Task status filter ─────────────────────────────────────── */
 .filter-group {
   display: flex;
