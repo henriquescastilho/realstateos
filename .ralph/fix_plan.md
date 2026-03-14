@@ -127,7 +127,7 @@
 
 - [x] 55. Property registry UI: create `apps/web/src/app/properties/` — property list with map view (Google Maps embed), property detail with photo gallery, linked contracts history, maintenance history, financial summary.
 
-- [ ] 56. Renter & owner management: create `apps/web/src/app/renters/` and `apps/web/src/app/owners/` — CRUD forms with CPF/CNPJ validation, contact info, linked contracts, payment history, document uploads.
+- [x] 56. Renter & owner management: create `apps/web/src/app/renters/` and `apps/web/src/app/owners/` — CRUD forms with CPF/CNPJ validation, contact info, linked contracts, payment history, document uploads.
 
 - [ ] 57. Billing management UI: create `apps/web/src/app/billing/` — charge list with status (pending/paid/overdue/partial), monthly calendar view, bulk charge generation trigger, charge detail with composition breakdown (rent + fees + adjustments).
 

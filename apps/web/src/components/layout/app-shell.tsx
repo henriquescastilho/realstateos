@@ -8,6 +8,8 @@ const navigation = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/properties", label: "Imóveis" },
   { href: "/contracts", label: "Contratos" },
+  { href: "/renters", label: "Locatários" },
+  { href: "/owners", label: "Proprietários" },
   { href: "/charges", label: "Cobranças" },
   { href: "/documents", label: "Documentos" },
   { href: "/tasks", label: "Tarefas" },
