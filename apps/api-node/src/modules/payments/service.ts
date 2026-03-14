@@ -8,6 +8,7 @@ import {
 } from "../../db/schema";
 import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
 import { ChargePaymentStatus, ReconciliationStatus } from "../../types/domain";
+import { emitDomainEvent } from "../../lib/events";
 import { reconcile, classifyReconciliation } from "./reconciliation";
 import { buildStatementEntries } from "./statement";
 import type {
@@ -138,6 +139,13 @@ async function createPaymentWithCharge(
 
     return { payment, charge: updatedCharge };
   });
+
+  await emitDomainEvent(input.orgId, "payment.received", {
+    paymentId: result.payment.id,
+    chargeId,
+    receivedAmount: input.receivedAmount,
+    reconciliationStatus: classification.status,
+  }).catch((e) => console.error("[payments] Event emit error:", e));
 
   return { ...result, autoReconciled: true };
 }

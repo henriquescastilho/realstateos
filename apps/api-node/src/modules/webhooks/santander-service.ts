@@ -15,6 +15,7 @@ import { db } from "../../db";
 import { charges, payments } from "../../db/schema";
 import { ChargePaymentStatus, ReconciliationStatus } from "../../types/domain";
 import { classifyReconciliation } from "../payments/reconciliation";
+import { emitDomainEvent } from "../../lib/events";
 import type { SantanderWebhookPayload } from "./santander-validator";
 
 // Santander statuses that indicate a payment was made
@@ -121,6 +122,14 @@ export async function processSantanderWebhook(
     `[webhook:santander] Payment created for charge ${charge.id}: ` +
     `amount=${receivedAmount} status=${classification.status} paymentStatus=${result.newPaymentStatus}`,
   );
+
+  await emitDomainEvent(charge.orgId, "payment.received", {
+    paymentId: result.payment.id,
+    chargeId: charge.id,
+    receivedAmount,
+    reconciliationStatus: classification.status,
+    source: "santander_webhook",
+  }).catch((e) => console.error("[webhook:santander] Event emit error:", e));
 
   return {
     processed: true,

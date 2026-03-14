@@ -34,6 +34,11 @@ import { paymentsRouter } from "./modules/payments/router";
 import { communicationsRouter } from "./modules/communications/router";
 import { maintenanceRouter } from "./modules/maintenance/router";
 import { integrationsRouter } from "./modules/integrations/router";
+import { eventsRouter } from "./modules/events/router";
+import { channelsRouter } from "./modules/communications/channels-router";
+import { inboxRouter } from "./modules/inbox/router";
+import { aiAssistantRouter } from "./modules/ai-assistant/router";
+import { agentsRouter } from "./modules/agents/router";
 
 app.use("/api/v1", requireAuth, requireOrgMatch, onboardingRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, billingRouter);
@@ -41,6 +46,11 @@ app.use("/api/v1", requireAuth, requireOrgMatch, paymentsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, communicationsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, maintenanceRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, integrationsRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, eventsRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, channelsRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, inboxRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, aiAssistantRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, agentsRouter);
 
 // ─── Global error handler (must be last) ───
 app.use(errorHandler);
