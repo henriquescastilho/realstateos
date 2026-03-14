@@ -13,6 +13,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { ok } from "../../lib/response";
 import { santanderWebhookSchema } from "./santander-validator";
 import { processSantanderWebhook } from "./santander-service";
+import { processEvolutionWebhook } from "./evolution-webhook";
 
 export const webhooksRouter = Router();
 
@@ -46,6 +47,24 @@ webhooksRouter.post(
 
       // For unexpected errors, pass to error handler
       next(err);
+    }
+  },
+);
+
+// POST /webhooks/evolution — receive Evolution API inbound messages
+webhooksRouter.post(
+  "/webhooks/evolution",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await processEvolutionWebhook(req.body);
+      ok(res, result);
+    } catch (err) {
+      console.error("[webhook:evolution] Processing error:", err);
+      // Return 200 to avoid retries
+      res.status(200).json({
+        ok: false,
+        error: { code: "PROCESSING_ERROR", message: "Webhook processing failed" },
+      });
     }
   },
 );

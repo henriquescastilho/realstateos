@@ -250,6 +250,9 @@ export const agentTasks = pgTable("agent_tasks", {
   relatedEntityType: varchar("related_entity_type", { length: 50 }),
   relatedEntityId: uuid("related_entity_id"),
   attemptCount: integer("attempt_count").default(0).notNull(),
+  executedAction: jsonb("executed_action").$type<Record<string, unknown>>(),
+  reviewedBy: varchar("reviewed_by", { length: 255 }),
+  reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   ...timestamps(),
 }, (t) => [
   index("agent_tasks_org_id_idx").on(t.orgId),
@@ -309,4 +312,156 @@ export const documents = pgTable("documents", {
   ...timestamps(),
 }, (t) => [
   index("documents_entity_idx").on(t.entityType, t.entityId),
+]);
+
+// ─── Webhook Subscriptions (Feature 2: Event Bus) ───
+export const webhookSubscriptions = pgTable("webhook_subscriptions", {
+  id: id(),
+  orgId: orgId(),
+  eventTypes: jsonb("event_types").$type<string[]>().notNull(),
+  targetUrl: varchar("target_url", { length: 500 }).notNull(),
+  secret: varchar("secret", { length: 255 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastDeliveryAt: timestamp("last_delivery_at", { withTimezone: true }),
+  lastDeliveryStatus: varchar("last_delivery_status", { length: 20 }),
+  ...timestamps(),
+}, (t) => [
+  index("webhook_subscriptions_org_id_idx").on(t.orgId),
+]);
+
+// ─── Event Log (Feature 2: Event Bus) ───
+export const eventLog = pgTable("event_log", {
+  id: id(),
+  orgId: orgId(),
+  eventType: varchar("event_type", { length: 100 }).notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("event_log_org_id_idx").on(t.orgId),
+  index("event_log_type_idx").on(t.eventType),
+]);
+
+// ─── Channel Configs (Feature 3: WhatsApp Evolution API) ───
+export const channelConfigs = pgTable("channel_configs", {
+  id: id(),
+  orgId: orgId(),
+  channel: varchar("channel", { length: 20 }).notNull(),
+  provider: varchar("provider", { length: 50 }).notNull(), // "meta-cloud" | "evolution-api"
+  config: jsonb("config").$type<Record<string, unknown>>().default({}),
+  isActive: boolean("is_active").default(true).notNull(),
+  ...timestamps(),
+}, (t) => [
+  uniqueIndex("channel_configs_org_channel_idx").on(t.orgId, t.channel),
+]);
+
+// ─── Inbound Messages (Feature 3: WhatsApp Evolution API) ───
+export const inboundMessages = pgTable("inbound_messages", {
+  id: id(),
+  orgId: orgId(),
+  channel: varchar("channel", { length: 20 }).notNull(),
+  provider: varchar("provider", { length: 50 }).notNull(),
+  externalMessageId: varchar("external_message_id", { length: 255 }),
+  senderPhone: varchar("sender_phone", { length: 30 }),
+  senderName: varchar("sender_name", { length: 255 }),
+  content: text("content"),
+  mediaUrl: varchar("media_url", { length: 500 }),
+  receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(),
+  matchedEntityType: varchar("matched_entity_type", { length: 50 }),
+  matchedEntityId: uuid("matched_entity_id"),
+  ...timestamps(),
+}, (t) => [
+  index("inbound_messages_org_id_idx").on(t.orgId),
+  index("inbound_messages_sender_idx").on(t.senderPhone),
+]);
+
+// ─── Inbox Threads (Feature 4: Inbox Multicanal) ───
+export const inboxThreads = pgTable("inbox_threads", {
+  id: id(),
+  orgId: orgId(),
+  channel: varchar("channel", { length: 20 }).notNull(),
+  contactIdentifier: varchar("contact_identifier", { length: 255 }).notNull(),
+  contactName: varchar("contact_name", { length: 255 }),
+  linkedEntityType: varchar("linked_entity_type", { length: 50 }),
+  linkedEntityId: uuid("linked_entity_id"),
+  linkedPropertyId: uuid("linked_property_id"),
+  linkedContractId: uuid("linked_contract_id"),
+  status: varchar("status", { length: 20 }).default("open").notNull(),
+  assignedTo: varchar("assigned_to", { length: 255 }),
+  lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
+  unreadCount: integer("unread_count").default(0).notNull(),
+  ...timestamps(),
+}, (t) => [
+  uniqueIndex("inbox_threads_org_channel_contact_idx").on(t.orgId, t.channel, t.contactIdentifier),
+  index("inbox_threads_org_id_idx").on(t.orgId),
+  index("inbox_threads_status_idx").on(t.status),
+]);
+
+// ─── Inbox Messages (Feature 4: Inbox Multicanal) ───
+export const inboxMessages = pgTable("inbox_messages", {
+  id: id(),
+  threadId: uuid("thread_id").notNull(),
+  direction: varchar("direction", { length: 10 }).notNull(), // "inbound" | "outbound"
+  content: text("content"),
+  mediaUrl: varchar("media_url", { length: 500 }),
+  externalMessageId: varchar("external_message_id", { length: 255 }),
+  status: varchar("status", { length: 20 }).default("sent").notNull(),
+  sentBy: varchar("sent_by", { length: 255 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("inbox_messages_thread_id_idx").on(t.threadId),
+]);
+
+// ─── Document Embeddings (Feature 5: RAG/Chatbot) ───
+export const documentEmbeddings = pgTable("document_embeddings", {
+  id: id(),
+  orgId: orgId(),
+  documentId: uuid("document_id"),
+  sourceType: varchar("source_type", { length: 50 }),
+  chunkIndex: integer("chunk_index").default(0).notNull(),
+  chunkText: text("chunk_text").notNull(),
+  embedding: text("embedding"), // serialized float array; use pgvector extension in migration
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("document_embeddings_org_id_idx").on(t.orgId),
+  index("document_embeddings_doc_id_idx").on(t.documentId),
+]);
+
+// ─── Chat Conversations (Feature 5: RAG/Chatbot) ───
+export const chatConversations = pgTable("chat_conversations", {
+  id: id(),
+  orgId: orgId(),
+  tenantId: uuid("tenant_id"),
+  title: varchar("title", { length: 255 }),
+  status: varchar("status", { length: 20 }).default("active").notNull(),
+  ...timestamps(),
+}, (t) => [
+  index("chat_conversations_org_id_idx").on(t.orgId),
+  index("chat_conversations_tenant_id_idx").on(t.tenantId),
+]);
+
+// ─── Chat Messages (Feature 5: RAG/Chatbot) ───
+export const chatMessages = pgTable("chat_messages", {
+  id: id(),
+  conversationId: uuid("conversation_id").notNull(),
+  role: varchar("role", { length: 20 }).notNull(), // "user" | "assistant"
+  content: text("content").notNull(),
+  sources: jsonb("sources").$type<Array<{ chunkId: string; text: string; score: number }>>(),
+  tokensUsed: integer("tokens_used"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index("chat_messages_conversation_id_idx").on(t.conversationId),
+]);
+
+// ─── Agent Configs (Feature 6: Enhanced AI Agents) ───
+export const agentConfigs = pgTable("agent_configs", {
+  id: id(),
+  orgId: orgId(),
+  taskType: varchar("task_type", { length: 50 }).notNull(),
+  autoExecuteThreshold: numeric("auto_execute_threshold", { precision: 5, scale: 4 }).default("0.8500").notNull(),
+  escalateThreshold: numeric("escalate_threshold", { precision: 5, scale: 4 }).default("0.5000").notNull(),
+  isEnabled: boolean("is_enabled").default(true).notNull(),
+  ...timestamps(),
+}, (t) => [
+  uniqueIndex("agent_configs_org_task_type_idx").on(t.orgId, t.taskType),
 ]);

@@ -10,6 +10,7 @@ import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors"
 import { ChargeIssueStatus, LeaseContractStatus, BoletoStatus } from "../../types/domain";
 import { calculateCharge } from "./calculator";
 import { generateBoleto, getOrgBankCredentials } from "../integrations/connectors/bank";
+import { emitDomainEvent } from "../../lib/events";
 import type { CreateBillingScheduleInput, GenerateChargesInput } from "./validators";
 
 /**
@@ -111,6 +112,13 @@ export async function generateCharge(input: GenerateChargesInput) {
       })
       .returning();
 
+    await emitDomainEvent(input.orgId, "charge.created", {
+      chargeId: charge.id,
+      leaseContractId: input.leaseContractId,
+      billingPeriod: input.billingPeriod,
+      netAmount: calculation.netAmount,
+    }).catch((e) => console.error("[billing] Event emit error:", e));
+
     return charge;
   } catch (err: unknown) {
     if (
@@ -211,6 +219,14 @@ export async function issueCharge(chargeId: string) {
     })
     .where(eq(charges.id, chargeId))
     .returning();
+
+  await emitDomainEvent(existing.orgId, "charge.issued", {
+    chargeId: updated.id,
+    leaseContractId: updated.leaseContractId,
+    netAmount: updated.netAmount,
+    dueDate: updated.dueDate,
+    boletoStatus: boletoResult.status,
+  }).catch((e) => console.error("[billing] Event emit error:", e));
 
   return updated;
 }

@@ -3,6 +3,7 @@ import { db } from "../../db";
 import { maintenanceTickets, agentTasks } from "../../db/schema";
 import { NotFoundError, ConflictError } from "../../lib/errors";
 import { classifyTicket } from "./classifier";
+import { emitDomainEvent } from "../../lib/events";
 import type { CreateTicketInput, UpdateTicketInput } from "./validators";
 
 const CLASSIFIER_CONFIDENCE_THRESHOLD = 60;
@@ -64,6 +65,13 @@ export async function createTicket(input: CreateTicketInput) {
     return { ticket, classification, agentTask };
   });
 
+  await emitDomainEvent(input.orgId, "ticket.opened", {
+    ticketId: result.ticket.id,
+    propertyId: input.propertyId,
+    category: result.ticket.category,
+    priority: result.ticket.priority,
+  }).catch((e) => console.error("[maintenance] Event emit error:", e));
+
   return result;
 }
 
@@ -122,6 +130,14 @@ export async function updateTicket(ticketId: string, input: UpdateTicketInput) {
     .set(updateData)
     .where(eq(maintenanceTickets.id, ticketId))
     .returning();
+
+  if (input.status === "resolved") {
+    await emitDomainEvent(existing.orgId, "ticket.resolved", {
+      ticketId: updated.id,
+      propertyId: updated.propertyId,
+      resolutionSummary: updated.resolutionSummary,
+    }).catch((e) => console.error("[maintenance] Event emit error:", e));
+  }
 
   return updated;
 }
