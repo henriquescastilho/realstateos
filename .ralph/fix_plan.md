@@ -69,7 +69,7 @@
 
 - [x] 29. Node.js API parity: complete `apps/api-node/` skeleton — implement all routers (onboarding, billing, payments, communications, maintenance) with full Drizzle ORM integration. Ensure 1:1 endpoint parity with FastAPI. Add JWT auth middleware. This is the migration target.
 
-- [ ] 30. Integration tests + ADK evaluation: create `apps/api/tests/agents/test_agent_e2e.py` — end-to-end test of full monthly cycle: contract onboarding → billing generation → payment reconciliation → owner statement → communications. Use ADK evaluation framework to score agent outputs. Add to CI pipeline.
+- [x] 30. Integration tests + ADK evaluation: create `apps/api/tests/agents/test_agent_e2e.py` — end-to-end test of full monthly cycle: contract onboarding → billing generation → payment reconciliation → owner statement → communications. Use ADK evaluation framework to score agent outputs. Add to CI pipeline.
 
 ## WAVE 6 — Database & Persistence Layer (loops 31-40)
 
@@ -203,7 +203,7 @@
 
 ## WAVE 11 — Integrations & External Services (loops 91-100)
 
-- [ ] 91. Santander bank integration: implement `apps/api/app/integrations/santander.py` — real webhook parser for Santander payment notifications. Map to internal payment schema. HMAC validation. Replay protection via idempotency keys.
+- [x] 91. Santander bank integration: implement `apps/api/app/integrations/santander.py` — real webhook parser for Santander payment notifications. Map to internal payment schema. HMAC validation. Replay protection via idempotency keys.
 
 - [ ] 92. Itaú bank integration: implement `apps/api/app/integrations/itau.py` — Itaú Open Finance webhook parser. OAuth2 token management. Account statement polling as fallback. Circuit breaker + retry.
 
