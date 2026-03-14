@@ -41,8 +41,11 @@ app.use("/api/v1", requireAuth, requireOrgMatch, integrationsRouter);
 // ─── Global error handler (must be last) ───
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`[api-node] running on port ${PORT}`);
-});
+// Only start server when run directly (not imported by tests)
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`[api-node] running on port ${PORT}`);
+  });
+}
 
 export default app;
