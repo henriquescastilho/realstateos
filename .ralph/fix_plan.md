@@ -135,7 +135,7 @@
 
 - [x] 59. Communications center: create `apps/web/src/app/communications/` — message history per renter/owner, compose interface (email/WhatsApp), template library, delivery status tracking, bulk send for payment reminders.
 
-- [ ] 60. Reports & analytics UI: create `apps/web/src/app/reports/` — portfolio KPI dashboard with date range picker, billing performance charts (Chart.js), default rate trend, maintenance cost analysis, export to PDF/XLSX buttons.
+- [x] 60. Reports & analytics UI: create `apps/web/src/app/reports/` — portfolio KPI dashboard with date range picker, billing performance charts (Chart.js), default rate trend, maintenance cost analysis, export to PDF/XLSX buttons.
 
 - [ ] 61. Settings UI: create `apps/web/src/app/settings/` — org profile, team members management (invite/remove/roles), notification preferences, webhook configuration, API key management, billing plan (placeholder).
 
