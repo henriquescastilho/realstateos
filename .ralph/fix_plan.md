@@ -105,7 +105,7 @@
 
 - [x] 45. Webhook system: create `apps/api/app/routes/webhooks.py` — `POST /webhooks` (register endpoint), `GET /webhooks` (list), `DELETE /webhooks/{id}`. Deliver events: contract.created, payment.reconciled, maintenance.escalated, agent.completed. HMAC signature validation.
 
-- [ ] 46. Bulk operations API: add bulk endpoints — `POST /contracts/bulk` (create many), `PATCH /charges/bulk-status` (update many), `POST /agents/bulk-trigger` (trigger agent for list of contracts). All return job_id for async tracking.
+- [x] 46. Bulk operations API: add bulk endpoints — `POST /contracts/bulk` (create many), `PATCH /charges/bulk-status` (update many), `POST /agents/bulk-trigger` (trigger agent for list of contracts). All return job_id for async tracking.
 
 - [ ] 47. File upload API: create `apps/api/app/routes/uploads.py` — `POST /uploads` streams to MinIO. Support: contract PDFs, maintenance photos, owner statements. Return presigned URL. Virus scan stub (pluggable). Max 50MB.
 

@@ -19,7 +19,7 @@
 - Wave 4: Portfolio agent, analytics API, pgvector search, APScheduler, document intelligence
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
-- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45)
+- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -32,6 +32,7 @@
 - API versioning: canonical prefix `/v1/`, legacy shims `/api/` and `/` via `include_versioned_routes()`. Version negotiation via `Accept: application/vnd.realstateos.v1+json` handled by `VersionNegotiationMiddleware`.
 - Pagination: all GET list endpoints return `PaginatedResponse[T]` from `app.schemas.pagination`. Use `PaginationParams` dependency (`page` + `per_page`). Pattern: `base = select(Model).where(...)`, count subquery, `PaginatedResponse.build(items, total, params)`.
 - Error catalog: `app.errors` — typed `AppError` subclasses with `code`, `message`, `http_status`, `documentation_url`. Handler registered in `main.py` returns `{"error": {"code": ..., "message": ..., "documentation_url": ...}}`. Use typed errors instead of bare `HTTPException` for all domain errors.
+- Bulk operations: `app.routes.bulk` — all endpoints under `/bulk/`. Pattern: create parent Task (RUNNING), process items, update Task with results, return `BulkJobResponse`. Max 100 items. Returns `job_id` + `status` (DONE/PARTIAL/FAILED) + `processed`/`failed` counts + per-item `results`/`errors`.
 
 ## BUGS — DO NOT REINTRODUCE (being fixed in fix/critical-bugs-wave6 branch)
 - **scheduler.py 74-88**: charge commit and audit commit are NOT atomic — wrap create_task_record in try/except
@@ -61,4 +62,4 @@ After completing each task:
 This creates a compounding knowledge loop — each iteration is smarter than the last.
 
 ## Last Updated
-Loop: 45 | Timestamp: 2026-03-14
+Loop: 46 | Timestamp: 2026-03-14

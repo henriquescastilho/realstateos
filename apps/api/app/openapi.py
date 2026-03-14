@@ -211,4 +211,20 @@ OPENAPI_TAGS: list[dict] = [
         "name": "auth",
         "description": "Authentication — obtain and refresh JWT tokens.",
     },
+    {
+        "name": "webhooks",
+        "description": (
+            "Webhook endpoints — register HTTP callbacks to receive real-time event notifications. "
+            "Every delivery is signed with HMAC-SHA256 via the `X-RealstateOS-Signature` header. "
+            "Supported events: contract.created, payment.reconciled, maintenance.escalated, agent.completed."
+        ),
+    },
+    {
+        "name": "bulk",
+        "description": (
+            "Bulk operations — create or update multiple resources in a single request (max 100 items). "
+            "All endpoints return a `job_id` for tracking via `GET /agent-tasks/{job_id}`. "
+            "Partial success is supported — failed items are reported individually."
+        ),
+    },
 ]
