@@ -133,7 +133,7 @@ export function Table<T extends Record<string, unknown>>({
                   fontStyle: "italic",
                 }}
               >
-                {emptyMessage}
+                {resolvedEmptyText}
               </td>
             </tr>
           )}
