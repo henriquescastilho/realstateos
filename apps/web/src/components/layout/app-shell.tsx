@@ -13,6 +13,7 @@ const navigation = [
   { href: "/charges", label: "Cobranças" },
   { href: "/billing", label: "Faturas" },
   { href: "/payments", label: "Pagamentos" },
+  { href: "/communications", label: "Comunicações" },
   { href: "/documents", label: "Documentos" },
   { href: "/tasks", label: "Tarefas" },
   { href: "/agents", label: "Agentes" },
