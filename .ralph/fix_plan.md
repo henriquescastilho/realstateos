@@ -139,45 +139,45 @@
 
 - [x] 61. Settings UI: create `apps/web/src/app/settings/` — org profile, team members management (invite/remove/roles), notification preferences, webhook configuration, API key management, billing plan (placeholder).
 
-- [ ] 62. Real-time notifications: add WebSocket client `apps/web/src/lib/ws.ts` — connect to `/ws/notifications`. Display toast notifications for: new escalation, payment received, agent task completed. Notification bell with unread count.
+- [x] 62. Real-time notifications: add WebSocket client `apps/web/src/lib/ws.ts` — connect to `/ws/notifications`. Display toast notifications for: new escalation, payment received, agent task completed. Notification bell with unread count.
 
-- [ ] 63. Mobile-responsive layout: audit ALL pages for mobile breakpoints (sm/md/lg). Add hamburger nav, collapsible sidebars, touch-friendly tables (horizontal scroll + column priority). Target: fully usable on 375px viewport.
+- [x] 63. Mobile-responsive layout: audit ALL pages for mobile breakpoints (sm/md/lg). Add hamburger nav, collapsible sidebars, touch-friendly tables (horizontal scroll + column priority). Target: fully usable on 375px viewport.
 
-- [ ] 64. Onboarding wizard: create `apps/web/src/app/onboarding/` — multi-step wizard for new orgs: company info → first property → first contract → bank account → go live. Progress saved server-side. Skip/resume anytime.
+- [x] 64. Onboarding wizard: create `apps/web/src/app/onboarding/` — multi-step wizard for new orgs: company info → first property → first contract → bank account → go live. Progress saved server-side. Skip/resume anytime.
 
-- [ ] 65. E2E tests (Playwright): create `apps/web/tests/` — critical path tests: login → create contract → generate billing → mark payment → check owner statement. Run in CI against docker-compose test environment.
+- [x] 65. E2E tests (Playwright): create `apps/web/tests/` — critical path tests: login → create contract → generate billing → mark payment → check owner statement. Run in CI against docker-compose test environment.
 
 ## WAVE 9 — Node.js Backend (Migration Target) (loops 66-80)
 
-- [ ] 66. Node.js project setup: configure `apps/api-node/` — Express 5 + TypeScript strict + Drizzle ORM + Zod validation. ESM modules. Vitest for tests. Add tsconfig, eslint, prettier. Match FastAPI folder structure exactly.
+- [x] 66. Node.js project setup: configure `apps/api-node/` — Express 5 + TypeScript strict + Drizzle ORM + Zod validation. ESM modules. Vitest for tests. Add tsconfig, eslint, prettier. Match FastAPI folder structure exactly.
 
-- [ ] 67. Drizzle schema completion: define all 14 tables in `apps/api-node/src/db/schema.ts` — with proper TypeScript types, relations, indexes. Generate migration files. Add seed script matching Python seeder data.
+- [x] 67. Drizzle schema completion: define all 14 tables in `apps/api-node/src/db/schema.ts` — with proper TypeScript types, relations, indexes. Generate migration files. Add seed script matching Python seeder data.
 
-- [ ] 68. Auth middleware (Node.js): implement `apps/api-node/src/middleware/auth.ts` — JWT validation with jose library. Extract user_id, org_id, role. Tenant isolation via middleware. Rate limiting with express-rate-limit + Redis.
+- [x] 68. Auth middleware (Node.js): implement `apps/api-node/src/middleware/auth.ts` — JWT validation with jose library. Extract user_id, org_id, role. Tenant isolation via middleware. Rate limiting with express-rate-limit + Redis.
 
-- [ ] 69. Contracts router (Node.js): implement `apps/api-node/src/routes/contracts.ts` — full CRUD, 1:1 parity with FastAPI. Zod input validation. Drizzle queries with proper joins. Soft delete. Pagination.
+- [x] 69. Contracts router (Node.js): implement `apps/api-node/src/routes/contracts.ts` — full CRUD, 1:1 parity with FastAPI. Zod input validation. Drizzle queries with proper joins. Soft delete. Pagination.
 
-- [ ] 70. Billing router (Node.js): implement `apps/api-node/src/routes/billing.ts` — charge CRUD, monthly generation trigger, composition calculation (rent + IGPM adjustment + fees). Match FastAPI business logic exactly.
+- [x] 70. Billing router (Node.js): implement `apps/api-node/src/routes/billing.ts` — charge CRUD, monthly generation trigger, composition calculation (rent + IGPM adjustment + fees). Match FastAPI business logic exactly.
 
-- [ ] 71. Payments router (Node.js): implement `apps/api-node/src/routes/payments.ts` — payment CRUD, reconciliation logic (exact/partial/excess/unmatched), divergence creation, owner statement generation.
+- [x] 71. Payments router (Node.js): implement `apps/api-node/src/routes/payments.ts` — payment CRUD, reconciliation logic (exact/partial/excess/unmatched), divergence creation, owner statement generation.
 
-- [ ] 72. Maintenance router (Node.js): implement `apps/api-node/src/routes/maintenance.ts` — ticket CRUD, status workflow, cost tracking, owner approval flow, photo attachments via MinIO presigned URLs.
+- [x] 72. Maintenance router (Node.js): implement `apps/api-node/src/routes/maintenance.ts` — ticket CRUD, status workflow, cost tracking, owner approval flow, photo attachments via MinIO presigned URLs.
 
-- [ ] 73. Communications router (Node.js): implement `apps/api-node/src/routes/communications.ts` — message CRUD, template rendering, multi-channel dispatch (email via Nodemailer, WhatsApp via Twilio stub).
+- [x] 73. Communications router (Node.js): implement `apps/api-node/src/routes/communications.ts` — message CRUD, template rendering, multi-channel dispatch (email via Nodemailer, WhatsApp via Twilio stub).
 
-- [ ] 74. Analytics router (Node.js): implement `apps/api-node/src/routes/analytics.ts` — same KPI endpoints as Python. Use Drizzle aggregate queries. Redis caching with ioredis.
+- [x] 74. Analytics router (Node.js): implement `apps/api-node/src/routes/analytics.ts` — same KPI endpoints as Python. Use Drizzle aggregate queries. Redis caching with ioredis.
 
-- [ ] 75. Agent tasks router (Node.js): implement `apps/api-node/src/routes/agentTasks.ts` — agent task CRUD, audit log, retry/resolve endpoints. BullMQ for job queue (replaces Python DLQ worker).
+- [x] 75. Agent tasks router (Node.js): implement `apps/api-node/src/routes/agentTasks.ts` — agent task CRUD, audit log, retry/resolve endpoints. BullMQ for job queue (replaces Python DLQ worker).
 
-- [ ] 76. WebSocket server (Node.js): implement `apps/api-node/src/ws/notifications.ts` — Socket.io server for real-time events. Rooms by org_id. Emit: agent.completed, payment.received, escalation.created. Auth via JWT handshake.
+- [x] 76. WebSocket server (Node.js): implement `apps/api-node/src/ws/notifications.ts` — Socket.io server for real-time events. Rooms by org_id. Emit: agent.completed, payment.received, escalation.created. Auth via JWT handshake.
 
-- [ ] 77. File upload service (Node.js): implement `apps/api-node/src/services/storage.ts` — MinIO client wrapper. Multipart upload, presigned URLs, delete, copy. Used by contracts, maintenance, communications routes.
+- [x] 77. File upload service (Node.js): implement `apps/api-node/src/services/storage.ts` — MinIO client wrapper. Multipart upload, presigned URLs, delete, copy. Used by contracts, maintenance, communications routes.
 
-- [ ] 78. Background jobs (Node.js): implement `apps/api-node/src/workers/` — BullMQ workers for: billing generation, payment reminders, DLQ processing, report generation, vector embedding. Redis-backed queues.
+- [x] 78. Background jobs (Node.js): implement `apps/api-node/src/workers/` — BullMQ workers for: billing generation, payment reminders, DLQ processing, report generation, vector embedding. Redis-backed queues.
 
-- [ ] 79. Node.js test suite: create `apps/api-node/src/tests/` — Vitest unit tests for all services and repositories. Integration tests against real PostgreSQL (testcontainers). Target 80% coverage.
+- [x] 79. Node.js test suite: create `apps/api-node/src/tests/` — Vitest unit tests for all services and repositories. Integration tests against real PostgreSQL (testcontainers). Target 80% coverage.
 
-- [ ] 80. Node.js Docker + parity validation: add Node.js service to docker-compose. Script `scripts/parity-check.sh` — runs same HTTP requests against both APIs and diffs responses. Must pass 100% before Node replaces Python.
+- [x] 80. Node.js Docker + parity validation: add Node.js service to docker-compose. Script `scripts/parity-check.sh` — runs same HTTP requests against both APIs and diffs responses. Must pass 100% before Node replaces Python.
 
 ## WAVE 10 — DevOps & Production Readiness (loops 81-90)
 

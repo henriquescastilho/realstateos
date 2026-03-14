@@ -20,7 +20,8 @@
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
 - Wave 7 COMPLETE: OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), GraphQL layer (task 49), nginx API gateway (task 50)
-- Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60)
+- Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60), settings UI (61), real-time notifications WebSocket (62), mobile-responsive layout with hamburger nav (63), onboarding wizard (64), Playwright E2E tests (65)
+- Wave 9 COMPLETE (74-80): analytics router, agent-tasks router, WebSocket notifications server, StorageService (MinIO S3 wrapper with fallback), BullMQ background workers (billing/reminders/DLQ/reports/embeddings), Vitest test suite (145 tests), Node.js Docker service + parity-check.sh script
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -70,5 +71,17 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 
 - Nginx API gateway: `nginx/api-gateway.conf` — rate limiting zones (per_token by Authorization header at 100r/m, per_ip_auth for /auth/ at 10r/m, per_token_agents for /agents+bulk at 20r/m). HTTP→HTTPS redirect. HTTPS with TLS 1.2/1.3, HSTS, X-Frame-Options DENY, X-Content-Type-Options. Structured JSON log_format. Gzip for JSON/JS/CSS/XLSX. Opt-in via `docker compose --profile gateway up`. Dev certs via `bash nginx/gen-dev-certs.sh`.
 
+- WebSocket notifications: `apps/web/src/lib/ws.ts` — module-level store, `startWs(token)`, `stopWs()`, `onNotification(handler)`. `NotificationBell` in header triggers toasts via `showToast()` (imperative export from `Toast.tsx`). `app-shell.tsx` renders bell in sticky header.
+- Mobile layout: hamburger `.hamburger-btn` (hidden on desktop, visible < 960px), `.sidebar-open` class, `.sidebar-overlay.visible` backdrop. `.filter-grid` CSS class replaces inline gridTemplateColumns. `.table-scroll` wrapper for horizontal scroll. Breakpoints: 959px (tablet), 599px (mobile).
+- Onboarding wizard: `apps/web/src/app/(onboarding)/onboarding/page.tsx` — 5-step: company→property→contract→bank→go-live. localStorage draft key `ro_onboarding_draft`. No AppShell (own route group layout).
+- E2E tests: `apps/web/tests/e2e/` — `critical-path.spec.ts` (login→contract→billing→payment→reports), `auth.spec.ts`, `mobile.spec.ts`. `playwright.config.ts` at `apps/web/`. `@playwright/test` in devDependencies.
+- Imperative toast: `showToast(message, variant)` exported from `Toast.tsx` — can be called outside React components.
+
+- Node.js StorageService: `apps/api-node/src/services/storage.ts` — `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` with graceful fallback. `StorageService.buildKey(orgId, folder, filename)` for canonical key format. `storageService` singleton exported.
+- Node.js workers: `apps/api-node/src/workers/` — billing.ts, reminders.ts, dlq.ts, reports.ts, embeddings.ts + index.ts. All use BullMQ with graceful fallback. `startAllWorkers()` from index. `enqueueBillingGeneration()`, `enqueueToDeadLetter()`, `enqueueReportGeneration()`, `enqueueEmbedding()` as public API.
+- Node.js tests: `apps/api-node/src/tests/` + `vitest.config.ts`. 145 tests passing. Covers: auth middleware, error classes, response helpers, StorageService fallback.
+- Node.js Docker: `api-node` service added to docker-compose.yml under `node` profile. Port 8082. Run with `docker compose --profile node up`.
+- Parity check: `scripts/parity-check.sh` — compares HTTP status codes and response keys between Python (8000) and Node (8082) APIs. Set `AUTH_TOKEN` for authenticated endpoint checks.
+
 ## Last Updated
-Loop: 61 | Timestamp: 2026-03-14
+Loop: 66 | Timestamp: 2026-03-14
