@@ -1,0 +1,237 @@
+## Real Estate OS — Default (production-oriented) values
+## Override per environment with values.dev.yaml, values.staging.yaml, values.prod.yaml
+
+global:
+  imageRegistry: "gcr.io/realstateos"
+  imagePullPolicy: Always
+  namespace: realstateos
+
+# ---------------------------------------------------------------------------
+# Infrastructure dependencies — disabled by default (use managed services in prod)
+# ---------------------------------------------------------------------------
+postgresql:
+  enabled: false
+  auth:
+    database: realestateos
+    username: realestateos
+    password: ""   # set via --set or existingSecret
+
+redis:
+  enabled: false
+  auth:
+    enabled: true
+    password: ""   # set via --set or existingSecret
+
+minio:
+  enabled: false
+  auth:
+    rootUser: minio
+    rootPassword: ""  # set via --set or existingSecret
+
+# ---------------------------------------------------------------------------
+# Shared application config (rendered into ConfigMap)
+# ---------------------------------------------------------------------------
+config:
+  environment: production
+  corsAllowedOrigins: "https://app.realstateos.com"
+  workerPollIntervalSeconds: "5"
+  s3BucketName: "realestateos"
+  s3EndpointUrl: ""          # empty = use AWS S3; set for GCS/MinIO
+  santanderSandboxEnabled: "false"
+
+# ---------------------------------------------------------------------------
+# Secrets — set real values via --set or CI/CD pipeline
+# Leave existingSecret non-empty to skip creating a Secret resource and
+# reference a pre-existing Kubernetes Secret instead.
+# ---------------------------------------------------------------------------
+secrets:
+  databaseUrl: ""
+  redisUrl: ""
+  jwtSecret: ""
+  s3AccessKeyId: ""
+  s3SecretAccessKey: ""
+  santanderClientId: ""
+  santanderClientSecret: ""
+  existingSecret: ""   # e.g. "realstateos-secret" — skip Secret creation if set
+
+# ---------------------------------------------------------------------------
+# Service Account (shared RBAC)
+# ---------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  annotations: {}
+  # GKE Workload Identity example:
+  # annotations:
+  #   iam.gke.io/gcp-service-account: realstateos@my-project.iam.gserviceaccount.com
+
+# ---------------------------------------------------------------------------
+# Ingress
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+  hosts:
+    api: api.realstateos.com
+    apiNode: api-node.realstateos.com
+    web: app.realstateos.com
+  tls:
+    enabled: true
+    secretName: realstateos-tls
+
+# ---------------------------------------------------------------------------
+# api — Python FastAPI (port 8000)
+# ---------------------------------------------------------------------------
+api:
+  enabled: true
+  image:
+    repository: api
+    tag: latest
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  servicePort: 8000
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  # topologySpreadConstraints whenUnsatisfiable policy for zone spreading
+  topologySpreadUnsatisfiable: DoNotSchedule
+
+# ---------------------------------------------------------------------------
+# api-node — Node.js Express (port 8082)
+# ---------------------------------------------------------------------------
+apiNode:
+  enabled: true
+  image:
+    repository: api-node
+    tag: latest
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  servicePort: 8082
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 20
+    periodSeconds: 20
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  topologySpreadUnsatisfiable: DoNotSchedule
+
+# ---------------------------------------------------------------------------
+# worker — Python background worker (port 8081)
+# ---------------------------------------------------------------------------
+worker:
+  enabled: true
+  image:
+    repository: worker
+    tag: latest
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  servicePort: 8081
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 15
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  topologySpreadUnsatisfiable: ScheduleAnyway
+
+# ---------------------------------------------------------------------------
+# web — Next.js (port 3000)
+# ---------------------------------------------------------------------------
+web:
+  enabled: true
+  image:
+    repository: web
+    tag: latest
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  servicePort: 3000
+  readinessProbe:
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  livenessProbe:
+    path: /health
+    initialDelaySeconds: 30
+    periodSeconds: 20
+    failureThreshold: 3
+    successThreshold: 1
+    timeoutSeconds: 5
+  topologySpreadUnsatisfiable: DoNotSchedule

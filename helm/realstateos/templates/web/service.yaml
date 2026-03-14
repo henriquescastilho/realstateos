@@ -1,0 +1,21 @@
+{{- if .Values.web.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-web" (include "realstateos.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "realstateos.labels" . | nindent 4 }}
+    app.kubernetes.io/name: web
+    app: web
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: {{ .Values.web.servicePort }}
+      targetPort: http
+      protocol: TCP
+{{- end }}

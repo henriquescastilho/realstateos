@@ -1,0 +1,25 @@
+apiVersion: v2
+name: realstateos
+description: Real Estate OS — Enterprise SaaS Platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - real-estate
+  - saas
+  - multi-tenant
+maintainers:
+  - name: RealEstateOS Team
+dependencies:
+  - name: postgresql
+    version: "~15.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  - name: redis
+    version: "~20.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+  - name: minio
+    version: "~14.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: minio.enabled

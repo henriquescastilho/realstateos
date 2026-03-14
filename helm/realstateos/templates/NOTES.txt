@@ -1,0 +1,65 @@
+Thank you for installing {{ .Chart.Name }} v{{ .Chart.AppVersion }}!
+
+Release:   {{ .Release.Name }}
+Namespace: {{ .Release.Namespace }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ACCESS URLS
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.tls.enabled }}
+  Web (Next.js):        https://{{ .Values.ingress.hosts.web }}
+  API (FastAPI):        https://{{ .Values.ingress.hosts.api }}
+  API Node (Express):   https://{{ .Values.ingress.hosts.apiNode }}
+{{- else }}
+  Web (Next.js):        http://{{ .Values.ingress.hosts.web }}
+  API (FastAPI):        http://{{ .Values.ingress.hosts.api }}
+  API Node (Express):   http://{{ .Values.ingress.hosts.apiNode }}
+{{- end }}
+{{- else }}
+
+  Ingress is disabled. Use port-forward to access services:
+
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "realstateos.fullname" . }}-web 3000:3000
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "realstateos.fullname" . }}-api 8000:8000
+  kubectl port-forward -n {{ .Release.Namespace }} svc/{{ include "realstateos.fullname" . }}-api-node 8082:8082
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DEPLOYED SERVICES
+
+{{- if .Values.api.enabled }}
+  api        {{ .Values.api.replicaCount }} replica(s) — port {{ .Values.api.servicePort }}
+{{- end }}
+{{- if .Values.apiNode.enabled }}
+  api-node   {{ .Values.apiNode.replicaCount }} replica(s) — port {{ .Values.apiNode.servicePort }}
+{{- end }}
+{{- if .Values.worker.enabled }}
+  worker     {{ .Values.worker.replicaCount }} replica(s) — port {{ .Values.worker.servicePort }}
+{{- end }}
+{{- if .Values.web.enabled }}
+  web        {{ .Values.web.replicaCount }} replica(s) — port {{ .Values.web.servicePort }}
+{{- end }}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HEALTH CHECKS
+
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/part-of={{ include "realstateos.name" . }}
+
+LOGS
+
+  kubectl logs -n {{ .Release.Namespace }} -l app=api --tail=50
+  kubectl logs -n {{ .Release.Namespace }} -l app=api-node --tail=50
+  kubectl logs -n {{ .Release.Namespace }} -l app=worker --tail=50
+  kubectl logs -n {{ .Release.Namespace }} -l app=web --tail=50
+
+UPGRADE
+
+  helm upgrade {{ .Release.Name }} ./helm/realstateos \
+    -f helm/realstateos/values.yaml \
+    -f helm/realstateos/values.prod.yaml \
+    --set secrets.existingSecret=realstateos-secret
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

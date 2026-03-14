@@ -1,0 +1,97 @@
+{{- if .Values.apiNode.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-api-node" (include "realstateos.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "realstateos.labels" . | nindent 4 }}
+    app.kubernetes.io/name: api-node
+    app: api-node
+spec:
+  {{- if not .Values.apiNode.autoscaling.enabled }}
+  replicas: {{ .Values.apiNode.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: api-node
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "realstateos.labels" . | nindent 8 }}
+        app.kubernetes.io/name: api-node
+        app: api-node
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "realstateos.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: {{ .Values.apiNode.topologySpreadUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              app: api-node
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      containers:
+        - name: api-node
+          image: {{ include "realstateos.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.apiNode.image.repository "tag" .Values.apiNode.image.tag) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.apiNode.servicePort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "realstateos.configMapName" . }}
+            - secretRef:
+                name: {{ include "realstateos.secretName" . }}
+          env:
+            - name: PORT
+              value: {{ .Values.apiNode.servicePort | quote }}
+          resources:
+            {{- toYaml .Values.apiNode.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.apiNode.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.apiNode.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.apiNode.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.apiNode.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.apiNode.readinessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.apiNode.readinessProbe.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.apiNode.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.apiNode.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.apiNode.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.apiNode.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.apiNode.livenessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.apiNode.livenessProbe.timeoutSeconds }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

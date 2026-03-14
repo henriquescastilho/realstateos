@@ -1,0 +1,41 @@
+## Staging overrides
+## Usage: helm upgrade --install realstateos . -f values.yaml -f values.staging.yaml \
+##          --set secrets.databaseUrl="..." --set secrets.jwtSecret="..."
+
+config:
+  environment: staging
+  corsAllowedOrigins: "https://staging.realstateos.com"
+  santanderSandboxEnabled: "true"
+
+api:
+  replicaCount: 1
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+
+apiNode:
+  replicaCount: 1
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+
+worker:
+  replicaCount: 1
+
+web:
+  replicaCount: 1
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+
+ingress:
+  hosts:
+    api: api.staging.realstateos.com
+    apiNode: api-node.staging.realstateos.com
+    web: staging.realstateos.com
+  tls:
+    enabled: true
+    secretName: realstateos-staging-tls

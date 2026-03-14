@@ -1,0 +1,68 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ printf "%s-ingress" (include "realstateos.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "realstateos.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        {{- if .Values.api.enabled }}
+        - {{ .Values.ingress.hosts.api | quote }}
+        {{- end }}
+        {{- if .Values.apiNode.enabled }}
+        - {{ .Values.ingress.hosts.apiNode | quote }}
+        {{- end }}
+        {{- if .Values.web.enabled }}
+        - {{ .Values.ingress.hosts.web | quote }}
+        {{- end }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
+  rules:
+    {{- if .Values.api.enabled }}
+    - host: {{ .Values.ingress.hosts.api | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ printf "%s-api" (include "realstateos.fullname" .) }}
+                port:
+                  number: {{ .Values.api.servicePort }}
+    {{- end }}
+    {{- if .Values.apiNode.enabled }}
+    - host: {{ .Values.ingress.hosts.apiNode | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ printf "%s-api-node" (include "realstateos.fullname" .) }}
+                port:
+                  number: {{ .Values.apiNode.servicePort }}
+    {{- end }}
+    {{- if .Values.web.enabled }}
+    - host: {{ .Values.ingress.hosts.web | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ printf "%s-web" (include "realstateos.fullname" .) }}
+                port:
+                  number: {{ .Values.web.servicePort }}
+    {{- end }}
+{{- end }}

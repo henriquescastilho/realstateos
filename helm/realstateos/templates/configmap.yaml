@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "realstateos.configMapName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "realstateos.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.config.environment | quote }}
+  NODE_ENV: {{ .Values.config.environment | quote }}
+  CORS_ALLOWED_ORIGINS: {{ .Values.config.corsAllowedOrigins | quote }}
+  WORKER_POLL_INTERVAL_SECONDS: {{ .Values.config.workerPollIntervalSeconds | quote }}
+  S3_BUCKET_NAME: {{ .Values.config.s3BucketName | quote }}
+  S3_ENDPOINT_URL: {{ .Values.config.s3EndpointUrl | quote }}
+  SANTANDER_SANDBOX_ENABLED: {{ .Values.config.santanderSandboxEnabled | quote }}
+  {{- if .Values.api.enabled }}
+  # Port for the api service (used as env default — containers override via explicit PORT env)
+  API_PORT: {{ .Values.api.servicePort | quote }}
+  {{- end }}
+  {{- if .Values.apiNode.enabled }}
+  API_NODE_PORT: {{ .Values.apiNode.servicePort | quote }}
+  {{- end }}
+  {{- if .Values.worker.enabled }}
+  WORKER_PORT: {{ .Values.worker.servicePort | quote }}
+  {{- end }}

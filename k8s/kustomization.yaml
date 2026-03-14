@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: realstateos
+
+resources:
+  # Cluster-scoped
+  - namespace.yaml
+
+  # Base shared resources
+  - base/configmap.yaml
+  - base/secret.yaml
+  - base/ingress.yaml
+  - base/rbac.yaml
+  - base/pdb.yaml
+
+  # api (Python FastAPI)
+  - api/deployment.yaml
+  - api/service.yaml
+  - api/hpa.yaml
+
+  # api-node (Node.js Express)
+  - api-node/deployment.yaml
+  - api-node/service.yaml
+  - api-node/hpa.yaml
+
+  # worker (Python background worker)
+  - worker/deployment.yaml
+  - worker/service.yaml
+
+  # web (Next.js)
+  - web/deployment.yaml
+  - web/service.yaml
+  - web/hpa.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: realstateos
+  app.kubernetes.io/managed-by: kustomize

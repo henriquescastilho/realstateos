@@ -1,0 +1,43 @@
+## Production overrides
+## Usage: helm upgrade --install realstateos . -f values.yaml -f values.prod.yaml \
+##          --set secrets.existingSecret="realstateos-secret"
+## Secrets should be pre-created in the cluster (e.g. via External Secrets Operator)
+## and referenced with secrets.existingSecret rather than inline values.
+
+config:
+  environment: production
+  corsAllowedOrigins: "https://app.realstateos.com"
+  santanderSandboxEnabled: "false"
+
+api:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+
+apiNode:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+
+worker:
+  replicaCount: 2
+
+web:
+  replicaCount: 3
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+
+ingress:
+  hosts:
+    api: api.realstateos.com
+    apiNode: api-node.realstateos.com
+    web: app.realstateos.com
+  tls:
+    enabled: true
+    secretName: realstateos-tls

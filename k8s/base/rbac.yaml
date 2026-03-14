@@ -1,0 +1,133 @@
+---
+# ServiceAccount: api
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api
+  namespace: realstateos
+  labels:
+    app: api
+    app.kubernetes.io/name: api
+    app.kubernetes.io/part-of: realstateos
+automountServiceAccountToken: false
+---
+# ServiceAccount: api-node
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api-node
+  namespace: realstateos
+  labels:
+    app: api-node
+    app.kubernetes.io/name: api-node
+    app.kubernetes.io/part-of: realstateos
+automountServiceAccountToken: false
+---
+# ServiceAccount: worker
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: worker
+  namespace: realstateos
+  labels:
+    app: worker
+    app.kubernetes.io/name: worker
+    app.kubernetes.io/part-of: realstateos
+automountServiceAccountToken: false
+---
+# ServiceAccount: web
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web
+  namespace: realstateos
+  labels:
+    app: web
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: realstateos
+automountServiceAccountToken: false
+---
+# Role: read own pod info (shared across all workloads)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: pod-reader
+  namespace: realstateos
+  labels:
+    app.kubernetes.io/part-of: realstateos
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+# RoleBinding: api
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: api-pod-reader
+  namespace: realstateos
+  labels:
+    app: api
+    app.kubernetes.io/part-of: realstateos
+subjects:
+  - kind: ServiceAccount
+    name: api
+    namespace: realstateos
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding: api-node
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: api-node-pod-reader
+  namespace: realstateos
+  labels:
+    app: api-node
+    app.kubernetes.io/part-of: realstateos
+subjects:
+  - kind: ServiceAccount
+    name: api-node
+    namespace: realstateos
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding: worker
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: worker-pod-reader
+  namespace: realstateos
+  labels:
+    app: worker
+    app.kubernetes.io/part-of: realstateos
+subjects:
+  - kind: ServiceAccount
+    name: worker
+    namespace: realstateos
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding: web
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: web-pod-reader
+  namespace: realstateos
+  labels:
+    app: web
+    app.kubernetes.io/part-of: realstateos
+subjects:
+  - kind: ServiceAccount
+    name: web
+    namespace: realstateos
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io

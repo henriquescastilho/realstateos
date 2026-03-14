@@ -1,0 +1,102 @@
+{{- if .Values.web.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-web" (include "realstateos.fullname" .) }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "realstateos.labels" . | nindent 4 }}
+    app.kubernetes.io/name: web
+    app: web
+spec:
+  {{- if not .Values.web.autoscaling.enabled }}
+  replicas: {{ .Values.web.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: web
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        {{- include "realstateos.labels" . | nindent 8 }}
+        app.kubernetes.io/name: web
+        app: web
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ include "realstateos.serviceAccountName" . }}
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: {{ .Values.web.topologySpreadUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+              app: web
+              app.kubernetes.io/instance: {{ .Release.Name }}
+      containers:
+        - name: web
+          image: {{ include "realstateos.image" (dict "registry" .Values.global.imageRegistry "repository" .Values.web.image.repository "tag" .Values.web.image.tag) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.web.servicePort }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "realstateos.configMapName" . }}
+            - secretRef:
+                name: {{ include "realstateos.secretName" . }}
+          env:
+            - name: PORT
+              value: {{ .Values.web.servicePort | quote }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.web.readinessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.web.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.web.readinessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.web.readinessProbe.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.web.livenessProbe.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.web.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.web.livenessProbe.successThreshold }}
+            timeoutSeconds: {{ .Values.web.livenessProbe.timeoutSeconds }}
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            # Next.js ISR / build cache — must be writable even with readOnlyRootFilesystem
+            - name: nextjs-cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: nextjs-cache
+          emptyDir: {}
+{{- end }}

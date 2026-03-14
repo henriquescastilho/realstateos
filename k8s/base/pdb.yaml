@@ -1,0 +1,48 @@
+---
+# PodDisruptionBudget: api
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-pdb
+  namespace: realstateos
+  labels:
+    app: api
+    app.kubernetes.io/name: api
+    app.kubernetes.io/part-of: realstateos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api
+---
+# PodDisruptionBudget: api-node
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-node-pdb
+  namespace: realstateos
+  labels:
+    app: api-node
+    app.kubernetes.io/name: api-node
+    app.kubernetes.io/part-of: realstateos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: api-node
+---
+# PodDisruptionBudget: web
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-pdb
+  namespace: realstateos
+  labels:
+    app: web
+    app.kubernetes.io/name: web
+    app.kubernetes.io/part-of: realstateos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: web
