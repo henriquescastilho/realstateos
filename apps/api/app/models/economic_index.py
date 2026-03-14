@@ -7,7 +7,7 @@ from decimal import Decimal
 from sqlalchemy import DateTime, Integer, Numeric, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.database import Base
+from app.db import Base
 
 
 class EconomicIndex(Base):

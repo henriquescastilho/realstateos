@@ -247,7 +247,7 @@
 
 ## WAVE 13 — Quality, Testing & Documentation (loops 111-120)
 
-- [ ] 111. Unit test suite — Python: achieve 80% coverage on `apps/api/app/services/` and `apps/api/app/repositories/`. Use pytest + pytest-asyncio. Mock external integrations. Test all error paths.
+- [x] 111. Unit test suite — Python: achieve 80% coverage on `apps/api/app/services/` and `apps/api/app/repositories/`. Use pytest + pytest-asyncio. Mock external integrations. Test all error paths.
 
 - [ ] 112. Unit test suite — Node.js: achieve 80% coverage on `apps/api-node/src/services/` and `apps/api-node/src/repositories/`. Vitest + vi.mock. Test all Zod validation schemas.
 
