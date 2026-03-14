@@ -3,35 +3,35 @@
 
 ## WAVE 1 — ADK Multi-Agent Foundation (loops 1-8)
 
-- [ ] 1. ADK OrchestratorAgent: create `apps/api/app/agents/orchestrator/agent.py` — top-level LlmAgent that routes tasks to sub-agents (billing, payments, comms, maintenance, onboarding) based on task_type. Use SequentialAgent for chained workflows. Include non-ADK fallback.
+- [x] 1. ADK OrchestratorAgent: create `apps/api/app/agents/orchestrator/agent.py` — top-level LlmAgent that routes tasks to sub-agents (billing, payments, comms, maintenance, onboarding) based on task_type. Use SequentialAgent for chained workflows. Include non-ADK fallback.
 
-- [ ] 2. ADK OnboardingAgent: create `apps/api/app/agents/onboarding_agent/` — LlmAgent with tools: `extract_contract_data(pdf_path)`, `validate_cpf(cpf)`, `normalize_address(address)`, `create_contract_record(data)`, `escalate_to_human(reason, context)`. Handles contract PDF ingestion with Gemini multimodal.
+- [x] 2. ADK OnboardingAgent: create `apps/api/app/agents/onboarding_agent/` — LlmAgent with tools: `extract_contract_data(pdf_path)`, `validate_cpf(cpf)`, `normalize_address(address)`, `create_contract_record(data)`, `escalate_to_human(reason, context)`. Handles contract PDF ingestion with Gemini multimodal.
 
-- [ ] 3. ADK PaymentsAgent: create `apps/api/app/agents/payments_agent/` — LlmAgent with tools: `ingest_bank_webhook(payload)`, `match_payment_to_charge(payment)`, `classify_reconciliation(received, expected)`, `handle_divergence(payment_id, context)`, `generate_owner_statement(contract_id, month)`. Replace keyword-matching with LLM-powered reconciliation.
+- [x] 3. ADK PaymentsAgent: create `apps/api/app/agents/payments_agent/` — LlmAgent with tools: `ingest_bank_webhook(payload)`, `match_payment_to_charge(payment)`, `classify_reconciliation(received, expected)`, `handle_divergence(payment_id, context)`, `generate_owner_statement(contract_id, month)`. Replace keyword-matching with LLM-powered reconciliation.
 
-- [ ] 4. ADK CommunicationsAgent: create `apps/api/app/agents/comms_agent/` — LlmAgent with tools: `send_charge_notice(renter_id, charge_id)`, `send_payment_confirmation(renter_id, payment_id)`, `send_owner_statement(owner_id, statement_id)`, `send_maintenance_update(renter_id, ticket_id)`, `get_message_history(entity_id)`. Multi-channel (email + WhatsApp).
+- [x] 4. ADK CommunicationsAgent: create `apps/api/app/agents/comms_agent/` — LlmAgent with tools: `send_charge_notice(renter_id, charge_id)`, `send_payment_confirmation(renter_id, payment_id)`, `send_owner_statement(owner_id, statement_id)`, `send_maintenance_update(renter_id, ticket_id)`, `get_message_history(entity_id)`. Multi-channel (email + WhatsApp).
 
-- [ ] 5. ADK MaintenanceAgent: create `apps/api/app/agents/maintenance_agent/` — LlmAgent with tools: `classify_ticket(description)`, `set_priority(ticket_id, priority)`, `assign_next_action(ticket_id)`, `check_cost_threshold(ticket_id, estimated_cost)`, `request_owner_approval(ticket_id, cost)`, `close_ticket(ticket_id, resolution)`. LLM classification replaces keyword rules.
+- [x] 5. ADK MaintenanceAgent: create `apps/api/app/agents/maintenance_agent/` — LlmAgent with tools: `classify_ticket(description)`, `set_priority(ticket_id, priority)`, `assign_next_action(ticket_id)`, `check_cost_threshold(ticket_id, estimated_cost)`, `request_owner_approval(ticket_id, cost)`, `close_ticket(ticket_id, resolution)`. LLM classification replaces keyword rules.
 
-- [ ] 6. ADK ParallelAgent pipeline: create `apps/api/app/agents/pipelines/monthly_billing_pipeline.py` — ParallelAgent that fans out billing generation across all active contracts simultaneously. Gather results, consolidate charges, trigger comms agent for notifications.
+- [x] 6. ADK ParallelAgent pipeline: create `apps/api/app/agents/pipelines/monthly_billing_pipeline.py` — ParallelAgent that fans out billing generation across all active contracts simultaneously. Gather results, consolidate charges, trigger comms agent for notifications.
 
-- [ ] 7. ADK LoopAgent for reconciliation: create `apps/api/app/agents/pipelines/reconciliation_pipeline.py` — LoopAgent that continuously polls bank webhooks, processes payments, escalates divergences until queue empty. Uses session state to track batch progress.
+- [x] 7. ADK LoopAgent for reconciliation: create `apps/api/app/agents/pipelines/reconciliation_pipeline.py` — LoopAgent that continuously polls bank webhooks, processes payments, escalates divergences until queue empty. Uses session state to track batch progress.
 
-- [ ] 8. ADK Callbacks + Audit: create `apps/api/app/agents/callbacks.py` — `before_tool_callback` that writes audit record to DB before every tool call. `after_tool_callback` that logs result, duration, and agent_id. Universal safety guardrail for all agents.
+- [x] 8. ADK Callbacks + Audit: create `apps/api/app/agents/callbacks.py` — `before_tool_callback` that writes audit record to DB before every tool call. `after_tool_callback` that logs result, duration, and agent_id. Universal safety guardrail for all agents.
 
 ## WAVE 2 — Multi-Tenant & Security (loops 9-14)
 
-- [ ] 9. Multi-tenant middleware: add `apps/api/app/middleware/tenant.py` — FastAPI dependency that extracts organization_id from JWT, injects into request state. Add `get_current_org()` dependency. Apply to all existing routes via DI.
+- [x] 9. Multi-tenant middleware: add `apps/api/app/middleware/tenant.py` — FastAPI dependency that extracts organization_id from JWT, injects into request state. Add `get_current_org()` dependency. Apply to all existing routes via DI.
 
-- [ ] 10. Organization-scoped DB queries: audit ALL SQLAlchemy queries in `apps/api/app/repositories/` and `apps/api/app/services/` — add `filter_by(tenant_id=org_id)` where missing. Create `TenantScopedSession` context manager that auto-applies tenant filter.
+- [x] 10. Organization-scoped DB queries: audit ALL SQLAlchemy queries in `apps/api/app/repositories/` and `apps/api/app/services/` — add `filter_by(tenant_id=org_id)` where missing. Create `TenantScopedSession` context manager that auto-applies tenant filter.
 
-- [ ] 11. JWT Authentication: implement `apps/api/app/middleware/auth.py` — JWT validation using python-jose, extract user_id + org_id + role from token. Add `get_current_user()` dependency. Apply auth to all non-demo routes. Keep /demo/* routes open for hackathon.
+- [x] 11. JWT Authentication: implement `apps/api/app/middleware/auth.py` — JWT validation using python-jose, extract user_id + org_id + role from token. Add `get_current_user()` dependency. Apply auth to all non-demo routes. Keep /demo/* routes open for hackathon.
 
-- [ ] 12. Rate limiting: add `apps/api/app/middleware/rate_limiter.py` using slowapi (FastAPI rate limiter). Apply: 100 req/min per IP globally, 10 req/min on /auth/* routes, 20 req/min on /agents/* routes. Redis-backed counters for distributed deployment.
+- [x] 12. Rate limiting: add `apps/api/app/middleware/rate_limiter.py` using slowapi (FastAPI rate limiter). Apply: 100 req/min per IP globally, 10 req/min on /auth/* routes, 20 req/min on /agents/* routes. Redis-backed counters for distributed deployment.
 
-- [ ] 13. Input sanitization + validation: audit all Pydantic schemas in `apps/api/app/schemas/` — add field validators for CPF/CNPJ, phone (BR format), CEP, email. Add request size limits. Sanitize string fields to prevent injection.
+- [x] 13. Input sanitization + validation: audit all Pydantic schemas in `apps/api/app/schemas/` — add field validators for CPF/CNPJ, phone (BR format), CEP, email. Add request size limits. Sanitize string fields to prevent injection.
 
-- [ ] 14. Security headers + CORS hardening: update `apps/api/app/main.py` — replace wildcard CORS with configurable allow-list from settings. Add security headers middleware (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security). Remove stack traces from error responses in production.
+- [x] 14. Security headers + CORS hardening: update `apps/api/app/main.py` — replace wildcard CORS with configurable allow-list from settings. Add security headers middleware (X-Content-Type-Options, X-Frame-Options, Strict-Transport-Security). Remove stack traces from error responses in production.
 
 ## WAVE 3 — Observability & Reliability (loops 15-20)
 
