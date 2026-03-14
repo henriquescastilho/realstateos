@@ -211,7 +211,7 @@
 
 - [x] 94. Email provider: implement `apps/api/app/integrations/email.py` — SendGrid client wrapper. Transactional emails: charge notice, payment confirmation, owner statement, maintenance update. HTML templates with Jinja2. Bounce handling webhook.
 
-- [ ] 95. ViaCEP integration: implement `apps/api/app/integrations/viacep.py` — CEP lookup for address normalization. Cache results in Redis (TTL 24h). Fallback to manual entry on API failure. Validate state/city consistency.
+- [x] 95. ViaCEP integration: implement `apps/api/app/integrations/viacep.py` — CEP lookup for address normalization. Cache results in Redis (TTL 24h). Fallback to manual entry on API failure. Validate state/city consistency.
 
 - [ ] 96. ReceitaWS / CPF validation: implement `apps/api/app/integrations/receita.py` — CPF/CNPJ validation via ReceitaWS API. Cache valid CPFs (24h). Checksum validation as fallback. LGPD-compliant: no storing full CPF in logs.
 
