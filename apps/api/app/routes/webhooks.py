@@ -125,6 +125,7 @@ def get_webhook(
 @router.delete(
     "/{webhook_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,  # required: PEP 563 __future__.annotations makes -> None ambiguous in FastAPI 0.115+
     summary="Deactivate webhook endpoint",
     description=(
         "Soft-delete a webhook endpoint. "
