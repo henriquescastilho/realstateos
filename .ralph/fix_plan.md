@@ -75,9 +75,9 @@
 
 - [x] 31. Alembic migrations for all new tables: create migration files for agent_tasks, audit_log, dlq_items, vector_embeddings, scheduled_jobs tables. Ensure idempotent UP/DOWN migrations. Add migration runner to startup.
 
-- [ ] 32. Repository pattern for agent_tasks: create `apps/api/app/repositories/agent_tasks.py` — full CRUD with filters (status, agent_type, org_id, date range), pagination, bulk status updates. Replace any raw SQL with SQLAlchemy ORM.
+- [x] 32. Repository pattern for agent_tasks: create `apps/api/app/repositories/agent_tasks.py` — full CRUD with filters (status, agent_type, org_id, date range), pagination, bulk status updates. Replace any raw SQL with SQLAlchemy ORM.
 
-- [ ] 33. Repository pattern for audit_log: create `apps/api/app/repositories/audit_log.py` — append-only audit trail. Query by entity_id, agent_id, action_type, time range. Support export to CSV/JSON for compliance.
+- [x] 33. Repository pattern for audit_log: create `apps/api/app/repositories/audit_log.py` — append-only audit trail. Query by entity_id, agent_id, action_type, time range. Support export to CSV/JSON for compliance.
 
 - [ ] 34. Connection pool tuning: configure `apps/api/app/database.py` — pool_size=20, max_overflow=10, pool_timeout=30, pool_recycle=3600. Add pool event listeners for monitoring. Async SQLAlchemy with asyncpg driver.
 
