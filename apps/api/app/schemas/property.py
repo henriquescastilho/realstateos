@@ -1,10 +1,11 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.common import ORMModel
 from app.schemas.validators import BRCEP, SafeStr
 
 
 class PropertyCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     address: SafeStr
     city: SafeStr
     state: SafeStr

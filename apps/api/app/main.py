@@ -2,8 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import settings
+from app.middleware.audit import AuditLogMiddleware
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.routes.router import hackathon_router
@@ -60,13 +65,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if settings.is_production else "/docs",
+    redoc_url=None if settings.is_production else "/redoc",
+    openapi_url=None if settings.is_production else "/openapi.json",
     lifespan=lifespan,
 )
 
 # NOTE: Middleware is applied in reverse registration order (last registered = outermost).
-# Order here: CorrelationId → SecurityHeaders → RateLimiter → CORS → Routes
+# Order here: CorrelationId → SecurityHeaders → AuditLog → RateLimiter → CORS → Routes
 
 app.add_middleware(
     CORSMiddleware,
@@ -78,6 +84,7 @@ app.add_middleware(
 )
 
 app.add_middleware(RateLimitMiddleware, redis_url=settings.redis_url)
+app.add_middleware(AuditLogMiddleware)
 app.add_middleware(SecurityHeadersMiddleware, debug=False)
 app.add_middleware(CorrelationIdMiddleware)
 

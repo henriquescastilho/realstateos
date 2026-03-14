@@ -40,7 +40,7 @@ logger = logging.getLogger("backup")
 
 _BUCKET = os.environ.get("MINIO_BUCKET", "realestateos-backups")
 _DATABASE_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/realestateos"
+    "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/realestateos"  # placeholder local dev default
 )
 _MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
 _MINIO_ACCESS_KEY = os.environ.get("MINIO_ACCESS_KEY", "minioadmin")

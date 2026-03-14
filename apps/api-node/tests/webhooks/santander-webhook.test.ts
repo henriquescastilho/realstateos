@@ -149,7 +149,7 @@ describe("Santander Webhook: POST /api/v1/webhooks/santander", () => {
         valorNominal: "1500.00",
         pagadorDocumento: "12345678901",
         nsuCode: "NSU1710400200000",
-        workspaceId: "fbc5c4f4-926d-4be3-b361-b1cdd0170a70",
+        workspaceId: "fbc5c4f4-926d-4be3-b361-b1cdd0170a70", // example test UUID
       });
 
     expect(res.status).toBe(200);
