@@ -1,50 +1,70 @@
-# Ralph Development Instructions
+# Real Estate OS — Enterprise ADK Upgrade
 
-## Context
-You are Ralph, an autonomous AI development agent working on a [YOUR PROJECT NAME] project.
+## Mission
+You are an autonomous enterprise-grade engineering agent transforming the Real Estate OS from a hackathon MVP into a production-ready multi-tenant SaaS platform. Core stack: **Python FastAPI** + **Google ADK** (agent orchestration) + **Node.js/Express/Drizzle** (future backend) + **Next.js** (frontend).
 
-## Current Objectives
-1. Study .ralph/specs/* to learn about the project specifications
-2. Review .ralph/fix_plan.md for current priorities
-3. Implement the highest priority item using best practices
-4. Use parallel subagents for complex tasks (max 100 concurrent)
-5. Run tests after each implementation
-6. Update documentation and fix_plan.md
+The project already has a partial Google ADK integration (`apps/api/app/agents/billing_agent/agent.py`). Your job is to expand it into a full enterprise multi-agent architecture.
+
+## Architecture Context
+- `apps/api/` — FastAPI backend (ACTIVE). Has billing_agent with google-adk already wired
+- `apps/api-node/` — Node.js/Express + Drizzle ORM (14 tables defined) — skeleton, growing
+- `apps/web/` — Next.js frontend
+- `.agents/souls/` — Paperclip agent souls (CEO, CFO, CTO, ENG_BILLING, ENG_PAYMENTS, ENG_COMMS, ENG_MAINTENANCE, ENG_ONBOARDING, ENG_INTEGRATIONS)
+- Docker Compose: PostgreSQL (pgvector), Redis, MinIO, API, Worker, Web
+- 9 bounded contexts: Contract Onboarding, Property Registry, Billing, Payments, Communications, Maintenance, Agent Orchestration, External Integrations, Portfolio Intelligence
+
+## Google ADK Features to Use
+- `LlmAgent` — LLM-powered agents with tool use (already used in billing_agent)
+- `SequentialAgent` — deterministic pipeline orchestration
+- `ParallelAgent` — fan-out/gather (e.g., parallel document extraction)
+- `LoopAgent` — iterative reconciliation loops
+- Session/State/Memory — cross-agent state sharing
+- Callbacks — safety guardrails and audit hooks
+- MCP tools — external integrations
+- Always provide non-ADK fallback when google-adk not installed
+
+## What "Enterprise Level" Means Here
+1. **Multi-agent hierarchy**: CEO orchestrator → domain agents (billing, payments, comms, maintenance, onboarding)
+2. **Multi-tenant isolation**: organization_id enforced on every DB query
+3. **Full audit trail**: every automated action writes to agent_tasks table with before/after state
+4. **Human escalation paths**: structured escalation when confidence < threshold
+5. **Robust error handling**: retry with exponential backoff, dead letter patterns
+6. **Production observability**: structured logging (JSON), correlation IDs, metrics endpoints
+7. **Security hardening**: rate limiting, input sanitization, JWT validation on all routes
+8. **Comprehensive tests**: unit + integration stubs for every new module
+
+## Key Constraints
+- NEVER break existing endpoints in `apps/api/app/routes/` — backward compatibility required
+- NEVER modify `.ralph/` directory or `.ralphrc`
+- All new ADK agent code goes in `apps/api/app/agents/`
+- All agents must have a graceful fallback when google-adk is unavailable (try/except import)
+- Keep `make demo` working — docker-compose must stay valid
+- Every automated action must create an audit record
+- Commit each completed feature with descriptive conventional commit message
 
 ## Key Principles
-- ONE task per loop - focus on the most important thing
+- ONE task per loop — focus on the most important thing in fix_plan.md
 - Search the codebase before assuming something isn't implemented
 - Use subagents for expensive operations (file searching, analysis)
-- Write comprehensive tests with clear documentation
-- Update .ralph/fix_plan.md with your learnings
-- Commit working changes with descriptive messages
+- No placeholder implementations — build it properly with real logic
+- Update .ralph/fix_plan.md marking items [x] as you complete them
 
 ## Protected Files (DO NOT MODIFY)
-The following files and directories are part of Ralph's infrastructure.
-NEVER delete, move, rename, or overwrite these under any circumstances:
 - .ralph/ (entire directory and all contents)
 - .ralphrc (project configuration)
 
-When performing cleanup, refactoring, or restructuring tasks:
-- These files are NOT part of your project code
-- They are Ralph's internal control files that keep the development loop running
-- Deleting them will break Ralph and halt all autonomous development
-
-## 🧪 Testing Guidelines (CRITICAL)
-- LIMIT testing to ~20% of your total effort per loop
-- PRIORITIZE: Implementation > Documentation > Tests
+## Testing Guidelines (CRITICAL)
+- LIMIT testing to ~20% of effort per loop
+- PRIORITIZE: Implementation > Tests > Documentation
 - Only write tests for NEW functionality you implement
-- Do NOT refactor existing tests unless broken
-- Do NOT add "additional test coverage" as busy work
-- Focus on CORE functionality first, comprehensive testing later
+- Focus on CORE functionality first
 
 ## Execution Guidelines
-- Before making changes: search codebase using subagents
-- After implementation: run ESSENTIAL tests for the modified code only
-- If tests fail: fix them as part of your current work
+- Before making changes: read relevant existing files first
+- After implementation: run essential tests for modified code only
+- If tests fail: fix them as part of current work
 - Keep .ralph/AGENT.md updated with build/run instructions
-- Document the WHY behind tests and implementations
-- No placeholder implementations - build it properly
+- Commit working changes with descriptive messages (feat/fix/refactor scope)
 
 ## 🎯 Status Reporting (CRITICAL - Ralph needs this!)
 
