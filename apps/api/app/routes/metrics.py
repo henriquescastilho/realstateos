@@ -42,7 +42,19 @@ def _prom_line(metric: str, labels: dict | None, value: float | int, help_text: 
     return f"{metric}{label_str} {value}"
 
 
-@router.get("/metrics", response_class=PlainTextResponse)
+@router.get(
+    "/metrics",
+    response_class=PlainTextResponse,
+    summary="Prometheus metrics",
+    description=(
+        "Prometheus text-format metrics endpoint. "
+        "Metrics are computed on-demand from DB queries. "
+        "No authentication required — restrict access at the network/ingress level in production. "
+        "Tracked metrics: `active_contracts_total`, `charges_generated_total`, "
+        "`payments_reconciled_total`, `agent_tasks_by_status{status}`, "
+        "`agent_tasks_by_type{type}`, `escalations_total`, `process_uptime_seconds`."
+    ),
+)
 def prometheus_metrics(db: Session = Depends(get_db)) -> str:
     """Prometheus text format metrics endpoint.
 

@@ -15,7 +15,15 @@ from app.models.task import Task
 router = APIRouter()
 
 
-@router.post("/reset")
+@router.post(
+    "/reset",
+    summary="Reset demo data",
+    description=(
+        "**Development / demo only.** Deletes all data for the authenticated tenant. "
+        "Removes owners, renters, properties, contracts, charges, documents, and tasks. "
+        "This operation is irreversible — use only in development or demo environments."
+    ),
+)
 def reset_demo(
     current_user: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_db),

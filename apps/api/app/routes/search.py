@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_current_org
+from app.openapi import AUTH_RESPONSES, RESPONSES_422
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/search", tags=["search"])
@@ -107,7 +108,17 @@ def _search_tasks(db: Session, tenant_id: str, query: str, limit: int) -> list[d
         return []
 
 
-@router.get("")
+@router.get(
+    "",
+    summary="Full-text search",
+    description=(
+        "Ranked full-text search across contracts and tasks using PostgreSQL `tsvector` "
+        "with Portuguese language stemming and stop-word removal. "
+        "Pass `entity=contracts`, `entity=tasks`, or `entity=all` (default) to narrow scope. "
+        "`q` must be at least 2 characters. Results are sorted by relevance rank."
+    ),
+    responses={**AUTH_RESPONSES, **RESPONSES_422},
+)
 def full_text_search(
     q: str = Query(..., min_length=2, max_length=200, description="Search query"),
     entity: str = Query("all", description="Entity type: contracts, tasks, all"),

@@ -6,11 +6,61 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
+from app.openapi import OPENAPI_TAGS
 from app.routes.router import hackathon_router
 from app.utils.logging import CorrelationIdMiddleware, configure_logging
 
 # Initialize structured JSON logging at import time
 configure_logging(level="INFO")
+
+_APP_DESCRIPTION = """\
+## Real Estate OS — Enterprise Multi-Tenant SaaS
+
+AI-powered property management platform for Brazilian real estate, built on
+**Google ADK** (Agent Development Kit) with a FastAPI backend.
+
+### Key features
+
+* **Multi-agent orchestration** — CEO orchestrator delegates to specialised agents:
+  Billing, Payments, Communications, Maintenance, and Onboarding.
+* **Multi-tenant isolation** — every resource is scoped to an `organization_id`
+  extracted from the Bearer JWT.
+* **Full audit trail** — every automated action writes an immutable record to
+  `agent_tasks` with before/after state.
+* **Human escalation** — structured escalation when agent confidence is below threshold.
+* **Brazilian compliance** — CPF/CNPJ validation, CEP lookup, IGPM/IPCA adjustments,
+  Santander bank webhook parsing.
+
+### Authentication
+
+All protected routes require a `Bearer` token in the `Authorization` header:
+
+```
+Authorization: Bearer <jwt>
+```
+
+Demo routes under `/demo/*` are open (no token required) for hackathon testing.
+
+### Rate limits
+
+| Scope | Limit |
+|---|---|
+| Global (per IP) | 100 req / min |
+| `/auth/*` | 10 req / min |
+| `/agents/*` | 20 req / min |
+
+### Pagination
+
+List endpoints accept `limit` (default 50, max 200) and `offset` query parameters.
+Responses are plain arrays today — paginated envelopes coming in v2.
+
+### Error format
+
+```json
+{ "detail": "Human-readable message" }
+```
+Validation errors return a list of `{ "field": "...", "message": "..." }` objects.
+"""
 
 
 def _run_migrations() -> None:
@@ -59,7 +109,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    version="0.1.0",
+    version="1.0.0",
+    description=_APP_DESCRIPTION,
+    contact={
+        "name": "Real Estate OS Engineering",
+        "url": "https://github.com/realstateos/enterprise",
+        "email": "eng@realstateos.com.br",
+    },
+    license_info={
+        "name": "Proprietary",
+        "url": "https://realstateos.com.br/terms",
+    },
+    terms_of_service="https://realstateos.com.br/terms",
+    openapi_tags=OPENAPI_TAGS,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -85,6 +147,11 @@ app.include_router(hackathon_router)
 app.include_router(hackathon_router, prefix="/api")
 
 
-@app.get("/health", tags=["health"])
+@app.get(
+    "/health",
+    tags=["health"],
+    summary="Basic liveness check",
+    description="Backward-compatible liveness endpoint. Returns `{\"status\": \"ok\"}` when the process is up.",
+)
 def healthcheck() -> dict[str, str]:
     return {"status": "ok"}

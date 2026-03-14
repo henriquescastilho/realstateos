@@ -14,6 +14,21 @@ class ContractCreate(BaseModel):
     monthly_rent: Decimal
     due_day: int
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "property_id": "770e8400-e29b-41d4-a716-446655440002",
+                    "renter_id": "660e8400-e29b-41d4-a716-446655440001",
+                    "start_date": "2026-01-01",
+                    "end_date": "2027-12-31",
+                    "monthly_rent": "2500.00",
+                    "due_day": 10,
+                }
+            ]
+        }
+    }
+
     @field_validator("due_day")
     @classmethod
     def validate_due_day(cls, v: int) -> int:

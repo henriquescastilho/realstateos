@@ -13,6 +13,8 @@ import time
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
+from app.openapi import RESPONSES_503
+
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["health"])
 
@@ -86,21 +88,43 @@ def _build_readiness_response() -> tuple[dict, int]:
     }, http_code
 
 
-@router.get("/health/live")
+@router.get(
+    "/health/live",
+    summary="Liveness probe",
+    description=(
+        "Kubernetes liveness probe. Returns 200 as long as the Python process is running. "
+        "If this returns non-200, Kubernetes will restart the pod."
+    ),
+)
 def liveness() -> dict:
-    """Kubernetes liveness probe — always 200 if the process is running."""
     return {"status": "ok"}
 
 
-@router.get("/health/ready")
+@router.get(
+    "/health/ready",
+    summary="Readiness probe",
+    description=(
+        "Kubernetes readiness probe. Returns 200 only when the database is reachable. "
+        "Redis and MinIO degradation returns 200 (they are not blocking). "
+        "Returns 503 if the database is unavailable."
+    ),
+    responses={**RESPONSES_503},
+)
 def readiness():
-    """Kubernetes readiness probe — 200 only if critical dependencies are healthy."""
     body, code = _build_readiness_response()
     return JSONResponse(content=body, status_code=code)
 
 
-@router.get("/health/full")
+@router.get(
+    "/health/full",
+    summary="Full health report",
+    description=(
+        "Detailed health report with latency measurements for all components: "
+        "database, Redis, and MinIO object storage. "
+        "Use this for operations dashboards and alerting."
+    ),
+    responses={**RESPONSES_503},
+)
 def full_health():
-    """Full health report including all components and latencies."""
     body, code = _build_readiness_response()
     return JSONResponse(content=body, status_code=code)

@@ -20,6 +20,7 @@ from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_current_org
 from app.models.task import Task
+from app.openapi import AUTH_RESPONSES, RESPONSES_404, RESPONSES_409, RESPONSES_422
 from app.schemas.task import TaskRead
 from app.services.task_service import create_task_record
 
@@ -39,7 +40,17 @@ def _get_task_or_404(db: Session, task_id: str, tenant_id: str) -> Task:
     return task
 
 
-@router.get("", response_model=list[TaskRead])
+@router.get(
+    "",
+    response_model=list[TaskRead],
+    summary="List agent tasks",
+    description=(
+        "List agent tasks for the authenticated tenant, newest first. "
+        "Filter by `status` (PENDING, RUNNING, DONE, FAILED, ESCALATED) and/or `type` "
+        "to narrow results. Use `limit`/`offset` for pagination."
+    ),
+    responses={**AUTH_RESPONSES},
+)
 def list_agent_tasks(
     task_status: str | None = Query(None, alias="status", description="Filter by status (PENDING, RUNNING, DONE, FAILED, ESCALATED)"),
     task_type: str | None = Query(None, alias="type", description="Filter by task type"),
@@ -58,7 +69,17 @@ def list_agent_tasks(
     return list(db.scalars(q).all())
 
 
-@router.get("/{task_id}", response_model=TaskRead)
+@router.get(
+    "/{task_id}",
+    response_model=TaskRead,
+    summary="Get agent task detail",
+    description=(
+        "Retrieve a single agent task including its full `payload` (audit log). "
+        "The payload contains the agent's input, output, escalation reason (if any), "
+        "and any human resolution metadata."
+    ),
+    responses={**AUTH_RESPONSES, **RESPONSES_404},
+)
 def get_agent_task(
     task_id: str,
     org: OrgContext = Depends(get_current_org),
@@ -68,7 +89,18 @@ def get_agent_task(
     return _get_task_or_404(db, task_id, org.tenant_id)
 
 
-@router.post("/{task_id}/retry", response_model=TaskRead, status_code=status.HTTP_200_OK)
+@router.post(
+    "/{task_id}/retry",
+    response_model=TaskRead,
+    status_code=status.HTTP_200_OK,
+    summary="Retry failed agent task",
+    description=(
+        "Human-triggered retry — resets status to PENDING so the worker picks it up again. "
+        "Only `FAILED` or `ESCALATED` tasks can be retried. "
+        "The retry is logged in the task payload with the operator's user ID."
+    ),
+    responses={**AUTH_RESPONSES, **RESPONSES_404, **RESPONSES_409},
+)
 def retry_agent_task(
     task_id: str,
     org: OrgContext = Depends(get_current_org),
@@ -102,7 +134,19 @@ def retry_agent_task(
     return task
 
 
-@router.post("/{task_id}/resolve", response_model=TaskRead, status_code=status.HTTP_200_OK)
+@router.post(
+    "/{task_id}/resolve",
+    response_model=TaskRead,
+    status_code=status.HTTP_200_OK,
+    summary="Resolve escalated agent task",
+    description=(
+        "Human resolution of an escalated task. "
+        "Set `resolution` to `approved` (marks task DONE) or `rejected` (marks task FAILED). "
+        "Include optional `notes` for audit trail. "
+        "Only `ESCALATED` tasks can be resolved via this endpoint."
+    ),
+    responses={**AUTH_RESPONSES, **RESPONSES_404, **RESPONSES_409, **RESPONSES_422},
+)
 def resolve_agent_task(
     task_id: str,
     body: ResolveTaskRequest,

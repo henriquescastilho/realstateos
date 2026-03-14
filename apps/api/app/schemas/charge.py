@@ -10,6 +10,17 @@ class GenerateMonthlyChargeRequest(BaseModel):
     contract_id: str
     reference_month: date
 
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "contract_id": "880e8400-e29b-41d4-a716-446655440003",
+                    "reference_month": "2026-03-01",
+                }
+            ]
+        }
+    }
+
 
 class ChargeRead(ORMModel):
     id: str

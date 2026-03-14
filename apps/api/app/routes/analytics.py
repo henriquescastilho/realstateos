@@ -21,12 +21,22 @@ from app.middleware.tenant import OrgContext, get_current_org
 from app.models.charge import Charge
 from app.models.contract import Contract
 from app.models.task import Task
+from app.openapi import AUTH_RESPONSES
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
 
-@router.get("/portfolio")
+@router.get(
+    "/portfolio",
+    summary="Portfolio KPIs",
+    description=(
+        "Return portfolio-level KPIs for the authenticated tenant: "
+        "active contract count, total monthly revenue, default rate (3-month rolling), "
+        "and contracts expiring in the next 30 and 60 days."
+    ),
+    responses={**AUTH_RESPONSES},
+)
 def portfolio_kpis(
     org: OrgContext = Depends(get_current_org),
     db: Session = Depends(get_db),
@@ -48,7 +58,16 @@ def portfolio_kpis(
     }
 
 
-@router.get("/billing")
+@router.get(
+    "/billing",
+    summary="Billing analytics",
+    description=(
+        "Monthly billing totals and payment rate for the authenticated tenant. "
+        "Pass `month` as `YYYY-MM` to query a specific month (defaults to current month). "
+        "Returns charge counts by status, total billed amount, and collection rate."
+    ),
+    responses={**AUTH_RESPONSES},
+)
 def billing_analytics(
     month: str | None = Query(None, description="Month in YYYY-MM format, defaults to current month"),
     org: OrgContext = Depends(get_current_org),
@@ -124,7 +143,16 @@ def billing_analytics(
     }
 
 
-@router.get("/maintenance")
+@router.get(
+    "/maintenance",
+    summary="Maintenance analytics",
+    description=(
+        "Maintenance task metrics for the authenticated tenant: "
+        "total count, status breakdown, resolution rate, and escalation rate. "
+        "Maintenance tasks are `Task` records whose `type` contains `MAINTENANCE`."
+    ),
+    responses={**AUTH_RESPONSES},
+)
 def maintenance_analytics(
     org: OrgContext = Depends(get_current_org),
     db: Session = Depends(get_db),
@@ -151,7 +179,16 @@ def maintenance_analytics(
     }
 
 
-@router.get("/agents")
+@router.get(
+    "/agents",
+    summary="Agent automation analytics",
+    description=(
+        "Agent automation rate and escalation breakdown by task type. "
+        "Shows how often each agent type completes tasks autonomously vs. escalates to human review. "
+        "Use this to identify agents that need tuning or tasks requiring policy updates."
+    ),
+    responses={**AUTH_RESPONSES},
+)
 def agent_analytics(
     org: OrgContext = Depends(get_current_org),
     db: Session = Depends(get_db),
