@@ -9,6 +9,7 @@ from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.openapi import OPENAPI_TAGS
 from app.routes.router import hackathon_router
 from app.utils.logging import CorrelationIdMiddleware, configure_logging
+from app.versioning import VersionNegotiationMiddleware, include_versioned_routes
 
 # Initialize structured JSON logging at import time
 configure_logging(level="INFO")
@@ -48,6 +49,22 @@ Demo routes under `/demo/*` are open (no token required) for hackathon testing.
 | Global (per IP) | 100 req / min |
 | `/auth/*` | 10 req / min |
 | `/agents/*` | 20 req / min |
+
+### API Versioning
+
+All routes are available under three equivalent path hierarchies:
+
+| Path prefix | Status |
+|---|---|
+| `/v1/…` | **Canonical** — use this for all new integrations |
+| `/api/…` | Legacy shim (backwards compat, do not use in new code) |
+| `/…` | Root shim (hackathon compatibility) |
+
+Version negotiation via `Accept` header is also supported:
+
+```
+Accept: application/vnd.realstateos.v1+json
+```
 
 ### Pagination
 
@@ -142,9 +159,11 @@ app.add_middleware(
 app.add_middleware(RateLimitMiddleware, redis_url=settings.redis_url)
 app.add_middleware(SecurityHeadersMiddleware, debug=False)
 app.add_middleware(CorrelationIdMiddleware)
+# Version negotiation: Accept: application/vnd.realstateos.v1+json → /v1/…
+app.add_middleware(VersionNegotiationMiddleware, default_version="/v1")
 
-app.include_router(hackathon_router)
-app.include_router(hackathon_router, prefix="/api")
+# Mount all routes:  /v1/ (canonical)  /api/ (legacy)  / (root shim)
+include_versioned_routes(app, hackathon_router)
 
 
 @app.get(
