@@ -255,7 +255,7 @@
 
 - [x] 114. Contract property-based tests: add hypothesis tests for billing calculation — `@given(rent=st.decimals(), days=st.integers())` — verify: no negative charges, IGPM adjustment bounds, partial payment calculations are always consistent.
 
-- [ ] 115. Security penetration tests: create `tests/security/` — automated security tests using OWASP ZAP Python API. Test: SQL injection on all filter params, JWT algorithm confusion, tenant isolation (cross-org data access attempts), rate limit bypass.
+- [x] 115. Security penetration tests: create `tests/security/` — automated security tests using OWASP ZAP Python API. Test: SQL injection on all filter params, JWT algorithm confusion, tenant isolation (cross-org data access attempts), rate limit bypass.
 
 - [ ] 116. API documentation site: create `docs/api/` — mkdocs-material site with: getting started guide, authentication tutorial, webhook integration guide, ADK agent architecture diagram, all endpoint references with examples.
 
