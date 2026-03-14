@@ -35,17 +35,17 @@
 
 ## WAVE 3 — Observability & Reliability (loops 15-20)
 
-- [ ] 15. Structured logging: replace all print/basic logging in `apps/api/` with structlog JSON logging. Add correlation_id (UUID) to every request via middleware. Log: request start/end, agent tool calls, DB query counts, external API calls. Mask sensitive fields (CPF, amounts).
+- [x] 15. Structured logging: replace all print/basic logging in `apps/api/` with structlog JSON logging. Add correlation_id (UUID) to every request via middleware. Log: request start/end, agent tool calls, DB query counts, external API calls. Mask sensitive fields (CPF, amounts).
 
 - [ ] 16. Metrics endpoint: create `apps/api/app/routes/metrics.py` — Prometheus-compatible `/metrics` endpoint. Track: active_contracts_total, charges_generated_total, payments_reconciled_total, agent_tasks_by_status, agent_task_duration_seconds histogram, escalations_total.
 
-- [ ] 17. Health check enhancements: expand `GET /health` — check DB connection, Redis connection, MinIO connection, agent worker status. Return structured JSON with each component status. Add `/health/ready` (k8s readiness) and `/health/live` (liveness).
+- [x] 17. Health check enhancements: expand `GET /health` — check DB connection, Redis connection, MinIO connection, agent worker status. Return structured JSON with each component status. Add `/health/ready` (k8s readiness) and `/health/live` (liveness).
 
-- [ ] 18. Retry + circuit breaker: create `apps/api/app/utils/resilience.py` — `@retry_with_backoff(max_attempts=3, base_delay=1.0)` decorator for external API calls. `CircuitBreaker` class with open/half-open/closed states. Apply to: Santander bank calls, WhatsApp API, email sending, OCR calls.
+- [x] 18. Retry + circuit breaker: create `apps/api/app/utils/resilience.py` — `@retry_with_backoff(max_attempts=3, base_delay=1.0)` decorator for external API calls. `CircuitBreaker` class with open/half-open/closed states. Apply to: Santander bank calls, WhatsApp API, email sending, OCR calls.
 
 - [ ] 19. Dead letter queue: add `apps/api/app/workers/dlq_worker.py` — Redis-backed dead letter queue for failed agent tasks. On 3rd failure: move to DLQ, create human escalation task, send alert. Worker processes DLQ items with human review required flag.
 
-- [ ] 20. Agent task status API: create `apps/api/app/routes/agent_tasks.py` — `GET /agent-tasks` (list with filters), `GET /agent-tasks/{id}` (detail with full audit log), `POST /agent-tasks/{id}/retry` (human-triggered retry), `POST /agent-tasks/{id}/resolve` (human resolution). Essential for operations dashboard.
+- [x] 20. Agent task status API: create `apps/api/app/routes/agent_tasks.py` — `GET /agent-tasks` (list with filters), `GET /agent-tasks/{id}` (detail with full audit log), `POST /agent-tasks/{id}/retry` (human-triggered retry), `POST /agent-tasks/{id}/resolve` (human resolution). Essential for operations dashboard.
 
 ## WAVE 4 — Portfolio Intelligence & Analytics (loops 21-25)
 

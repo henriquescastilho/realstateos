@@ -5,6 +5,10 @@ from app.config import settings
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.routes.router import hackathon_router
+from app.utils.logging import CorrelationIdMiddleware, configure_logging
+
+# Initialize structured JSON logging at import time
+configure_logging(level="INFO")
 
 app = FastAPI(
     title=settings.app_name,
@@ -29,6 +33,7 @@ app.add_middleware(
 app.add_middleware(RateLimitMiddleware, redis_url=settings.redis_url)
 
 app.add_middleware(SecurityHeadersMiddleware, debug=False)
+app.add_middleware(CorrelationIdMiddleware)
 
 app.include_router(hackathon_router)
 app.include_router(hackathon_router, prefix="/api")
