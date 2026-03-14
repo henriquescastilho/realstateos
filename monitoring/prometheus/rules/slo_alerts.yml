@@ -1,0 +1,209 @@
+---
+# Real Estate OS — SLO Alerting Rules
+# Targets: p95 < 200ms, error rate < 1%, availability > 99.9%
+#
+# NOTE: HTTP latency histograms (http_request_duration_seconds_*) require
+#   prometheus-fastapi-instrumentator to be installed on the API.
+#   Until then, rules using those metrics will produce "no data" (safe).
+#   Application-level metrics (realestateos_*) work without it.
+
+groups:
+
+  # ── Availability ────────────────────────────────────────────────────────────
+  - name: availability
+    rules:
+
+      - alert: APIDown
+        expr: up{job="realstateos-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          slo:      availability
+        annotations:
+          summary:     "Real Estate OS API is down"
+          description: "The Python API (job={{ $labels.job }}) has been unreachable for > 1 minute."
+          runbook:     "https://github.com/your-org/realstateos/blob/main/docs/runbook/api-down.md"
+
+      - alert: WorkerDown
+        expr: up{job="realstateos-worker"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          slo:      availability
+        annotations:
+          summary:     "Real Estate OS background worker is down"
+          description: "The agent worker has been unreachable for > 2 minutes. Scheduled tasks will not run."
+
+  # ── HTTP Latency SLO (requires prometheus-fastapi-instrumentator) ───────────
+  - name: latency_slo
+    rules:
+
+      - alert: APIHighLatencyWarning
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="realstateos-api"}[5m])
+            )
+          ) > 0.200
+        for: 5m
+        labels:
+          severity: warning
+          slo:      latency
+        annotations:
+          summary:     "API p95 latency exceeds 200ms SLO"
+          description: "p95 latency is {{ $value | humanizeDuration }} (SLO: 200ms)"
+          action:      "Check DB slow query log, Redis connectivity, and active agent tasks."
+
+      - alert: APIHighLatencyCritical
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (
+              rate(http_request_duration_seconds_bucket{job="realstateos-api"}[5m])
+            )
+          ) > 0.500
+        for: 3m
+        labels:
+          severity: critical
+          slo:      latency
+        annotations:
+          summary:     "API p95 latency exceeds 500ms — SLO severely breached"
+          description: "p95 latency is {{ $value | humanizeDuration }}. Likely DB or dependency outage."
+
+  # ── HTTP Error Rate SLO (requires instrumentator) ───────────────────────────
+  - name: error_rate_slo
+    rules:
+
+      - alert: APIHighErrorRateWarning
+        expr: |
+          (
+            sum(rate(http_requests_total{job="realstateos-api", status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="realstateos-api"}[5m]))
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          slo:      error_rate
+        annotations:
+          summary:     "API error rate exceeds 1% SLO"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+          action:      "Check /health/ready, recent deployments, and Loki error logs."
+
+      - alert: APIHighErrorRateCritical
+        expr: |
+          (
+            sum(rate(http_requests_total{job="realstateos-api", status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="realstateos-api"}[5m]))
+          ) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          slo:      error_rate
+        annotations:
+          summary:     "API error rate exceeds 5% — critical SLO breach"
+          description: "Error rate {{ $value | humanizePercentage }}. Immediate investigation required."
+
+  # ── Application-level Alerts (always available) ─────────────────────────────
+  - name: application
+    rules:
+
+      - alert: HighEscalationRate
+        expr: |
+          increase(realestateos_escalations_total[15m]) > 5
+        for: 0m
+        labels:
+          severity: warning
+          slo:      automation
+        annotations:
+          summary:     "High number of agent task escalations"
+          description: "{{ $value }} agent tasks escalated to humans in the last 15 minutes."
+          action:      "Review /escalations inbox — agent confidence may have dropped."
+
+      - alert: AgentTasksStuck
+        expr: |
+          realestateos_agent_tasks_total{status="running"} > 20
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "Unusually high number of running agent tasks"
+          description: "{{ $value }} tasks in 'running' state for > 10 minutes. Possible deadlock or worker crash."
+
+      - alert: NoActiveContracts
+        expr: realestateos_active_contracts_total == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "No active contracts found"
+          description: "Possible DB query issue or data loss. Verify DB connectivity."
+
+  # ── Redis ───────────────────────────────────────────────────────────────────
+  - name: redis
+    rules:
+
+      - alert: RedisDown
+        expr: redis_up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary:     "Redis is down"
+          description: "Redis has been unavailable for > 1 minute. Rate limiting, caching, and BullMQ queues are affected."
+
+      - alert: RedisLowHitRate
+        expr: |
+          (
+            redis_keyspace_hits_total
+            /
+            (redis_keyspace_hits_total + redis_keyspace_misses_total + 1)
+          ) < 0.5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "Redis cache hit rate below 50%"
+          description: "Cache hit rate {{ $value | humanizePercentage }}. Consider increasing TTLs or reviewing cache key patterns."
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "Redis memory usage above 90%"
+          description: "{{ $value | humanizePercentage }} of max memory used. Risk of eviction."
+
+  # ── PostgreSQL ───────────────────────────────────────────────────────────────
+  - name: postgresql
+    rules:
+
+      - alert: PostgreSQLDown
+        expr: pg_up{job="postgresql"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary:     "PostgreSQL is down"
+          description: "Database has been unreachable for > 1 minute. ALL services are degraded."
+
+      - alert: PostgreSQLHighConnectionUsage
+        expr: |
+          sum(pg_stat_activity_count) / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "PostgreSQL connection pool > 80% used"
+          description: "{{ $value | humanizePercentage }} of max_connections in use. Risk of connection exhaustion."
+
+      - alert: PostgreSQLSlowQueries
+        expr: |
+          rate(pg_stat_activity_max_tx_duration{state="active"}[5m]) > 30
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary:     "Long-running PostgreSQL queries detected"
+          description: "Queries running for > 30 seconds. Check pg_stat_activity for blocking transactions."

@@ -1,0 +1,116 @@
+---
+# AlertManager Configuration — Real Estate OS
+#
+# Routing:
+#   critical → PagerDuty (stub) + Slack (stub)
+#   warning  → Slack (stub)
+#   all      → default receiver (log only)
+#
+# Replace <PLACEHOLDER> values with real credentials before production use.
+
+global:
+  resolve_timeout: 5m
+  # PagerDuty Events API v2
+  pagerduty_url: 'https://events.pagerduty.com/v2/enqueue'
+
+# ── Notification templates ───────────────────────────────────────────────────
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# ── Routing tree ─────────────────────────────────────────────────────────────
+route:
+  # Default: aggregate alerts over 30s, group by alertname + severity
+  group_by:       ['alertname', 'severity', 'slo']
+  group_wait:     30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: default-sink
+
+  routes:
+    # Critical alerts → PagerDuty immediately (no grouping delay)
+    - matchers:
+        - severity = "critical"
+      receiver: pagerduty-critical
+      group_wait:     0s
+      group_interval: 1m
+      repeat_interval: 30m
+      continue: true   # also send to default-sink for logging
+
+    # Warning alerts → Slack channel
+    - matchers:
+        - severity = "warning"
+      receiver: slack-warnings
+      group_wait: 60s
+      repeat_interval: 2h
+
+    # SLO latency/error_rate alerts → dedicated channel
+    - matchers:
+        - slo =~ "latency|error_rate"
+      receiver: slack-slo-breach
+      group_wait: 30s
+
+# ── Inhibition rules ─────────────────────────────────────────────────────────
+# When a critical alert fires, suppress related warning alerts
+inhibit_rules:
+  - source_matchers:
+      - severity = "critical"
+    target_matchers:
+      - severity = "warning"
+    equal: ['alertname']
+
+  # API down → suppress latency/error rate alerts (expected when down)
+  - source_matchers:
+      - alertname = "APIDown"
+    target_matchers:
+      - job = "realstateos-api"
+    equal: ['job']
+
+# ── Receivers ────────────────────────────────────────────────────────────────
+receivers:
+
+  # Default: no-op sink (alerts are logged by AlertManager itself)
+  - name: default-sink
+
+  # PagerDuty — critical production incidents
+  - name: pagerduty-critical
+    pagerduty_configs:
+      - routing_key: '<PAGERDUTY_INTEGRATION_KEY_REPLACE_ME>'
+        description: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+        severity: '{{ .GroupLabels.severity | default "critical" }}'
+        details:
+          environment:  '{{ .GroupLabels.environment }}'
+          project:      'realstateos'
+          alertname:    '{{ .GroupLabels.alertname }}'
+          description:  '{{ range .Alerts }}{{ .Annotations.description }}{{ " " }}{{ end }}'
+          runbook:      '{{ range .Alerts }}{{ .Annotations.runbook }}{{ " " }}{{ end }}'
+        # Sandbox mode: set send_resolved=true to auto-resolve in PagerDuty
+        send_resolved: true
+
+  # Slack — warning channel
+  - name: slack-warnings
+    slack_configs:
+      - api_url: '<SLACK_WEBHOOK_URL_REPLACE_ME>'
+        channel:  '#realstateos-alerts'
+        title:    '[WARNING] {{ .GroupLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *{{ .Annotations.summary }}*
+          {{ .Annotations.description }}
+          *Action:* {{ .Annotations.action | default "Investigate" }}
+          {{ end }}
+        send_resolved: true
+
+  # Slack — dedicated SLO breach channel
+  - name: slack-slo-breach
+    slack_configs:
+      - api_url: '<SLACK_WEBHOOK_URL_REPLACE_ME>'
+        channel:  '#realstateos-slo'
+        color:    '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+        title:    'SLO Breach: {{ .GroupLabels.alertname }}'
+        text: |
+          *SLO:* {{ .GroupLabels.slo }}
+          *Severity:* {{ .GroupLabels.severity }}
+          {{ range .Alerts }}
+          {{ .Annotations.description }}
+          {{ end }}
+        send_resolved: true

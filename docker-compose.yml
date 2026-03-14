@@ -167,6 +167,116 @@ services:
       retries: 3
     restart: unless-stopped
 
+  # ── Monitoring stack (Prometheus + Grafana + AlertManager) ───────────────────
+  # Opt-in: docker compose --profile monitoring up
+  # Access:
+  #   Prometheus   → http://localhost:9090
+  #   Grafana      → http://localhost:3001  (admin / admin)
+  #   AlertManager → http://localhost:9093
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    profiles:
+      - monitoring
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      - api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    profiles:
+      - monitoring
+    environment:
+      GF_SECURITY_ADMIN_USER:     ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP:     "false"
+      GF_PATHS_PROVISIONING:      /etc/grafana/provisioning
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/api-overview.json
+      GF_FEATURE_TOGGLES_ENABLE: publicDashboards
+      # Alerting contacts (set in env or .env file)
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    profiles:
+      - monitoring
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --web.external-url=http://localhost:9093
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Redis exporter — publishes Redis metrics to Prometheus
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.59.0
+    profiles:
+      - monitoring
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - "${REDIS_EXPORTER_PORT:-9121}:9121"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # PostgreSQL exporter — publishes PG metrics to Prometheus
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    profiles:
+      - monitoring
+    environment:
+      DATA_SOURCE_NAME: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/realestateos?sslmode=disable}
+    ports:
+      - "${PG_EXPORTER_PORT:-9187}:9187"
+    depends_on:
+      - db
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   nginx_logs:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:

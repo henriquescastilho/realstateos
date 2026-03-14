@@ -22,7 +22,7 @@
 - Wave 7 COMPLETE: OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), GraphQL layer (task 49), nginx API gateway (task 50)
 - Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60), settings UI (61), real-time notifications WebSocket (62), mobile-responsive layout with hamburger nav (63), onboarding wizard (64), Playwright E2E tests (65)
 - Wave 9 COMPLETE (74-80): analytics router, agent-tasks router, WebSocket notifications server, StorageService (MinIO S3 wrapper with fallback), BullMQ background workers (billing/reminders/DLQ/reports/embeddings), Vitest test suite (145 tests), Node.js Docker service + parity-check.sh script
-- Wave 10 (81-87 done): k8s/ manifests, helm/realstateos/ chart, GitHub Actions CI/CD, Docker optimization (uv + multi-stage + non-root), settings enhancement (env-specific defaults + Vault stub), migration safety checker + CI integration, Locust load test suite
+- Wave 10 (81-88 done): k8s/ manifests, helm/realstateos/ chart, GitHub Actions CI/CD, Docker optimization, settings enhancement, migration safety checker, Locust load test suite, monitoring stack (Prometheus/Grafana/AlertManager + redis/pg exporters, `monitoring` docker-compose profile)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -70,6 +70,7 @@ After completing each task:
 
 This creates a compounding knowledge loop — each iteration is smarter than the last.
 
+- Monitoring stack: `monitoring/` — opt-in via `docker compose --profile monitoring up`. Prometheus (v2.51, scrapes api:8000/metrics, worker:8081, api-node:8082, redis-exporter:9121, postgres-exporter:9187; 15d retention). Grafana (v10.4, port 3001, provisioned datasources Prometheus+Loki, 3 dashboards: api-overview/agent-throughput/infrastructure). AlertManager (v0.27, PagerDuty stub + Slack stubs; SLO alert rules: APIDown/APIHighLatency p95>200ms/APIHighErrorRate >1%/HighEscalationRate/RedisDown/PostgreSQLDown). Redis exporter + PG exporter sidecars.
 - Nginx API gateway: `nginx/api-gateway.conf` — rate limiting zones (per_token by Authorization header at 100r/m, per_ip_auth for /auth/ at 10r/m, per_token_agents for /agents+bulk at 20r/m). HTTP→HTTPS redirect. HTTPS with TLS 1.2/1.3, HSTS, X-Frame-Options DENY, X-Content-Type-Options. Structured JSON log_format. Gzip for JSON/JS/CSS/XLSX. Opt-in via `docker compose --profile gateway up`. Dev certs via `bash nginx/gen-dev-certs.sh`.
 
 - WebSocket notifications: `apps/web/src/lib/ws.ts` — module-level store, `startWs(token)`, `stopWs()`, `onNotification(handler)`. `NotificationBell` in header triggers toasts via `showToast()` (imperative export from `Toast.tsx`). `app-shell.tsx` renders bell in sticky header.

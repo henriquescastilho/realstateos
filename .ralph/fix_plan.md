@@ -195,7 +195,7 @@
 
 - [x] 87. Load testing: create `tests/load/` — Locust scenarios for: 100 concurrent users browsing, 50 concurrent billing generations, 200 req/s on payment webhook endpoint. SLO targets: <200ms p95, <1% error rate under load.
 
-- [ ] 88. Monitoring stack: add to docker-compose — Prometheus (scrapes /metrics), Grafana (dashboards: API latency, agent throughput, DB pool, Redis hit rate, error rate), AlertManager (PagerDuty webhook stub for SLO breaches).
+- [x] 88. Monitoring stack: add to docker-compose — Prometheus (scrapes /metrics), Grafana (dashboards: API latency, agent throughput, DB pool, Redis hit rate, error rate), AlertManager (PagerDuty webhook stub for SLO breaches).
 
 - [ ] 89. Log aggregation: add Loki to docker-compose. Configure structlog JSON output to stdout, Promtail to ship to Loki. Grafana dashboards for log exploration. Log retention: 30 days.
 
