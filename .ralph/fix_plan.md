@@ -209,7 +209,7 @@
 
 - [x] 93. WhatsApp Business API: implement `apps/api/app/integrations/whatsapp.py` — Meta WhatsApp Business API client. Template message sending, media messages, delivery receipts. Rate limiting (1000 msg/day on free tier). Sandbox mode for dev.
 
-- [ ] 94. Email provider: implement `apps/api/app/integrations/email.py` — SendGrid client wrapper. Transactional emails: charge notice, payment confirmation, owner statement, maintenance update. HTML templates with Jinja2. Bounce handling webhook.
+- [x] 94. Email provider: implement `apps/api/app/integrations/email.py` — SendGrid client wrapper. Transactional emails: charge notice, payment confirmation, owner statement, maintenance update. HTML templates with Jinja2. Bounce handling webhook.
 
 - [ ] 95. ViaCEP integration: implement `apps/api/app/integrations/viacep.py` — CEP lookup for address normalization. Cache results in Redis (TTL 24h). Fallback to manual entry on API failure. Validate state/city consistency.
 
