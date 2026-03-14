@@ -91,7 +91,7 @@
 
 - [x] 39. Soft delete pattern: add `deleted_at` column to contracts, properties, renters, owners tables. Update all repositories to filter `deleted_at IS NULL` by default. Add `DELETE /resource/{id}` that soft-deletes, `POST /resource/{id}/restore` to restore.
 
-- [ ] 40. Database backup strategy: create `apps/api/scripts/backup.py` — pg_dump to MinIO with timestamp. Retention: daily 7 days, weekly 4 weeks, monthly 12 months. Backup verification: restore to temp DB and run smoke test.
+- [x] 40. Database backup strategy: create `apps/api/scripts/backup.py` — pg_dump to MinIO with timestamp. Retention: daily 7 days, weekly 4 weeks, monthly 12 months. Backup verification: restore to temp DB and run smoke test.
 
 ## WAVE 7 — API Hardening & Documentation (loops 41-50)
 
