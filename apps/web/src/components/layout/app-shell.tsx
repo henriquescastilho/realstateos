@@ -12,6 +12,7 @@ const navigation = [
   { href: "/owners", label: "Proprietários" },
   { href: "/charges", label: "Cobranças" },
   { href: "/billing", label: "Faturas" },
+  { href: "/payments", label: "Pagamentos" },
   { href: "/documents", label: "Documentos" },
   { href: "/tasks", label: "Tarefas" },
   { href: "/agents", label: "Agentes" },

@@ -131,7 +131,7 @@
 
 - [x] 57. Billing management UI: create `apps/web/src/app/billing/` — charge list with status (pending/paid/overdue/partial), monthly calendar view, bulk charge generation trigger, charge detail with composition breakdown (rent + fees + adjustments).
 
-- [ ] 58. Payments UI: create `apps/web/src/app/payments/` — payment list with reconciliation status, manual reconciliation interface (match payment to charge), divergence review queue, bank statement import (CSV upload).
+- [x] 58. Payments UI: create `apps/web/src/app/payments/` — payment list with reconciliation status, manual reconciliation interface (match payment to charge), divergence review queue, bank statement import (CSV upload).
 
 - [ ] 59. Communications center: create `apps/web/src/app/communications/` — message history per renter/owner, compose interface (email/WhatsApp), template library, delivery status tracking, bulk send for payment reminders.
 
