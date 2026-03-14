@@ -95,7 +95,7 @@
 
 ## WAVE 7 — API Hardening & Documentation (loops 41-50)
 
-- [ ] 41. OpenAPI spec enhancement: update all route decorators with full `response_model`, `responses`, `tags`, `summary`, `description`. Add example request/response bodies. Ensure `/docs` is production-ready.
+- [x] 41. OpenAPI spec enhancement: update all route decorators with full `response_model`, `responses`, `tags`, `summary`, `description`. Add example request/response bodies. Ensure `/docs` is production-ready.
 
 - [ ] 42. API versioning: add `/v1/` prefix to all existing routes. Create `apps/api/app/versioning.py` — version negotiation via header `Accept: application/vnd.realstateos.v1+json`. Maintain backwards compat shim for unversioned routes.
 

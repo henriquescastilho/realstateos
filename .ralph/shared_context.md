@@ -19,6 +19,7 @@
 - Wave 4: Portfolio agent, analytics API, pgvector search, APScheduler, document intelligence
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
+- Wave 7 (partial): OpenAPI spec enhancement (task 41)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -26,6 +27,8 @@
 - Agent tools use try/except around google-adk imports for fallback
 - Pydantic schemas use `model_config = ConfigDict(from_attributes=True)`
 - Commits use conventional format: `feat(scope): description`
+- OpenAPI error responses: import from `app.openapi` — `AUTH_RESPONSES`, `CRUD_RESPONSES`, `RESPONSES_404`, etc.
+- OpenAPI examples: set via `model_config = {"json_schema_extra": {"examples": [...]}}` in Pydantic schemas
 
 ## BUGS — DO NOT REINTRODUCE (being fixed in fix/critical-bugs-wave6 branch)
 - **scheduler.py 74-88**: charge commit and audit commit are NOT atomic — wrap create_task_record in try/except
@@ -55,4 +58,4 @@ After completing each task:
 This creates a compounding knowledge loop — each iteration is smarter than the last.
 
 ## Last Updated
-Loop: 40 | Timestamp: 2026-03-14
+Loop: 41 | Timestamp: 2026-03-14
