@@ -251,7 +251,7 @@
 
 - [x] 112. Unit test suite — Node.js: achieve 80% coverage on `apps/api-node/src/services/` and `apps/api-node/src/repositories/`. Vitest + vi.mock. Test all Zod validation schemas.
 
-- [ ] 113. Integration tests — Python: create `apps/api/tests/integration/` — tests against real PostgreSQL + Redis (testcontainers). Test: full billing cycle, payment reconciliation, agent task lifecycle. No mocks for DB/cache.
+- [x] 113. Integration tests — Python: create `apps/api/tests/integration/` — tests against real PostgreSQL + Redis (testcontainers). Test: full billing cycle, payment reconciliation, agent task lifecycle. No mocks for DB/cache.
 
 - [ ] 114. Contract property-based tests: add hypothesis tests for billing calculation — `@given(rent=st.decimals(), days=st.integers())` — verify: no negative charges, IGPM adjustment bounds, partial payment calculations are always consistent.
 
