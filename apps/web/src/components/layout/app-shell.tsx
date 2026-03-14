@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { OrgSwitcher } from "./OrgSwitcher";
+import { NotificationBell } from "./NotificationBell";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard" },
@@ -56,7 +57,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <OrgSwitcher />
       </aside>
 
-      <main className="page-frame">{children}</main>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        <header
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            padding: "0.625rem 2.5rem",
+            borderBottom: "1px solid var(--line)",
+            background: "rgba(254, 250, 242, 0.72)",
+            backdropFilter: "blur(18px)",
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            gap: "0.75rem",
+          }}
+        >
+          <NotificationBell />
+        </header>
+        <main className="page-frame">{children}</main>
+      </div>
     </div>
   );
 }

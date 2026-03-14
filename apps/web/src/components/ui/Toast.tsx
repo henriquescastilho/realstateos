@@ -37,6 +37,23 @@ function subscribe(listener: Listener): () => void {
 }
 
 // ---------------------------------------------------------------------------
+// Imperative API — usable outside React components (e.g. from WS handlers)
+// ---------------------------------------------------------------------------
+
+export function showToast(
+  message: string,
+  variant: ToastVariant = "info",
+): void {
+  const id = crypto.randomUUID();
+  _toasts = [..._toasts, { id, message, variant }];
+  notifyListeners();
+  setTimeout(() => {
+    _toasts = _toasts.filter((t) => t.id !== id);
+    notifyListeners();
+  }, 4000);
+}
+
+// ---------------------------------------------------------------------------
 // useToast hook — returns { toasts, show, dismiss }
 // ---------------------------------------------------------------------------
 
