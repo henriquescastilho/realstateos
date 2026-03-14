@@ -121,7 +121,7 @@
 
 - [x] 52. Authentication flow (Next.js): create `apps/web/src/app/(auth)/login/page.tsx` and `register/page.tsx` — JWT-based login with refresh token rotation. Protected route middleware. Org switcher for multi-tenant. Remember me. Forgot password flow.
 
-- [ ] 53. Dashboard home: create `apps/web/src/app/dashboard/page.tsx` — KPI cards (active contracts, monthly revenue, default rate, open tickets), charts (billing trend 12mo, payment rate by month), recent activity feed, quick action buttons.
+- [x] 53. Dashboard home: create `apps/web/src/app/dashboard/page.tsx` — KPI cards (active contracts, monthly revenue, default rate, open tickets), charts (billing trend 12mo, payment rate by month), recent activity feed, quick action buttons.
 
 - [ ] 54. Contract management UI: create `apps/web/src/app/contracts/` — list with search/filter (status, owner, renter, property), detail view with full history timeline, create/edit form with PDF upload, status workflow buttons (activate/suspend/terminate).
 
