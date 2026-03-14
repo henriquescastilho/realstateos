@@ -263,7 +263,7 @@
 
 - [x] 118. Developer onboarding guide: create `docs/DEVELOPMENT.md` — complete setup from scratch: prerequisites, env vars, docker-compose up, seed data, first API call, running tests, common issues. Target: working in <15 minutes.
 
-- [ ] 119. Performance benchmarks: create `tests/benchmarks/` — measure and document: billing generation for 1000 contracts, payment reconciliation throughput, vector search latency, agent task end-to-end time. Set regression thresholds in CI.
+- [x] 119. Performance benchmarks: create `tests/benchmarks/` — measure and document: billing generation for 1000 contracts, payment reconciliation throughput, vector search latency, agent task end-to-end time. Set regression thresholds in CI.
 
 - [ ] 120. Production launch checklist: create `docs/LAUNCH_CHECKLIST.md` — pre-launch: security audit sign-off, load test results, backup verified, monitoring alerts configured, runbook reviewed. Go/no-go criteria. Post-launch: 24h monitoring plan, rollback procedure.
 
