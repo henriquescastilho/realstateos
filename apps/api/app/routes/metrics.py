@@ -60,8 +60,14 @@ def prometheus_metrics(db: Session = Depends(get_db)) -> str:
         # active_contracts_total
         # ----------------------------------------------------------------
         section("realestateos_active_contracts_total", "Number of active contracts")
+        from datetime import date  # noqa: PLC0415
+
+        today = date.today()
         active_contracts = db.scalar(
-            select(func.count()).select_from(Contract).where(Contract.status == "active")
+            select(func.count()).select_from(Contract).where(
+                Contract.start_date <= today,
+                Contract.end_date >= today,
+            )
         ) or 0
         lines.append(_prom_line("realestateos_active_contracts_total", None, active_contracts))
 

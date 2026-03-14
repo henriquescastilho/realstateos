@@ -49,13 +49,13 @@
 
 ## WAVE 4 — Portfolio Intelligence & Analytics (loops 21-25)
 
-- [ ] 21. Portfolio Intelligence Agent: create `apps/api/app/agents/portfolio_agent/` — LlmAgent with tools: `get_portfolio_summary(org_id)`, `calculate_default_rate(org_id, period)`, `get_expiring_contracts(days_ahead)`, `calculate_avg_resolution_time(org_id)`, `generate_portfolio_report(org_id, month)`. Uses pgvector for similarity search on historical data.
+- [x] 21. Portfolio Intelligence Agent: create `apps/api/app/agents/portfolio_agent/` — LlmAgent with tools: `get_portfolio_summary(org_id)`, `calculate_default_rate(org_id, period)`, `get_expiring_contracts(days_ahead)`, `calculate_avg_resolution_time(org_id)`, `generate_portfolio_report(org_id, month)`. Uses pgvector for similarity search on historical data.
 
-- [ ] 22. Analytics routes: create `apps/api/app/routes/analytics.py` — `GET /analytics/portfolio` (KPIs: default rate, avg billing cycle, escalation rate), `GET /analytics/billing` (monthly totals, payment rates), `GET /analytics/maintenance` (avg resolution time, category breakdown), `GET /analytics/agents` (automation rate, escalation rate by agent).
+- [x] 22. Analytics routes: create `apps/api/app/routes/analytics.py` — `GET /analytics/portfolio` (KPIs: default rate, avg billing cycle, escalation rate), `GET /analytics/billing` (monthly totals, payment rates), `GET /analytics/maintenance` (avg resolution time, category breakdown), `GET /analytics/agents` (automation rate, escalation rate by agent).
 
 - [ ] 23. pgvector semantic search: create `apps/api/app/services/vector_search.py` — use pgvector extension already in docker-compose. Embed contract text, maintenance descriptions, communications using Gemini embeddings. Enable: "find similar maintenance tickets", "search contracts by description", semantic duplicate detection.
 
-- [ ] 24. Scheduled tasks: create `apps/api/app/workers/scheduler.py` — APScheduler integration. Jobs: monthly billing generation (1st of month, 6am), payment reminder D-3 (charge due date - 3 days), overdue escalation (daily at 9am for charges past due > 5 days), portfolio report generation (monthly). All jobs create agent_tasks records.
+- [x] 24. Scheduled tasks: create `apps/api/app/workers/scheduler.py` — APScheduler integration. Jobs: monthly billing generation (1st of month, 6am), payment reminder D-3 (charge due date - 3 days), overdue escalation (daily at 9am for charges past due > 5 days), portfolio report generation (monthly). All jobs create agent_tasks records.
 
 - [ ] 25. Document intelligence: expand `apps/api/app/services/document_ingestion.py` — use Gemini multimodal to extract structured data from contract PDFs. Fields: parties (names, CPF, addresses), property description, rent amount, due day, duration, special clauses. Confidence score per field. Low confidence → escalation task.
 

@@ -15,14 +15,19 @@ configure_logging(level="INFO")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: initialize DLQ worker
+    # Startup
     from app.db import SessionLocal  # noqa: PLC0415
     from app.workers.dlq_worker import init_dlq_worker  # noqa: PLC0415
+    from app.workers.scheduler import start_scheduler  # noqa: PLC0415
 
     dlq = init_dlq_worker(redis_url=settings.redis_url, db_factory=SessionLocal)
+    start_scheduler()
     yield
-    # Shutdown: stop DLQ worker
+    # Shutdown
+    from app.workers.scheduler import stop_scheduler  # noqa: PLC0415
+
     dlq.stop()
+    stop_scheduler()
 
 
 app = FastAPI(
