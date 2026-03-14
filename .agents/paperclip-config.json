@@ -1,0 +1,104 @@
+{
+  "company": {
+    "id": "1c87debd-697c-4b11-b33d-9bbf9c7d22e7",
+    "name": "Real Estate OS",
+    "paperclipUrl": "http://localhost:3100"
+  },
+  "agents": {
+    "ceo": {
+      "id": "5c6119a7-6e96-420b-97fa-f8883f0d27eb",
+      "name": "CEO - Real Estate OS",
+      "role": "ceo",
+      "soul": ".agents/souls/CEO.md",
+      "heartbeatSec": 600
+    },
+    "cto": {
+      "id": "6b16f06e-f0e7-4fef-b85f-b9e5c64a1919",
+      "name": "CTO - Arquitetura e Engenharia",
+      "role": "cto",
+      "soul": ".agents/souls/CTO.md",
+      "heartbeatSec": 300
+    },
+    "cfo": {
+      "id": "fc0b8b86-7613-4834-b38b-9a432f4339c9",
+      "name": "CFO - Operacoes Financeiras",
+      "role": "cfo",
+      "soul": ".agents/souls/CFO.md",
+      "heartbeatSec": 600
+    },
+    "pm": {
+      "id": "e2318338-019e-448a-8405-858ecf9b1d0e",
+      "name": "PM - Produto e Backlog",
+      "role": "pm",
+      "soul": null,
+      "heartbeatSec": 600
+    },
+    "eng_onboarding": {
+      "id": "8bdb4bfa-4735-4471-a3c0-d098d8bb64f7",
+      "name": "Eng - Contract Onboarding",
+      "role": "engineer",
+      "soul": ".agents/souls/ENG_ONBOARDING.md",
+      "heartbeatSec": 300
+    },
+    "eng_billing": {
+      "id": "9e78810b-d000-444e-9d1c-27e16374775a",
+      "name": "Eng - Billing e Cobranca",
+      "role": "engineer",
+      "soul": ".agents/souls/ENG_BILLING.md",
+      "heartbeatSec": 300
+    },
+    "eng_payments": {
+      "id": "af79a196-6445-46b4-879d-ae63c0715540",
+      "name": "Eng - Pagamentos e Conciliacao",
+      "role": "engineer",
+      "soul": ".agents/souls/ENG_PAYMENTS.md",
+      "heartbeatSec": 300
+    },
+    "eng_comms": {
+      "id": "e2868126-455c-4de4-9bac-2d1c8ab8b54b",
+      "name": "Eng - Comunicacoes",
+      "role": "engineer",
+      "soul": ".agents/souls/ENG_COMMS.md",
+      "heartbeatSec": 300
+    },
+    "eng_maintenance": {
+      "id": "dc03491d-82df-4a44-bece-c8c4711ab881",
+      "name": "Eng - Manutencao e Suporte",
+      "role": "engineer",
+      "soul": ".agents/souls/ENG_MAINTENANCE.md",
+      "heartbeatSec": 300
+    },
+    "eng_integrations": {
+      "id": "72991371-ac8a-4cf3-b730-224312d66239",
+      "name": "Eng - Integracoes Externas",
+      "role": "engineer",
+      "soul": ".agents/souls/ENG_INTEGRATIONS.md",
+      "heartbeatSec": 300
+    },
+    "qa": {
+      "id": "d4f0d673-c94a-402b-88c2-62c4a00e1a87",
+      "name": "QA - Qualidade e Testes",
+      "role": "qa",
+      "soul": null,
+      "heartbeatSec": 600
+    },
+    "devops": {
+      "id": "aaaecbcf-8258-4dc2-92f4-14d38a6de023",
+      "name": "DevOps - Infra e Deploy",
+      "role": "devops",
+      "soul": null,
+      "heartbeatSec": 600
+    }
+  },
+  "projects": {
+    "contract_onboarding": "3598fb25-3525-461b-9d7f-fd504347fcf2",
+    "property_registry": "246ffbeb-5253-4a11-b0c2-9a25771614e9",
+    "billing_and_charges": "a719b677-5efc-488d-ac64-b156948cf803",
+    "payments_and_reconciliation": "81b22999-d3ec-4473-9e47-b16ac968fc62",
+    "communications": "ae446a8e-897f-4194-a4b2-4d68e31e26fe",
+    "maintenance_and_support": "e5cc0b8c-29d8-48b1-bf5a-68494d99bc25",
+    "external_integrations": "e69ecb67-6b10-4fe9-8548-6400c3a698d0",
+    "portfolio_intelligence": "669b6e44-c214-4a6f-afad-d39ab9c6c734",
+    "infrastructure": "60efea59-6065-435f-a3c5-7e546dcd9029"
+  }
+}

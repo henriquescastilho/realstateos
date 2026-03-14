@@ -7,6 +7,15 @@ import { Card } from "@/components/page-sections";
 import { apiGet } from "@/lib/api";
 import type { TaskRecord } from "@/lib/types";
 
+type StatusFilter = "ALL" | "DONE" | "ERROR" | "PENDING";
+
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "ALL", label: "Todos" },
+  { value: "DONE", label: "Done" },
+  { value: "PENDING", label: "Pending" },
+  { value: "ERROR", label: "Error" },
+];
+
 function taskMessage(task: TaskRecord) {
   const message = task.payload.message;
   return typeof message === "string" ? message : "Sem mensagem registrada.";
@@ -18,6 +27,7 @@ function taskResult(task: TaskRecord) {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
+  const [filter, setFilter] = useState<StatusFilter>("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +48,10 @@ export default function TasksPage() {
     void refresh();
   }, []);
 
+  const filtered = [...tasks]
+    .reverse()
+    .filter((task) => filter === "ALL" || task.status.toUpperCase() === filter);
+
   return (
     <ProtectedPage
       title="Tarefas"
@@ -47,18 +61,35 @@ export default function TasksPage() {
 
       <Card title="Log do agente" subtitle="Mensagens obrigatórias do fluxo aparecem com destaque.">
         <div className="section-actions">
+          <div className="filter-group">
+            {STATUS_FILTERS.map((item) => (
+              <button
+                key={item.value}
+                type="button"
+                className={filter === item.value ? "filter-button active" : "filter-button"}
+                onClick={() => setFilter(item.value)}
+              >
+                {item.label}
+                {item.value !== "ALL" && (
+                  <span className="filter-count">
+                    {tasks.filter((t) => t.status.toUpperCase() === item.value).length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
           <button className="ghost-button" type="button" onClick={() => void refresh()}>
-            Atualizar tarefas
+            Atualizar
           </button>
         </div>
 
         {loading ? (
           <p className="empty-state">Carregando tarefas...</p>
-        ) : tasks.length === 0 ? (
-          <p className="empty-state">Nenhuma tarefa registrada ainda.</p>
+        ) : filtered.length === 0 ? (
+          <p className="empty-state">Nenhuma tarefa encontrada para este filtro.</p>
         ) : (
           <div className="list">
-            {[...tasks].reverse().map((task) => (
+            {filtered.map((task) => (
               <article key={task.id} className="task-card">
                 <div className="task-header">
                   <div>
