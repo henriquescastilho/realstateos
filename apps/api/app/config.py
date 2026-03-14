@@ -1,4 +1,7 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_WEAK_SECRETS = {"change-me", "secret", "changeme", "password", "dev-secret"}
 
 
 class Settings(BaseSettings):
@@ -12,8 +15,17 @@ class Settings(BaseSettings):
     s3_bucket_name: str = "realestateos"
     cors_allowed_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
     worker_poll_interval_seconds: float = 2.0
-    jwt_secret: str = "change-me"
+    jwt_secret: str
     jwt_algorithm: str = "HS256"
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def jwt_secret_must_be_strong(cls, v: str) -> str:
+        if v.lower() in _WEAK_SECRETS or len(v) < 32:
+            raise ValueError(
+                "JWT_SECRET is too weak. Set a strong secret of at least 32 characters via the JWT_SECRET env var."
+            )
+        return v
     access_token_expire_minutes: int = 60
     google_adk_model: str = "gemini-2.0-flash"
     santander_sandbox_enabled: bool = True

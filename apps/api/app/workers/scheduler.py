@@ -74,18 +74,21 @@ def _run_monthly_billing() -> None:
         if processed > 0:
             db.commit()
 
-        create_task_record(
-            db=db,
-            tenant_id="SYSTEM",
-            task_type="SCHEDULED_MONTHLY_BILLING",
-            status_value="DONE" if errors == 0 else "PARTIAL",
-            message=f"Monthly billing: {processed} charges generated, {errors} errors",
-            payload={
-                "reference_month": reference_month.isoformat(),
-                "processed": processed,
-                "errors": errors,
-            },
-        )
+        try:
+            create_task_record(
+                db=db,
+                tenant_id="SYSTEM",
+                task_type="SCHEDULED_MONTHLY_BILLING",
+                status_value="DONE" if errors == 0 else "PARTIAL",
+                message=f"Monthly billing: {processed} charges generated, {errors} errors",
+                payload={
+                    "reference_month": reference_month.isoformat(),
+                    "processed": processed,
+                    "errors": errors,
+                },
+            )
+        except Exception as audit_exc:  # noqa: BLE001
+            logger.error("Audit record failed after billing commit (charges ARE saved): %s", audit_exc)
         logger.info("Monthly billing completed: %d processed, %d errors", processed, errors)
 
 

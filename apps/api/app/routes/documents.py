@@ -5,18 +5,20 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.document import Document
 from app.schemas.document import DocumentRead
-from app.services.demo_tenant import get_or_create_demo_tenant
 from app.services.document_ingestion import upload_monthly_bill
 
 router = APIRouter()
 
 
 @router.get("", response_model=list[DocumentRead])
-def list_documents(db: Session = Depends(get_db)):
-    demo_tenant = get_or_create_demo_tenant(db)
-    return list(db.scalars(select(Document).where(Document.tenant_id == demo_tenant.id)).all())
+def list_documents(
+    org: OrgContext = Depends(get_demo_or_authed_org),
+    db: Session = Depends(get_db),
+):
+    return list(db.scalars(select(Document).where(Document.tenant_id == org.tenant_id)).all())
 
 
 @router.post("/upload", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
@@ -26,13 +28,13 @@ def upload_document(
     extracted_amount: Annotated[str | None, Form()] = None,
     extracted_due_date: Annotated[str | None, Form()] = None,
     file: UploadFile = File(...),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
     content = file.file.read()
-    demo_tenant = get_or_create_demo_tenant(db)
     return upload_monthly_bill(
         db=db,
-        tenant_id=demo_tenant.id,
+        tenant_id=org.tenant_id,
         property_id=property_id,
         document_type=type,
         filename=file.filename,
