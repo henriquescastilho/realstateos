@@ -2,9 +2,7 @@ import { eq, and, count } from "drizzle-orm";
 import { db } from "../../db";
 import { messageRecords } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
-import { renderTemplate } from "./templates";
-import { sendEmail } from "./channels/email";
-import { sendWhatsApp } from "./channels/whatsapp";
+import { messagesQueue } from "../../lib/queue";
 
 export interface SendMessageInput {
   orgId: string;
@@ -17,12 +15,10 @@ export interface SendMessageInput {
 }
 
 /**
- * Send a message via the specified channel and record it.
+ * Queue a message for async delivery via BullMQ.
+ * No longer sends synchronously — the worker handles actual sending.
  */
 export async function sendMessage(input: SendMessageInput) {
-  // Render template
-  const rendered = renderTemplate(input.templateType, input.templateData);
-
   // Create message record as queued
   const [record] = await db
     .insert(messageRecords)
@@ -37,45 +33,17 @@ export async function sendMessage(input: SendMessageInput) {
     })
     .returning();
 
-  // Send via channel
-  let success = false;
-  let error: string | undefined;
+  // Enqueue for async processing
+  await messagesQueue().add("send", {
+    messageRecordId: record.id,
+    orgId: input.orgId,
+    channel: input.channel,
+    recipient: input.recipient,
+    templateType: input.templateType,
+    templateData: input.templateData,
+  });
 
-  try {
-    if (input.channel === "email") {
-      const result = await sendEmail({
-        to: input.recipient,
-        subject: rendered.subject,
-        body: rendered.body,
-      });
-      success = result.success;
-      error = result.error;
-    } else if (input.channel === "whatsapp") {
-      const result = await sendWhatsApp({
-        to: input.recipient,
-        body: `${rendered.subject}\n\n${rendered.body}`,
-      });
-      success = result.success;
-      error = result.error;
-    } else {
-      throw new ValidationError(`Unsupported channel: ${input.channel}`);
-    }
-  } catch (err) {
-    success = false;
-    error = err instanceof Error ? err.message : "Unknown send error";
-  }
-
-  // Update record status
-  const [updated] = await db
-    .update(messageRecords)
-    .set({
-      status: success ? "sent" : "failed",
-      sentAt: success ? new Date() : undefined,
-    })
-    .where(eq(messageRecords.id, record.id))
-    .returning();
-
-  return { record: updated, success, error };
+  return { record, queued: true };
 }
 
 /**

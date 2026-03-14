@@ -2,15 +2,15 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-COPY package.json package-lock.json* /app/
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY apps/web/package.json /app/package.json
+RUN npm install
 
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 COPY --from=deps /app/node_modules /app/node_modules
-COPY . /app
+COPY apps/web/ /app/
 
 RUN npm run build
 

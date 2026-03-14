@@ -20,3 +20,29 @@ export const listConnectorsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
+
+// ─── Bank (Santander) ───
+
+export const generateBoletoSchema = z.object({
+  amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "amount must be a decimal string e.g. '150.00'"),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "dueDate must be YYYY-MM-DD"),
+  payerName: z.string().min(1).max(200),
+  payerDocument: z.string().min(11).max(18),
+  description: z.string().max(200).default(""),
+});
+
+export const generatePixSchema = z.object({
+  amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "amount must be a decimal string e.g. '50.00'"),
+  description: z.string().max(200).default(""),
+  expiresInMinutes: z.number().int().min(1).max(1440).optional(),
+});
+
+export const registerBankCredentialsSchema = z.object({
+  clientId: z.string().min(1).max(255),
+  clientSecret: z.string().min(1).max(255),
+  workspaceId: z.string().max(255).optional(),
+  certPath: z.string().min(1).max(500),
+  keyPath: z.string().min(1).max(500),
+  environment: z.enum(["sandbox", "production"]).default("sandbox"),
+  baseUrl: z.string().url().optional(),
+});

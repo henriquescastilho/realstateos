@@ -14,6 +14,16 @@ import type {
   agentTasks,
   integrationConnectors,
   documents,
+  webhookSubscriptions,
+  eventLog,
+  channelConfigs,
+  inboundMessages,
+  inboxThreads,
+  inboxMessages,
+  documentEmbeddings,
+  chatConversations,
+  chatMessages,
+  agentConfigs,
 } from "../db/schema";
 
 // ─── Select types (read from DB) ───
@@ -31,6 +41,16 @@ export type MessageRecord = InferSelectModel<typeof messageRecords>;
 export type AgentTask = InferSelectModel<typeof agentTasks>;
 export type IntegrationConnector = InferSelectModel<typeof integrationConnectors>;
 export type Document = InferSelectModel<typeof documents>;
+export type WebhookSubscription = InferSelectModel<typeof webhookSubscriptions>;
+export type EventLogEntry = InferSelectModel<typeof eventLog>;
+export type ChannelConfig = InferSelectModel<typeof channelConfigs>;
+export type InboundMessage = InferSelectModel<typeof inboundMessages>;
+export type InboxThread = InferSelectModel<typeof inboxThreads>;
+export type InboxMessage = InferSelectModel<typeof inboxMessages>;
+export type DocumentEmbedding = InferSelectModel<typeof documentEmbeddings>;
+export type ChatConversation = InferSelectModel<typeof chatConversations>;
+export type ChatMessage = InferSelectModel<typeof chatMessages>;
+export type AgentConfig = InferSelectModel<typeof agentConfigs>;
 
 // ─── Insert types (write to DB) ───
 export type NewOrganization = InferInsertModel<typeof organizations>;
@@ -47,6 +67,16 @@ export type NewMessageRecord = InferInsertModel<typeof messageRecords>;
 export type NewAgentTask = InferInsertModel<typeof agentTasks>;
 export type NewIntegrationConnector = InferInsertModel<typeof integrationConnectors>;
 export type NewDocument = InferInsertModel<typeof documents>;
+export type NewWebhookSubscription = InferInsertModel<typeof webhookSubscriptions>;
+export type NewEventLogEntry = InferInsertModel<typeof eventLog>;
+export type NewChannelConfig = InferInsertModel<typeof channelConfigs>;
+export type NewInboundMessage = InferInsertModel<typeof inboundMessages>;
+export type NewInboxThread = InferInsertModel<typeof inboxThreads>;
+export type NewInboxMessage = InferInsertModel<typeof inboxMessages>;
+export type NewDocumentEmbedding = InferInsertModel<typeof documentEmbeddings>;
+export type NewChatConversation = InferInsertModel<typeof chatConversations>;
+export type NewChatMessage = InferInsertModel<typeof chatMessages>;
+export type NewAgentConfig = InferInsertModel<typeof agentConfigs>;
 
 // ─── Enums (canonical states) ───
 export const LeaseContractStatus = {
@@ -89,9 +119,34 @@ export const AgentTaskStatus = {
   CANCELLED: "cancelled",
 } as const;
 
+export const BoletoStatus = {
+  PENDING: "pending",
+  GENERATED: "generated",
+  FAILED: "failed",
+} as const;
+
 export const ReconciliationStatus = {
   UNMATCHED: "unmatched",
   MATCHED: "matched",
   PARTIAL: "partial",
   DIVERGENT: "divergent",
+} as const;
+
+export const InboxThreadStatus = {
+  OPEN: "open",
+  SNOOZED: "snoozed",
+  CLOSED: "closed",
+} as const;
+
+export const DomainEventTypes = {
+  CHARGE_CREATED: "charge.created",
+  CHARGE_ISSUED: "charge.issued",
+  CHARGE_OVERDUE: "charge.overdue",
+  PAYMENT_RECEIVED: "payment.received",
+  TICKET_OPENED: "ticket.opened",
+  TICKET_RESOLVED: "ticket.resolved",
+  STATEMENT_READY: "statement.ready",
+  MESSAGE_SENT: "message.sent",
+  MESSAGE_FAILED: "message.failed",
+  MESSAGE_INBOUND: "message.inbound",
 } as const;

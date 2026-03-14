@@ -1,4 +1,10 @@
 from collections.abc import Generator
+import os
+
+# Override DATABASE_URL before any app modules are imported so that the
+# SQLAlchemy engine is created with SQLite (in-memory) instead of PostgreSQL.
+# This must happen before `import app.models` triggers `app.db` loading.
+os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 
 import pytest
 from sqlalchemy import create_engine
@@ -9,7 +15,6 @@ import app.models  # noqa: F401
 from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.db import Base
-from app.main import app
 from app.models.tenant import Tenant
 from app.models.user import User
 
@@ -57,6 +62,8 @@ def test_current_user() -> CurrentUser:
 
 @pytest.fixture
 def client(db_session: Session, test_current_user: CurrentUser):
+    from app.main import app  # lazy import — requires email-validator
+
     def override_get_db():
         yield db_session
 
