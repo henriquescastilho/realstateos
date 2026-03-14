@@ -235,7 +235,7 @@
 
 - [x] 105. Maintenance cost estimator: create `apps/api/app/agents/maintenance_agent/cost_estimator.py` — LlmAgent that estimates repair cost from ticket description + historical similar tickets via pgvector. Returns range (min/expected/max) with confidence.
 
-- [ ] 106. Contract renewal recommender: create `apps/api/app/agents/portfolio_agent/renewal_recommender.py` — LlmAgent that analyzes expiring contracts and recommends: renew (good payer), renegotiate (late payer with reason), terminate (chronic default). Sends draft email to owner.
+- [x] 106. Contract renewal recommender: create `apps/api/app/agents/portfolio_agent/renewal_recommender.py` — LlmAgent that analyzes expiring contracts and recommends: renew (good payer), renegotiate (late payer with reason), terminate (chronic default). Sends draft email to owner.
 
 - [ ] 107. Natural language query API: create `apps/api/app/routes/nl_query.py` — `POST /query` accepts plain Portuguese question, converts to SQL via LlmAgent (text-to-SQL with schema context), executes read-only, returns structured results + explanation.
 
