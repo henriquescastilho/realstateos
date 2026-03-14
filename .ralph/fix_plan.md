@@ -83,7 +83,7 @@
 
 - [x] 35. Redis cache layer: create `apps/api/app/cache/redis_cache.py` — decorator `@cache(ttl=300, key_fn=...)` for expensive queries. Cache: portfolio KPIs (5min), contract lists (1min), analytics aggregates (10min). Invalidate on mutations.
 
-- [ ] 36. Query optimization — N+1 audit: scan all repositories for N+1 patterns. Add `selectinload`/`joinedload` for relationships. Add EXPLAIN ANALYZE comments on slow queries. Target: <50ms p95 for all list endpoints.
+- [x] 36. Query optimization — N+1 audit: scan all repositories for N+1 patterns. Add `selectinload`/`joinedload` for relationships. Add EXPLAIN ANALYZE comments on slow queries. Target: <50ms p95 for all list endpoints.
 
 - [ ] 37. Full-text search: add PostgreSQL `tsvector` columns to contracts, maintenance_tickets, communications tables. Create `GIN` indexes. Expose `GET /search?q=` endpoint that searches across all entities with ranking.
 
