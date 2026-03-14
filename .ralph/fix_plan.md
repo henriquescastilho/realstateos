@@ -229,7 +229,7 @@
 
 - [x] 102. Predictive default scoring: create `apps/api/app/ml/default_predictor.py` — feature engineering from payment history (days late, partial payment frequency, maintenance correlation). Train with scikit-learn LogisticRegression. Score per renter monthly. Store in DB.
 
-- [ ] 103. Anomaly detection for payments: create `apps/api/app/ml/anomaly_detector.py` — detect unusual payment patterns (sudden large payment, payment from new account, timing anomaly). Flag for human review. Use Isolation Forest on payment features.
+- [x] 103. Anomaly detection for payments: create `apps/api/app/ml/anomaly_detector.py` — detect unusual payment patterns (sudden large payment, payment from new account, timing anomaly). Flag for human review. Use Isolation Forest on payment features.
 
 - [ ] 104. Smart charge composition: enhance billing agent — LlmAgent analyzes contract terms + applicable indices + late fees + discounts to compute charge composition. Explains each line item in plain Portuguese for owner statement.
 
