@@ -265,7 +265,7 @@
 
 - [x] 119. Performance benchmarks: create `tests/benchmarks/` — measure and document: billing generation for 1000 contracts, payment reconciliation throughput, vector search latency, agent task end-to-end time. Set regression thresholds in CI.
 
-- [ ] 120. Production launch checklist: create `docs/LAUNCH_CHECKLIST.md` — pre-launch: security audit sign-off, load test results, backup verified, monitoring alerts configured, runbook reviewed. Go/no-go criteria. Post-launch: 24h monitoring plan, rollback procedure.
+- [x] 120. Production launch checklist: create `docs/LAUNCH_CHECKLIST.md` — pre-launch: security audit sign-off, load test results, backup verified, monitoring alerts configured, runbook reviewed. Go/no-go criteria. Post-launch: 24h monitoring plan, rollback procedure.
 
 ## Completed
 - [x] Project initialization
