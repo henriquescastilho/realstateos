@@ -1,0 +1,91 @@
+site_name: RealState OS API
+site_description: Production-grade multi-tenant real estate management API
+site_author: RealState OS Team
+site_url: https://docs.realstateos.io
+
+repo_name: realstateos-enterprise
+repo_url: https://github.com/realstateos/realstateos-enterprise
+
+theme:
+  name: material
+  language: en
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Authentication: authentication.md
+  - Endpoints:
+    - Overview: endpoints/index.md
+    - Contracts: endpoints/contracts.md
+    - Properties: endpoints/properties.md
+    - Owners & Renters: endpoints/owners-renters.md
+    - Billing & Charges: endpoints/billing.md
+    - Payments: endpoints/payments.md
+    - Maintenance Tickets: endpoints/maintenance.md
+    - Agent Tasks: endpoints/agent-tasks.md
+    - Webhooks: endpoints/webhooks.md
+    - Uploads & Exports: endpoints/uploads-exports.md
+    - Analytics & Search: endpoints/analytics-search.md
+  - Webhooks Guide: webhooks.md
+  - AI Agents: agents.md
+  - Changelog: changelog.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/realstateos/realstateos-enterprise
+  version:
+    provider: mike

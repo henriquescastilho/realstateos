@@ -257,7 +257,7 @@
 
 - [x] 115. Security penetration tests: create `tests/security/` — automated security tests using OWASP ZAP Python API. Test: SQL injection on all filter params, JWT algorithm confusion, tenant isolation (cross-org data access attempts), rate limit bypass.
 
-- [ ] 116. API documentation site: create `docs/api/` — mkdocs-material site with: getting started guide, authentication tutorial, webhook integration guide, ADK agent architecture diagram, all endpoint references with examples.
+- [x] 116. API documentation site: create `docs/api/` — mkdocs-material site with: getting started guide, authentication tutorial, webhook integration guide, ADK agent architecture diagram, all endpoint references with examples.
 
 - [ ] 117. Architecture decision records: create `docs/adr/` — ADR-001 (ADK over Langgraph), ADR-002 (FastAPI + Node.js dual backend), ADR-003 (pgvector for embeddings), ADR-004 (Redis for caching), ADR-005 (multi-tenant via org_id column).
 
