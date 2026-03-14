@@ -73,7 +73,7 @@
 
 ## WAVE 6 — Database & Persistence Layer (loops 31-40)
 
-- [ ] 31. Alembic migrations for all new tables: create migration files for agent_tasks, audit_log, dlq_items, vector_embeddings, scheduled_jobs tables. Ensure idempotent UP/DOWN migrations. Add migration runner to startup.
+- [x] 31. Alembic migrations for all new tables: create migration files for agent_tasks, audit_log, dlq_items, vector_embeddings, scheduled_jobs tables. Ensure idempotent UP/DOWN migrations. Add migration runner to startup.
 
 - [ ] 32. Repository pattern for agent_tasks: create `apps/api/app/repositories/agent_tasks.py` — full CRUD with filters (status, agent_type, org_id, date range), pagination, bulk status updates. Replace any raw SQL with SQLAlchemy ORM.
 
