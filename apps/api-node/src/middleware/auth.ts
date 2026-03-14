@@ -7,15 +7,15 @@ import { UnauthorizedError, ForbiddenError } from "../lib/errors";
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ALGORITHM = "HS256";
 
-if (!JWT_SECRET && process.env.NODE_ENV === "production") {
-  throw new Error("JWT_SECRET environment variable is required in production");
+if (!JWT_SECRET && process.env.NODE_ENV !== "test") {
+  throw new Error("JWT_SECRET environment variable is required");
 }
 
 // ─── Types ───
 
 export interface JWTPayload {
-  sub: string;        // user/service ID
-  org_id: string;     // organization ID (multi-tenant)
+  sub: string; // user/service ID
+  org_id: string; // organization ID (multi-tenant)
   email?: string;
   role?: string;
   iat?: number;
@@ -41,12 +41,16 @@ declare global {
  * In development (no JWT_SECRET set), allows unauthenticated access
  * with a synthetic user for testing convenience.
  */
-export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
-  // Dev mode bypass — only when JWT_SECRET is not configured
-  if (!JWT_SECRET) {
+export function requireAuth(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
+  // Test-only bypass — only allowed when NODE_ENV=test and JWT_SECRET is not configured
+  if (!JWT_SECRET && process.env.NODE_ENV === "test") {
     req.user = {
       sub: "dev-user",
-      org_id: req.headers["x-org-id"] as string || "dev-placeholder-org-id", // example fallback for dev mode
+      org_id: (req.headers["x-org-id"] as string) || "dev-placeholder-org-id", // example fallback for dev mode
       email: "dev@localhost",
       role: "admin",
     };
@@ -72,7 +76,9 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
     }) as JWTPayload;
 
     if (!decoded.sub || !decoded.org_id) {
-      throw new UnauthorizedError("Token missing required claims (sub, org_id)");
+      throw new UnauthorizedError(
+        "Token missing required claims (sub, org_id)",
+      );
     }
 
     req.user = decoded;
@@ -93,7 +99,11 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
  * Ensures the authenticated user's org_id matches the orgId in the request body or query.
  * Must be used AFTER requireAuth.
  */
-export function requireOrgMatch(req: Request, _res: Response, next: NextFunction): void {
+export function requireOrgMatch(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+): void {
   const user = req.user;
   if (!user) {
     throw new UnauthorizedError("Authentication required");
@@ -131,7 +141,10 @@ export function requireRole(...allowedRoles: string[]) {
 /**
  * Generate a JWT token (for /auth/token endpoint and testing).
  */
-export function generateToken(payload: Omit<JWTPayload, "iat" | "exp">, expiresInMinutes = 60): string {
+export function generateToken(
+  payload: Omit<JWTPayload, "iat" | "exp">,
+  expiresInMinutes = 60,
+): string {
   const secret = JWT_SECRET || "dev-secret";
   return jwt.sign(payload, secret, {
     algorithm: JWT_ALGORITHM,

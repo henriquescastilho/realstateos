@@ -87,8 +87,8 @@ def _run_monthly_billing() -> None:
                     "errors": errors,
                 },
             )
-        except Exception as exc:  # noqa: BLE001
-            logger.error("Audit record failed after billing commit: %s", exc)
+        except Exception as audit_exc:  # noqa: BLE001
+            logger.error("Audit record failed after billing commit (charges ARE saved): %s", audit_exc)
         logger.info("Monthly billing completed: %d processed, %d errors", processed, errors)
 
 

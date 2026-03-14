@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
+from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.document import Document
 from app.schemas.document import DocumentRead
 from app.services.document_ingestion import upload_monthly_bill
@@ -32,10 +33,10 @@ def _sanitize_filename(filename: str | None) -> str:
 
 @router.get("", response_model=list[DocumentRead])
 def list_documents(
-    current_user: CurrentUser = Depends(get_current_user),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
-    return list(db.scalars(select(Document).where(Document.tenant_id == current_user.tenant_id)).all())
+    return list(db.scalars(select(Document).where(Document.tenant_id == org.tenant_id)).all())
 
 
 @router.post("/upload", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
@@ -47,7 +48,7 @@ def upload_document(
     extracted_amount: Annotated[str | None, Form()] = None,
     extracted_due_date: Annotated[str | None, Form()] = None,
     file: UploadFile = File(...),
-    current_user: CurrentUser = Depends(get_current_user),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
     # Validate content type
@@ -93,7 +94,7 @@ def upload_document(
 
     return upload_monthly_bill(
         db=db,
-        tenant_id=current_user.tenant_id,
+        tenant_id=org.tenant_id,
         property_id=property_id,
         document_type=type,
         filename=safe_filename,

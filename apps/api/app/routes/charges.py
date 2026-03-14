@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
+from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.models.charge import Charge
 from app.schemas.charge import ChargeRead, ConsolidatedChargeRead, GenerateMonthlyChargeRequest
 from app.services.consolidation import consolidate_pending_charges
@@ -19,10 +20,10 @@ billing_limiter = Limiter(key_func=get_remote_address)
 
 @router.get("", response_model=list[ChargeRead])
 def list_charges(
-    current_user: CurrentUser = Depends(get_current_user),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
-    return list(db.scalars(select(Charge).where(Charge.tenant_id == current_user.tenant_id)).all())
+    return list(db.scalars(select(Charge).where(Charge.tenant_id == org.tenant_id)).all())
 
 
 @router.post("/generate-monthly", response_model=list[ChargeRead], status_code=status.HTTP_201_CREATED)
@@ -30,13 +31,13 @@ def list_charges(
 def generate_monthly_charge(
     request: Request,
     payload: GenerateMonthlyChargeRequest,
-    current_user: CurrentUser = Depends(get_current_user),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
-    charges = create_monthly_rent_charge(db, current_user.tenant_id, payload.contract_id, payload.reference_month)
+    charges = create_monthly_rent_charge(db, org.tenant_id, payload.contract_id, payload.reference_month)
     create_task_record(
         db,
-        tenant_id=current_user.tenant_id,
+        tenant_id=org.tenant_id,
         task_type="GENERATE_MONTHLY_CHARGE",
         status_value="DONE",
         message="Cobranca mensal gerada automaticamente",
@@ -50,13 +51,13 @@ def generate_monthly_charge(
 def consolidate_charge_month(
     request: Request,
     payload: GenerateMonthlyChargeRequest,
-    current_user: CurrentUser = Depends(get_current_user),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
-    charge = consolidate_pending_charges(db, current_user.tenant_id, payload.contract_id, payload.reference_month)
+    charge = consolidate_pending_charges(db, org.tenant_id, payload.contract_id, payload.reference_month)
     create_task_record(
         db,
-        tenant_id=current_user.tenant_id,
+        tenant_id=org.tenant_id,
         task_type="CONSOLIDATE_CHARGES",
         status_value="DONE",
         message="Consolidacao realizada",
@@ -70,13 +71,13 @@ def consolidate_charge_month(
 def generate_payment(
     request: Request,
     charge_id: str,
-    current_user: CurrentUser = Depends(get_current_user),
+    org: OrgContext = Depends(get_demo_or_authed_org),
     db: Session = Depends(get_db),
 ):
-    payment = generate_payment_payload(db, current_user.tenant_id, charge_id)
+    payment = generate_payment_payload(db, org.tenant_id, charge_id)
     create_task_record(
         db,
-        tenant_id=current_user.tenant_id,
+        tenant_id=org.tenant_id,
         task_type="GENERATE_PAYMENT",
         status_value="DONE",
         message="Boleto Santander emitido" if payment["provider"] == "santander" else "Pagamento mock gerado",

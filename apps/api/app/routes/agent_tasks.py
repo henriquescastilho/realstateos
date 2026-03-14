@@ -9,6 +9,7 @@ Endpoints:
 from __future__ import annotations
 
 import logging
+from typing import Literal
 
 from typing import Literal
 
@@ -120,11 +121,10 @@ def resolve_agent_task(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Cannot resolve task with status '{task.status}'. Only ESCALATED tasks can be resolved.",
         )
-    decision = body.resolution
-    task.status = "DONE" if decision == "approved" else "FAILED"
+    task.status = "DONE" if body.resolution == "approved" else "FAILED"
     task.payload = {
         **task.payload,
-        "human_resolution": decision,
+        "human_resolution": body.resolution,
         "resolved_by": org.user_id,
         "resolution_notes": body.notes,
     }
@@ -134,7 +134,7 @@ def resolve_agent_task(
     logger.info(
         "Task resolved by human: task_id=%s decision=%s tenant_id=%s user_id=%s",
         task_id,
-        decision,
+        body.resolution,
         org.tenant_id,
         org.user_id,
     )
