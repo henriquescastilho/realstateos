@@ -227,7 +227,7 @@
 
 - [x] 101. RAG for contract Q&A: create `apps/api/app/agents/contract_qa_agent/` — LlmAgent that answers natural language questions about a specific contract using RAG over pgvector embeddings. Tool: `search_contract_chunks(contract_id, query)`.
 
-- [ ] 102. Predictive default scoring: create `apps/api/app/ml/default_predictor.py` — feature engineering from payment history (days late, partial payment frequency, maintenance correlation). Train with scikit-learn LogisticRegression. Score per renter monthly. Store in DB.
+- [x] 102. Predictive default scoring: create `apps/api/app/ml/default_predictor.py` — feature engineering from payment history (days late, partial payment frequency, maintenance correlation). Train with scikit-learn LogisticRegression. Score per renter monthly. Store in DB.
 
 - [ ] 103. Anomaly detection for payments: create `apps/api/app/ml/anomaly_detector.py` — detect unusual payment patterns (sudden large payment, payment from new account, timing anomaly). Flag for human review. Use Isolation Forest on payment features.
 
