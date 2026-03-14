@@ -199,7 +199,7 @@
 
 - [x] 89. Log aggregation: add Loki to docker-compose. Configure structlog JSON output to stdout, Promtail to ship to Loki. Grafana dashboards for log exploration. Log retention: 30 days.
 
-- [ ] 90. Disaster recovery runbook: create `docs/runbook/` — DR procedures: DB restore from backup, Redis flush recovery, MinIO bucket restore, full cluster rebuild from IaC. RTO target: <4h, RPO target: <1h.
+- [x] 90. Disaster recovery runbook: create `docs/runbook/` — DR procedures: DB restore from backup, Redis flush recovery, MinIO bucket restore, full cluster rebuild from IaC. RTO target: <4h, RPO target: <1h.
 
 ## WAVE 11 — Integrations & External Services (loops 91-100)
 
