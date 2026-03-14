@@ -251,6 +251,27 @@ export const agentTasks = pgTable("agent_tasks", {
   index("agent_tasks_entity_idx").on(t.relatedEntityType, t.relatedEntityId),
 ]);
 
+// ─── Bank Credentials (per org — Santander mTLS) ───
+export const bankCredentials = pgTable("bank_credentials", {
+  id: id(),
+  orgId: orgId(),
+  provider: varchar("provider", { length: 50 }).default("santander").notNull(),
+  environment: varchar("environment", { length: 20 }).default("sandbox").notNull(), // sandbox | production
+  clientId: varchar("client_id", { length: 255 }).notNull(),
+  clientSecret: varchar("client_secret", { length: 255 }).notNull(),
+  workspaceId: varchar("workspace_id", { length: 255 }),
+  certPath: varchar("cert_path", { length: 500 }), // relative to certs/ root
+  keyPath: varchar("key_path", { length: 500 }),  // relative to certs/ root
+  baseUrl: varchar("base_url", { length: 500 }).default("https://trust-sandbox.api.santander.com.br").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  lastHealthCheck: timestamp("last_health_check", { withTimezone: true }),
+  lastHealthStatus: varchar("last_health_status", { length: 20 }), // healthy | degraded | down
+  ...timestamps(),
+}, (t) => [
+  uniqueIndex("bank_credentials_org_provider_idx").on(t.orgId, t.provider),
+  index("bank_credentials_org_id_idx").on(t.orgId),
+]);
+
 // ─── Integration Connectors ───
 export const integrationConnectors = pgTable("integration_connectors", {
   id: id(),
