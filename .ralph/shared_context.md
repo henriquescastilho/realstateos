@@ -33,6 +33,9 @@
 - Pagination: all GET list endpoints return `PaginatedResponse[T]` from `app.schemas.pagination`. Use `PaginationParams` dependency (`page` + `per_page`). Pattern: `base = select(Model).where(...)`, count subquery, `PaginatedResponse.build(items, total, params)`.
 - Error catalog: `app.errors` — typed `AppError` subclasses with `code`, `message`, `http_status`, `documentation_url`. Handler registered in `main.py` returns `{"error": {"code": ..., "message": ..., "documentation_url": ...}}`. Use typed errors instead of bare `HTTPException` for all domain errors.
 - Bulk operations: `app.routes.bulk` — all endpoints under `/bulk/`. Pattern: create parent Task (RUNNING), process items, update Task with results, return `BulkJobResponse`. Max 100 items. Returns `job_id` + `status` (DONE/PARTIAL/FAILED) + `processed`/`failed` counts + per-item `results`/`errors`.
+- File uploads: `app.routes.uploads` — POST /uploads (multipart/form-data). Max 50MB, allowed MIME: PDF/JPEG/PNG/WebP/HEIC. Key: `{tenant_id}/{folder}/{uuid}-{filename}`. Returns presigned URL (1h TTL). StorageService in `app.services.storage`.
+- Webhook delivery: `app.services.webhook_service.dispatch_webhook_event(db, tenant_id, event, data)` — finds matching active endpoints for tenant, signs body with HMAC-SHA256, delivers via urllib POST. Returns count of endpoints notified. Never raises.
+- Storage service: `app.services.storage.StorageService` — boto3 S3 wrapper for MinIO. Configured via settings.s3_*. Methods: upload, presigned_url, delete, copy. Falls back if boto3 missing.
 
 ## BUGS — DO NOT REINTRODUCE (being fixed in fix/critical-bugs-wave6 branch)
 - **scheduler.py 74-88**: charge commit and audit commit are NOT atomic — wrap create_task_record in try/except
