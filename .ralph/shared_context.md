@@ -22,6 +22,7 @@
 - Wave 7 COMPLETE: OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), GraphQL layer (task 49), nginx API gateway (task 50)
 - Wave 8 COMPLETE: Design system (51), auth flow (52), dashboard KPIs (53), contract UI (54), property registry (55), renter & owner management (56), billing calendar (57), payments reconciliation (58), communications center (59), reports & analytics SVG charts (60), settings UI (61), real-time notifications WebSocket (62), mobile-responsive layout with hamburger nav (63), onboarding wizard (64), Playwright E2E tests (65)
 - Wave 9 COMPLETE (74-80): analytics router, agent-tasks router, WebSocket notifications server, StorageService (MinIO S3 wrapper with fallback), BullMQ background workers (billing/reminders/DLQ/reports/embeddings), Vitest test suite (145 tests), Node.js Docker service + parity-check.sh script
+- Wave 10 (81-83 done): k8s/ manifests (18 files: namespace, configmap, secret, ingress+TLS, RBAC, PDB, Deployment/Service/HPA per service), helm/realstateos/ chart (23 files: values.yaml + dev/staging/prod overlays, bitnami deps, all service templates), GitHub Actions CI/CD (ci.yml matrix build, cd-staging.yml auto-deploy on main, cd-prod.yml manual+approval gate)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -83,5 +84,9 @@ This creates a compounding knowledge loop — each iteration is smarter than the
 - Node.js Docker: `api-node` service added to docker-compose.yml under `node` profile. Port 8082. Run with `docker compose --profile node up`.
 - Parity check: `scripts/parity-check.sh` — compares HTTP status codes and response keys between Python (8000) and Node (8082) APIs. Set `AUTH_TOKEN` for authenticated endpoint checks.
 
+- k8s manifests: `k8s/` — 18 files, kustomize base. Namespace `realstateos`. All containers: runAsNonRoot, readOnlyRootFilesystem, emptyDir /tmp. TopologySpreadConstraints for zone-aware spreading. PDB minAvailable:1. HPA autoscaling/v2 CPU 70% + memory 80%.
+- Helm chart: `helm/realstateos/` — `secrets.existingSecret` to point at pre-created k8s secret. `api.autoscaling.enabled: false` prevents Helm fighting HPA. `global.imageRegistry` overrides all image registries.
+- GitHub Actions: `ci.yml` has ci-gate summary job. `cd-staging.yml` runs migration pod before Helm upgrade, auto-rollbacks on failure. `cd-prod.yml` has approval gate environment `production-approval`, pre-deploys DB backup, smoke tests all 3 endpoints.
+
 ## Last Updated
-Loop: 66 | Timestamp: 2026-03-14
+Loop: 67 | Timestamp: 2026-03-14

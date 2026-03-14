@@ -1,0 +1,260 @@
+name: CD — Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (e.g. sha-abc1234). Leave empty to use staging-latest."
+        required: false
+        default: ""
+      skip_staging_check:
+        description: "Skip staging health check (emergency deploy only)"
+        type: boolean
+        default: false
+      confirm:
+        description: 'Type "deploy" to confirm production deployment'
+        required: true
+        default: ""
+
+env:
+  REGISTRY: gcr.io
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: realstateos-prod
+  GKE_ZONE: us-central1
+  HELM_RELEASE: realstateos
+  NAMESPACE: realstateos
+
+jobs:
+  # ─── Pre-flight checks ──────────────────────────────────────────────────────
+  preflight:
+    name: Pre-flight checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Verify confirmation input
+        run: |
+          if [[ "${{ github.event.inputs.confirm }}" != "deploy" ]]; then
+            echo "::error::Confirmation required. Type 'deploy' in the confirm field."
+            exit 1
+          fi
+          echo "Confirmation received ✓"
+
+      - uses: actions/checkout@v4
+
+      - name: Check staging is healthy (unless skipped)
+        if: github.event.inputs.skip_staging_check != 'true'
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            https://api.staging.realstateos.com/health 2>/dev/null || echo "000")
+          echo "Staging health: $STATUS"
+          if [[ "$STATUS" != "200" ]]; then
+            echo "::error::Staging is not healthy ($STATUS). Fix staging before deploying to prod."
+            exit 1
+          fi
+          echo "Staging health check passed ✓"
+        continue-on-error: false
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          TAG="${{ github.event.inputs.image_tag }}"
+          if [[ -z "$TAG" ]]; then
+            TAG="staging-latest"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Deploying image tag: $TAG"
+
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+
+  # ─── Approval gate ──────────────────────────────────────────────────────────
+  approval:
+    name: Production approval
+    runs-on: ubuntu-latest
+    needs: preflight
+    environment:
+      name: production-approval
+    # This job will pause and require manual approval from a reviewer
+    # Configure the 'production-approval' environment in GitHub Settings
+    # with required reviewers (e.g., tech lead, CTO)
+
+    steps:
+      - name: Approval granted
+        run: echo "Production deployment approved by ${{ github.actor }} ✓"
+
+  # ─── Run migrations ─────────────────────────────────────────────────────────
+  migrate:
+    name: Run database migrations (prod)
+    runs-on: ubuntu-latest
+    needs: [preflight, approval]
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      - name: Backup database before migration
+        run: |
+          kubectl run db-backup-${{ github.run_number }} \
+            --image=gcr.io/${{ env.PROJECT_ID }}/api:${{ needs.preflight.outputs.image_tag }} \
+            --restart=Never \
+            --namespace=${{ env.NAMESPACE }} \
+            --env="DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}" \
+            --env="S3_ENDPOINT_URL=${{ secrets.S3_ENDPOINT_URL }}" \
+            --env="S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}" \
+            --env="S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}" \
+            --command -- python scripts/backup.py --tag pre-deploy-${{ github.run_number }}
+          kubectl wait --for=condition=ready pod/db-backup-${{ github.run_number }} \
+            --timeout=300s --namespace=${{ env.NAMESPACE }} || true
+          kubectl logs db-backup-${{ github.run_number }} --namespace=${{ env.NAMESPACE }}
+          kubectl delete pod db-backup-${{ github.run_number }} --namespace=${{ env.NAMESPACE }}
+
+      - name: Run Alembic migrations
+        run: |
+          kubectl run migration-prod-${{ github.run_number }} \
+            --image=gcr.io/${{ env.PROJECT_ID }}/api:${{ needs.preflight.outputs.image_tag }} \
+            --restart=Never \
+            --namespace=${{ env.NAMESPACE }} \
+            --env="DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}" \
+            --command -- python -m alembic upgrade head
+          kubectl wait pod/migration-prod-${{ github.run_number }} \
+            --for=condition=ready --timeout=120s --namespace=${{ env.NAMESPACE }} || true
+          kubectl logs migration-prod-${{ github.run_number }} --namespace=${{ env.NAMESPACE }}
+          EXIT_CODE=$(kubectl get pod migration-prod-${{ github.run_number }} \
+            -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}' \
+            --namespace=${{ env.NAMESPACE }} 2>/dev/null || echo "1")
+          kubectl delete pod migration-prod-${{ github.run_number }} --namespace=${{ env.NAMESPACE }}
+          if [[ "$EXIT_CODE" != "0" ]]; then
+            echo "::error::Migration failed with exit code $EXIT_CODE"
+            exit 1
+          fi
+
+  # ─── Deploy via Helm ────────────────────────────────────────────────────────
+  deploy:
+    name: Helm deploy to production
+    runs-on: ubuntu-latest
+    needs: [preflight, approval, migrate]
+    environment:
+      name: production
+      url: https://app.realstateos.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY_PROD }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "3.14.0"
+
+      - name: Record deploy start time
+        id: timing
+        run: echo "start=$(date -u +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Helm upgrade (production)
+        run: |
+          helm upgrade --install ${{ env.HELM_RELEASE }} ./helm/realstateos/ \
+            --namespace ${{ env.NAMESPACE }} \
+            --create-namespace \
+            -f helm/realstateos/values.yaml \
+            -f helm/realstateos/values.prod.yaml \
+            --set global.imageRegistry=gcr.io/${{ env.PROJECT_ID }} \
+            --set api.image.tag=${{ needs.preflight.outputs.image_tag }} \
+            --set apiNode.image.tag=${{ needs.preflight.outputs.image_tag }} \
+            --set worker.image.tag=${{ needs.preflight.outputs.image_tag }} \
+            --set web.image.tag=${{ needs.preflight.outputs.image_tag }} \
+            --set secrets.existingSecret=realstateos-prod-secret \
+            --atomic \
+            --timeout 15m \
+            --wait \
+            --history-max 5
+
+      - name: Verify all rollouts
+        run: |
+          for deployment in api api-node web; do
+            kubectl rollout status deployment/realstateos-${deployment} \
+              --namespace ${{ env.NAMESPACE }} --timeout=5m
+          done
+
+      - name: Production smoke tests
+        run: |
+          sleep 20
+          # Check all endpoints
+          for endpoint in \
+            "https://api.realstateos.com/health" \
+            "https://api-node.realstateos.com/health" \
+            "https://app.realstateos.com"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$endpoint" 2>/dev/null || echo "000")
+            echo "$endpoint → $STATUS"
+            if [[ "$STATUS" != "200" ]]; then
+              echo "::error::Smoke test failed for $endpoint ($STATUS)"
+              exit 1
+            fi
+          done
+          echo "All production smoke tests passed ✓"
+
+      - name: Calculate deploy time
+        if: always()
+        run: |
+          END=$(date -u +%s)
+          DURATION=$(( END - ${{ steps.timing.outputs.start }} ))
+          echo "Deploy duration: ${DURATION}s"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "::notice title=Production Deploy Succeeded::Tag ${{ needs.preflight.outputs.image_tag }} is live on production"
+
+      - name: Auto-rollback on failure
+        if: failure()
+        run: |
+          echo "::error::Production deployment failed — initiating rollback"
+          helm rollback ${{ env.HELM_RELEASE }} --namespace ${{ env.NAMESPACE }}
+          echo "::warning::Rolled back to previous Helm release"
+
+  # ─── Post-deploy validation ─────────────────────────────────────────────────
+  post-deploy:
+    name: Post-deploy validation
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run parity check (Python vs Node APIs)
+        run: |
+          bash scripts/parity-check.sh \
+            https://api.realstateos.com/api/v1 \
+            https://api-node.realstateos.com/api/v1 \
+            || echo "Parity check warning (non-blocking in post-deploy)"
+        continue-on-error: true
+
+      - name: Tag release in git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          TAG="release-$(date -u +%Y%m%d-%H%M)-${{ needs.preflight.outputs.image_tag }}"
+          git tag "$TAG"
+          git push origin "$TAG"
+        continue-on-error: true

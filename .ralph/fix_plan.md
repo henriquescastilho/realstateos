@@ -181,11 +181,11 @@
 
 ## WAVE 10 — DevOps & Production Readiness (loops 81-90)
 
-- [ ] 81. Kubernetes manifests: create `k8s/` — Deployment, Service, HPA for api, api-node, worker, web. ConfigMap for env vars, Secret for credentials. Ingress with TLS. Namespace isolation per environment.
+- [x] 81. Kubernetes manifests: create `k8s/` — Deployment, Service, HPA for api, api-node, worker, web. ConfigMap for env vars, Secret for credentials. Ingress with TLS. Namespace isolation per environment.
 
-- [ ] 82. Helm chart: create `helm/realstateos/` — parameterized chart for all services. Values files for dev/staging/prod. Include PostgreSQL (bitnami), Redis (bitnami), MinIO charts as dependencies.
+- [x] 82. Helm chart: create `helm/realstateos/` — parameterized chart for all services. Values files for dev/staging/prod. Include PostgreSQL (bitnami), Redis (bitnami), MinIO charts as dependencies.
 
-- [ ] 83. GitHub Actions CI/CD: create `.github/workflows/` — ci.yml (lint + test + build on PR), cd-staging.yml (deploy to staging on main merge), cd-prod.yml (manual trigger, with approval gate). Matrix build for Python + Node.js.
+- [x] 83. GitHub Actions CI/CD: create `.github/workflows/` — ci.yml (lint + test + build on PR), cd-staging.yml (deploy to staging on main merge), cd-prod.yml (manual trigger, with approval gate). Matrix build for Python + Node.js.
 
 - [ ] 84. Docker image optimization: multi-stage Dockerfiles for all services. Python: use uv for deps, non-root user, security scanning with trivy. Node.js: pnpm, standalone output, distroless base. Target: <200MB images.
 
