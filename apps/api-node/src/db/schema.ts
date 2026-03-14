@@ -151,6 +151,12 @@ export const charges = pgTable("charges", {
   secondCopyCount: integer("second_copy_count").default(0).notNull(),
   dueDate: date("due_date").notNull(),
   issuedAt: timestamp("issued_at", { withTimezone: true }),
+  // ─── Boleto fields (populated on issue) ───
+  boletoId: varchar("boleto_id", { length: 100 }),
+  barcode: varchar("barcode", { length: 60 }),
+  digitableLine: varchar("digitavel_line", { length: 60 }),
+  boletoStatus: varchar("boleto_status", { length: 20 }).default("pending"), // pending | generated | failed
+  boletoError: text("boleto_error"),
   ...timestamps(),
 }, (t) => [
   index("charges_org_id_idx").on(t.orgId),

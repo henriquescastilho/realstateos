@@ -3,11 +3,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY apps/api-node/package.json apps/api-node/package-lock.json ./
 RUN npm install --no-audit --no-fund
 
-COPY tsconfig.json ./
-COPY src/ ./src/
+COPY apps/api-node/tsconfig.json ./
+COPY apps/api-node/src/ ./src/
 
 RUN npm run build
 
@@ -20,12 +20,12 @@ WORKDIR /app
 RUN addgroup -g 1001 appgroup && \
     adduser -u 1001 -G appgroup -D appuser
 
-COPY package.json package-lock.json ./
+COPY apps/api-node/package.json apps/api-node/package-lock.json ./
 RUN npm install --omit=dev --no-audit --no-fund && \
     npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
-COPY drizzle/ ./drizzle/
+COPY apps/api-node/drizzle/ ./drizzle/
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

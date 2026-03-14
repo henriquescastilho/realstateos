@@ -89,6 +89,12 @@ export const AgentTaskStatus = {
   CANCELLED: "cancelled",
 } as const;
 
+export const BoletoStatus = {
+  PENDING: "pending",
+  GENERATED: "generated",
+  FAILED: "failed",
+} as const;
+
 export const ReconciliationStatus = {
   UNMATCHED: "unmatched",
   MATCHED: "matched",

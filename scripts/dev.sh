@@ -43,18 +43,29 @@ stop_all() {
   exit 0
 }
 
+# ─── Database URL ───
+# Docker Compose PostgreSQL uses default local-dev credentials
+export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/realestateos}" # placeholder
+
 # ─── Infra only ───
 start_infra() {
   log "Subindo infra (PostgreSQL + Redis + MinIO)..."
   cd "$ROOT_DIR"
   docker compose up -d
   log "Aguardando PostgreSQL..."
-  sleep 3
+
+  # Wait for PostgreSQL to be ready
+  for i in {1..15}; do
+    if docker compose exec -T db pg_isready -U postgres > /dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
 
   # Run migrations
   log "Rodando migrations..."
   cd "$API_DIR"
-  npx drizzle-kit migrate 2>&1 | tail -1
+  DATABASE_URL="$DATABASE_URL" npx drizzle-kit push --force 2>&1 | tail -3
   log "Infra pronta."
 }
 
@@ -62,8 +73,7 @@ start_infra() {
 run_seed() {
   log "Populando banco de teste (L Castilho Imoveis)..."
   cd "$API_DIR"
-  export DATABASE_URL="postgresql://henriquecastilho@localhost:5432/realestateos"
-  npx tsx src/db/seed-test-data.ts --reset
+  DATABASE_URL="$DATABASE_URL" npx tsx src/db/seed-test-data.ts --reset
   log "Seed concluido."
 }
 
@@ -122,7 +132,7 @@ case "${1:-all}" in
     # Start API Node (background)
     log "Iniciando API Node (porta 3001)..."
     cd "$API_DIR"
-    npx ts-node src/index.ts > "$LOG_DIR/api-node.log" 2>&1 &
+    DATABASE_URL="$DATABASE_URL" PORT=3001 NODE_ENV=development npx ts-node src/index.ts > "$LOG_DIR/api-node.log" 2>&1 &
     API_PID=$!
 
     # Wait for API to be ready

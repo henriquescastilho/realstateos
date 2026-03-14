@@ -10,6 +10,7 @@ node_modules/
 # Build output
 dist/
 build/
+.next/
 
 # Drizzle (meta snapshots are auto-generated, only track SQL migrations)
 **/drizzle/meta/
