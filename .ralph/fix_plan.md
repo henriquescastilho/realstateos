@@ -89,7 +89,7 @@
 
 - [x] 38. Database seeder: create `apps/api/scripts/seed.py` — generates realistic Brazilian real estate data: 5 orgs, 50 properties, 200 contracts, 2 years of billing history, payments, maintenance tickets. Used for demo and load testing.
 
-- [ ] 39. Soft delete pattern: add `deleted_at` column to contracts, properties, renters, owners tables. Update all repositories to filter `deleted_at IS NULL` by default. Add `DELETE /resource/{id}` that soft-deletes, `POST /resource/{id}/restore` to restore.
+- [x] 39. Soft delete pattern: add `deleted_at` column to contracts, properties, renters, owners tables. Update all repositories to filter `deleted_at IS NULL` by default. Add `DELETE /resource/{id}` that soft-deletes, `POST /resource/{id}/restore` to restore.
 
 - [ ] 40. Database backup strategy: create `apps/api/scripts/backup.py` — pg_dump to MinIO with timestamp. Retention: daily 7 days, weekly 4 weeks, monthly 12 months. Backup verification: restore to temp DB and run smoke test.
 

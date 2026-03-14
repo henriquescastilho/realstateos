@@ -30,7 +30,7 @@ def list_contracts_for_tenant(
             -- which is always better than N individual queries.
     """
     today = date.today()
-    q = select(Contract).where(Contract.tenant_id == tenant_id)
+    q = select(Contract).where(Contract.tenant_id == tenant_id, Contract.deleted_at.is_(None))
     if active_only:
         q = q.where(Contract.start_date <= today, Contract.end_date >= today)
     if with_charges:
@@ -47,7 +47,11 @@ def get_contract(
     with_charges: bool = False,
 ) -> Contract | None:
     """Fetch a single contract scoped to tenant."""
-    q = select(Contract).where(Contract.id == contract_id, Contract.tenant_id == tenant_id)
+    q = select(Contract).where(
+        Contract.id == contract_id,
+        Contract.tenant_id == tenant_id,
+        Contract.deleted_at.is_(None),
+    )
     if with_charges:
         q = q.options(selectinload(Contract.charges))
     return db.scalar(q)
@@ -72,6 +76,7 @@ def list_expiring_contracts(
         db.scalars(
             select(Contract).where(
                 Contract.tenant_id == tenant_id,
+                Contract.deleted_at.is_(None),
                 Contract.end_date >= today,
                 Contract.end_date <= cutoff,
             ).order_by(Contract.end_date.asc())
