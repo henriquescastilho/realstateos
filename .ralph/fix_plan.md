@@ -205,7 +205,7 @@
 
 - [x] 91. Santander bank integration: implement `apps/api/app/integrations/santander.py` — real webhook parser for Santander payment notifications. Map to internal payment schema. HMAC validation. Replay protection via idempotency keys.
 
-- [ ] 92. Itaú bank integration: implement `apps/api/app/integrations/itau.py` — Itaú Open Finance webhook parser. OAuth2 token management. Account statement polling as fallback. Circuit breaker + retry.
+- [x] 92. Itaú bank integration: implement `apps/api/app/integrations/itau.py` — Itaú Open Finance webhook parser. OAuth2 token management. Account statement polling as fallback. Circuit breaker + retry.
 
 - [ ] 93. WhatsApp Business API: implement `apps/api/app/integrations/whatsapp.py` — Meta WhatsApp Business API client. Template message sending, media messages, delivery receipts. Rate limiting (1000 msg/day on free tier). Sandbox mode for dev.
 
