@@ -217,7 +217,7 @@
 
 - [x] 97. Google Calendar integration: implement `apps/api/app/integrations/google_calendar.py` — create calendar events for: contract renewals (60 days prior), inspection dates, maintenance appointments. OAuth2 per org. Sync bidirectionally.
 
-- [ ] 98. DocuSign / Clicksign stub: create `apps/api/app/integrations/esign.py` — interface for digital contract signing. Clicksign implementation (BR market). Create envelope, send to signers, webhook on completion, download signed PDF to MinIO.
+- [x] 98. DocuSign / Clicksign stub: create `apps/api/app/integrations/esign.py` — interface for digital contract signing. Clicksign implementation (BR market). Create envelope, send to signers, webhook on completion, download signed PDF to MinIO.
 
 - [ ] 99. IGPM/IPCA index integration: implement `apps/api/app/integrations/indices.py` — fetch monthly IGPM/IPCA from FGV/IBGE public APIs. Cache in DB table. Used by billing engine for annual rent adjustments. Alert when index unavailable.
 
