@@ -85,7 +85,7 @@
 
 - [x] 36. Query optimization — N+1 audit: scan all repositories for N+1 patterns. Add `selectinload`/`joinedload` for relationships. Add EXPLAIN ANALYZE comments on slow queries. Target: <50ms p95 for all list endpoints.
 
-- [ ] 37. Full-text search: add PostgreSQL `tsvector` columns to contracts, maintenance_tickets, communications tables. Create `GIN` indexes. Expose `GET /search?q=` endpoint that searches across all entities with ranking.
+- [x] 37. Full-text search: add PostgreSQL `tsvector` columns to contracts, maintenance_tickets, communications tables. Create `GIN` indexes. Expose `GET /search?q=` endpoint that searches across all entities with ranking.
 
 - [ ] 38. Database seeder: create `apps/api/scripts/seed.py` — generates realistic Brazilian real estate data: 5 orgs, 50 properties, 200 contracts, 2 years of billing history, payments, maintenance tickets. Used for demo and load testing.
 
