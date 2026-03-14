@@ -113,7 +113,7 @@
 
 - [ ] 49. GraphQL layer: add `strawberry-graphql` alongside REST. Schema covers: contracts, charges, payments, maintenance_tickets, agent_tasks. Supports N+1-safe dataloaders. Subscription for real-time agent task updates via WebSocket.
 
-- [ ] 50. API gateway config: create `nginx/api-gateway.conf` — rate limiting by org_id (not just IP), request/response logging, SSL termination, upstream health checks, gzip compression. Docker Compose update to include nginx service.
+- [x] 50. API gateway config: create `nginx/api-gateway.conf` — rate limiting by org_id (not just IP), request/response logging, SSL termination, upstream health checks, gzip compression. Docker Compose update to include nginx service.
 
 ## WAVE 8 — Frontend Complete (loops 51-65)
 

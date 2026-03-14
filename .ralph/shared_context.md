@@ -19,7 +19,7 @@
 - Wave 4: Portfolio agent, analytics API, pgvector search, APScheduler, document intelligence
 - Wave 5: Agent dashboard (Next.js), escalation inbox, maintenance UI, Node.js parity, e2e tests
 - Wave 6 (partial): Alembic migrations, repository pattern, connection pool tuning, Redis cache, N+1 audit, full-text search, DB seeder, soft delete, database backup strategy
-- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48)
+- Wave 7 (partial): OpenAPI spec enhancement (task 41), API versioning (task 42), pagination standardization (task 43), error catalog (task 44), webhook system (task 45), bulk operations API (task 46), file upload API (task 47), export API (task 48), nginx API gateway (task 50)
 
 ## Known Patterns (use these, don't reinvent)
 - All FastAPI routes use: `Depends(get_current_user)` + `Depends(get_current_org)`
@@ -64,5 +64,7 @@ After completing each task:
 
 This creates a compounding knowledge loop — each iteration is smarter than the last.
 
+- Nginx API gateway: `nginx/api-gateway.conf` — rate limiting zones (per_token by Authorization header at 100r/m, per_ip_auth for /auth/ at 10r/m, per_token_agents for /agents+bulk at 20r/m). HTTP→HTTPS redirect. HTTPS with TLS 1.2/1.3, HSTS, X-Frame-Options DENY, X-Content-Type-Options. Structured JSON log_format. Gzip for JSON/JS/CSS/XLSX. Opt-in via `docker compose --profile gateway up`. Dev certs via `bash nginx/gen-dev-certs.sh`.
+
 ## Last Updated
-Loop: 48 | Timestamp: 2026-03-14
+Loop: 50 | Timestamp: 2026-03-14
