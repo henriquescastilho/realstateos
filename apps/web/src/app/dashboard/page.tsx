@@ -159,6 +159,14 @@ function KpiCard({
   );
 }
 
+/** Compact currency format for axis labels: R$ 105k, R$ 1.2M */
+function fmtCompact(n: number) {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(1).replace(".", ",")}M`;
+  if (abs >= 1_000) return `R$ ${(n / 1_000).toFixed(0)}k`;
+  return `R$ ${n.toFixed(0)}`;
+}
+
 /** Minimal SVG line chart for billing trend with saldo */
 function BillingChart({ months }: { months: BillingMonth[] }) {
   if (!months.length)
@@ -174,63 +182,67 @@ function BillingChart({ months }: { months: BillingMonth[] }) {
   const saldoData: number[] = [];
   let runningBalance = santanderBalance;
   for (let i = recent.length - 1; i >= 0; i--) {
-    // Reconstruct backwards: subtract the monthly delta to get previous balance
     saldoData[i] = runningBalance;
-    const delta = recent[i].total_paid - recent[i].total_charged;
+    const delta = (recent[i].total_paid || 0) - (recent[i].total_charged || 0);
     runningBalance -= delta;
   }
 
-  const allValues = [
-    ...recent.map((m) => m.total_charged || 0),
-    ...recent.map((m) => m.total_net || 0),
-    ...saldoData.map((v) => v || 0),
-  ];
+  const grossData = recent.map((m) => m.total_charged || 0);
+  const netData = recent.map((m) => m.total_net || 0);
+  const saldoSafe = saldoData.map((v) => v || 0);
+
+  const allValues = [...grossData, ...netData, ...saldoSafe];
   const maxVal = Math.max(...allValues, 1);
   const minVal = Math.min(...allValues, 0);
   const range = maxVal - minVal || 1;
 
-  const W = 560;
-  const H = 160;
-  const PAD_L = 60;
-  const PAD_R = 120;
+  const W = 520;
+  const H = 180;
+  const PAD_T = 16;
+  const PAD_B = 10;
+  const PAD_L = 52;
+  const PAD_R = 100;
+  const chartH = H - PAD_T - PAD_B;
   const chartW = W - PAD_L - PAD_R;
 
   function toX(i: number) {
     return PAD_L + (i / Math.max(recent.length - 1, 1)) * chartW;
   }
   function toY(val: number) {
-    const v = val || 0;
-    return H - ((v - minVal) / range) * (H - 20) - 10;
+    return PAD_T + chartH - ((val - minVal) / range) * chartH;
   }
 
   function makeLine(data: number[]) {
     return data.map((v, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(" ");
   }
 
-  const grossData = recent.map((m) => m.total_charged || 0);
-  const netData = recent.map((m) => m.total_net || 0);
   const grossLine = makeLine(grossData);
   const netLine = makeLine(netData);
-  const saldoLine = makeLine(saldoData);
+  const saldoLine = makeLine(saldoSafe);
 
-  // Area fill between gross and net lines
-  const areaPath = (() => {
+  // Area fill between gross and net lines (only if there's a visible gap)
+  const grossNetGap = Math.abs(toY(grossData[0]) - toY(netData[0]));
+  const areaPath = grossNetGap > 3 ? (() => {
     const top = grossData.map((v, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(" ");
-    const bottom = [...netData].reverse().map((v, i) => {
-      const idx = netData.length - 1 - i;
-      return `L${toX(idx).toFixed(1)},${toY(v).toFixed(1)}`;
+    const bottom = [...netData].map((_, ri) => {
+      const i = netData.length - 1 - ri;
+      return `L${toX(i).toFixed(1)},${toY(netData[i]).toFixed(1)}`;
     }).join(" ");
     return `${top} ${bottom} Z`;
-  })();
+  })() : null;
 
   // Smart label positioning: spread labels if too close
-  const spreadLabels = (labels: { y: number; color: string; text: string }[]) => {
+  const spreadLabels = (labels: { y: number; color: string; text: string; name: string }[]) => {
     const sorted = labels.map((l, i) => ({ ...l, orig: i })).sort((a, b) => a.y - b.y);
-    const MIN_GAP = 14;
+    const MIN_GAP = 13;
     for (let i = 1; i < sorted.length; i++) {
       if (sorted[i].y - sorted[i - 1].y < MIN_GAP) {
         sorted[i].y = sorted[i - 1].y + MIN_GAP;
       }
+    }
+    // Clamp within chart area
+    for (const l of sorted) {
+      l.y = Math.max(PAD_T + 6, Math.min(H + PAD_B, l.y));
     }
     return sorted.sort((a, b) => a.orig - b.orig);
   };
@@ -238,86 +250,79 @@ function BillingChart({ months }: { months: BillingMonth[] }) {
   const lastIdx = recent.length - 1;
   const labelX = toX(lastIdx) + 8;
   const endLabels = spreadLabels([
-    { y: toY(grossData[lastIdx]), color: "#ef4444", text: fmt(grossData[lastIdx], true) },
-    { y: toY(netData[lastIdx]), color: "#22c55e", text: fmt(netData[lastIdx], true) },
-    { y: toY(saldoData[lastIdx]), color: "#4f46e5", text: fmt(saldoData[lastIdx], true) },
+    { y: toY(grossData[lastIdx]), color: "#ef4444", text: fmtCompact(grossData[lastIdx]), name: "Bruto" },
+    { y: toY(netData[lastIdx]), color: "#22c55e", text: fmtCompact(netData[lastIdx]), name: "Líquido" },
+    { y: toY(saldoSafe[lastIdx]), color: "#4f46e5", text: fmtCompact(saldoSafe[lastIdx]), name: "Saldo" },
   ]);
 
-  // Y axis values
-  const yAxisValues = [0, 0.5, 1].map((pct) => ({
-    y: H - pct * (H - 20) - 10,
+  // Y axis: 5 evenly spaced ticks
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((pct) => ({
+    y: PAD_T + chartH - pct * chartH,
     val: minVal + pct * range,
   }));
 
   return (
     <svg
-      viewBox={`0 0 ${W} ${H + 32}`}
+      viewBox={`0 0 ${W} ${H + 28}`}
       style={{ width: "100%", maxWidth: W, display: "block" }}
       aria-label="Faturamento e saldo"
     >
       {/* Grid lines + Y axis labels */}
-      {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
-        const y = H - pct * (H - 20) - 10;
-        return (
-          <line key={pct} x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="currentColor" opacity={0.06} />
-        );
-      })}
-      {yAxisValues.map(({ y, val }) => (
-        <text key={val} x={PAD_L - 6} y={y + 3} textAnchor="end" fontSize={9} fill="currentColor" opacity={0.35}>
-          {fmt(val, true)}
-        </text>
+      {yTicks.map(({ y, val }, idx) => (
+        <g key={idx}>
+          <line x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="currentColor" opacity={0.06} />
+          <text x={PAD_L - 6} y={y + 3} textAnchor="end" fontSize={8} fill="currentColor" opacity={0.3}>
+            {fmtCompact(val)}
+          </text>
+        </g>
       ))}
 
       {/* Area between Bruto and Líquido */}
-      <path d={areaPath} fill="rgba(239,68,68,0.08)" stroke="none" />
+      {areaPath && <path d={areaPath} fill="rgba(239,68,68,0.07)" stroke="none" />}
 
       {/* Faturamento Bruto (dashed) */}
-      <path d={grossLine} fill="none" stroke="#ef4444" strokeWidth={2.5} strokeLinejoin="round" strokeDasharray="4,2" />
-      {recent.map((m, i) => (
-        <circle key={`g-${i}`} cx={toX(i)} cy={toY(m.total_charged)} r={3.5} fill="#ef4444" />
+      <path d={grossLine} fill="none" stroke="#ef4444" strokeWidth={2} strokeLinejoin="round" strokeDasharray="5,3" />
+      {grossData.map((v, i) => (
+        <circle key={`g-${i}`} cx={toX(i)} cy={toY(v)} r={3} fill="#ef4444" />
       ))}
 
       {/* Faturamento Líquido (solid) */}
-      <path d={netLine} fill="none" stroke="#22c55e" strokeWidth={2.5} strokeLinejoin="round" />
-      {recent.map((m, i) => (
-        <circle key={`n-${i}`} cx={toX(i)} cy={toY(m.total_net)} r={3.5} fill="#22c55e" />
+      <path d={netLine} fill="none" stroke="#22c55e" strokeWidth={2} strokeLinejoin="round" />
+      {netData.map((v, i) => (
+        <circle key={`n-${i}`} cx={toX(i)} cy={toY(v)} r={3} fill="#22c55e" />
       ))}
 
       {/* Saldo */}
       <path d={saldoLine} fill="none" stroke="#4f46e5" strokeWidth={2} strokeDasharray="6,3" strokeLinejoin="round" />
-      {saldoData.map((v, i) => (
-        <circle key={`s-${i}`} cx={toX(i)} cy={toY(v)} r={3} fill="#4f46e5" />
+      {saldoSafe.map((v, i) => (
+        <circle key={`s-${i}`} cx={toX(i)} cy={toY(v)} r={2.5} fill="#4f46e5" />
       ))}
-
-      {/* Inline labels at first point */}
-      {recent.length > 1 && (
-        <>
-          <text x={toX(0) - 4} y={toY(grossData[0]) - 8} fontSize={8} fill="#ef4444" fontWeight={600} textAnchor="start">Bruto</text>
-          <text x={toX(0) - 4} y={toY(netData[0]) + 14} fontSize={8} fill="#22c55e" fontWeight={600} textAnchor="start">Líquido</text>
-          <text x={toX(0) - 4} y={toY(saldoData[0]) - 8} fontSize={8} fill="#4f46e5" fontWeight={600} textAnchor="start">Saldo</text>
-        </>
-      )}
 
       {/* X axis labels */}
       {recent.map((m, i) => (
         <text
           key={m.month}
           x={toX(i)}
-          y={H + 18}
+          y={H + 16}
           textAnchor="middle"
           fontSize={10}
           fill="currentColor"
-          opacity={0.45}
+          opacity={0.4}
         >
           {m.month.slice(5)}
         </text>
       ))}
 
-      {/* Value labels on last points (smart-spaced) */}
+      {/* End labels: name + value, smart-spaced */}
       {recent.length > 0 && endLabels.map((l, i) => (
-        <text key={i} x={labelX} y={l.y + 3} fontSize={9} fill={l.color} fontWeight={600}>
-          {l.text}
-        </text>
+        <g key={i}>
+          <text x={labelX} y={l.y} fontSize={8} fill={l.color} fontWeight={600}>
+            {l.name}
+          </text>
+          <text x={labelX} y={l.y + 10} fontSize={8} fill={l.color} opacity={0.7}>
+            {l.text}
+          </text>
+        </g>
       ))}
     </svg>
   );
