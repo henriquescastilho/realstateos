@@ -1,10 +1,12 @@
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
   payments,
   charges,
   statements,
   leaseContracts,
+  properties,
+  tenants,
 } from "../../db/schema";
 import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
 import { ChargePaymentStatus, ReconciliationStatus } from "../../types/domain";
@@ -252,8 +254,72 @@ export async function listPayments(params: {
     db.select({ total: count() }).from(payments).where(whereClause),
   ]);
 
+  // Enrich payments with charge/property/renter info
+  const chargeIds = [...new Set(data.map((p) => p.chargeId).filter((id) => id && id !== "00000000-0000-0000-0000-000000000000"))];
+  let chargeMap = new Map<string, { description: string; amount: string; due_date: string; property_address: string }>();
+
+  if (chargeIds.length > 0) {
+    const chargeRows = await db.select().from(charges).where(inArray(charges.id, chargeIds));
+    const contractIds = [...new Set(chargeRows.map((c) => c.leaseContractId))];
+
+    let propertyMap = new Map<string, string>();
+    let tenantMap = new Map<string, string>();
+    let contractPropertyMap = new Map<string, string>();
+    let contractTenantMap = new Map<string, string>();
+
+    if (contractIds.length > 0) {
+      const contractRows = await db.select().from(leaseContracts).where(inArray(leaseContracts.id, contractIds));
+      const propIds = [...new Set(contractRows.map((c) => c.propertyId))];
+      const tenantIds = [...new Set(contractRows.map((c) => c.tenantId))];
+
+      if (propIds.length > 0) {
+        const propRows = await db.select({ id: properties.id, address: properties.address }).from(properties).where(inArray(properties.id, propIds));
+        for (const p of propRows) propertyMap.set(p.id, p.address);
+      }
+      if (tenantIds.length > 0) {
+        const tenantRows = await db.select({ id: tenants.id, fullName: tenants.fullName }).from(tenants).where(inArray(tenants.id, tenantIds));
+        for (const t of tenantRows) tenantMap.set(t.id, t.fullName);
+      }
+      for (const c of contractRows) {
+        contractPropertyMap.set(c.id, propertyMap.get(c.propertyId) ?? "");
+        contractTenantMap.set(c.id, tenantMap.get(c.tenantId) ?? "");
+      }
+    }
+
+    for (const ch of chargeRows) {
+      chargeMap.set(ch.id, {
+        description: `Aluguel ${ch.billingPeriod}`,
+        amount: ch.netAmount,
+        due_date: ch.dueDate,
+        property_address: contractPropertyMap.get(ch.leaseContractId) ?? "",
+      });
+    }
+  }
+
+  const enriched = data.map((payment) => {
+    const charge = chargeMap.get(payment.chargeId);
+    return {
+      id: payment.id,
+      charge_id: payment.chargeId,
+      amount: payment.receivedAmount,
+      paid_at: payment.receivedAt?.toISOString() ?? "",
+      method: payment.paymentMethod,
+      payer_name: "",
+      reference: payment.bankReference ?? "",
+      status: payment.reconciliationStatus,
+      source: "bank_import",
+      charge: charge ? {
+        id: payment.chargeId,
+        description: charge.description,
+        amount: charge.amount,
+        due_date: charge.due_date,
+        property_address: charge.property_address,
+      } : undefined,
+    };
+  });
+
   return {
-    data,
+    data: enriched,
     total: totalResult[0]?.total ?? 0,
     page: params.page,
     pageSize: params.pageSize,

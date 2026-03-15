@@ -1,10 +1,11 @@
-import { eq, and, count } from "drizzle-orm";
+import { eq, and, count, inArray } from "drizzle-orm";
 import { db } from "../../db";
 import {
   billingSchedules,
   charges,
   leaseContracts,
   tenants,
+  properties,
 } from "../../db/schema";
 import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
 import { ChargeIssueStatus, LeaseContractStatus, BoletoStatus } from "../../types/domain";
@@ -173,8 +174,56 @@ export async function listCharges(params: {
     db.select({ total: count() }).from(charges).where(whereClause),
   ]);
 
+  // Enrich charges with contract/property/renter names
+  const contractIds = [...new Set(data.map((c) => c.leaseContractId))];
+  let contractMap = new Map<string, { propertyId: string; tenantId: string; ownerId: string; rentAmount: string }>();
+  let propertyMap = new Map<string, string>();
+  let tenantMap = new Map<string, string>();
+
+  if (contractIds.length > 0) {
+    const contractRows = await db
+      .select()
+      .from(leaseContracts)
+      .where(inArray(leaseContracts.id, contractIds));
+
+    for (const c of contractRows) {
+      contractMap.set(c.id, { propertyId: c.propertyId, tenantId: c.tenantId, ownerId: c.ownerId, rentAmount: c.rentAmount });
+    }
+
+    const propIds = [...new Set(contractRows.map((c) => c.propertyId))];
+    const tenantIds = [...new Set(contractRows.map((c) => c.tenantId))];
+
+    if (propIds.length > 0) {
+      const propRows = await db.select({ id: properties.id, address: properties.address }).from(properties).where(inArray(properties.id, propIds));
+      for (const p of propRows) propertyMap.set(p.id, p.address);
+    }
+
+    if (tenantIds.length > 0) {
+      const tenantRows = await db.select({ id: tenants.id, fullName: tenants.fullName }).from(tenants).where(inArray(tenants.id, tenantIds));
+      for (const t of tenantRows) tenantMap.set(t.id, t.fullName);
+    }
+  }
+
+  const enriched = data.map((charge) => {
+    const contract = contractMap.get(charge.leaseContractId);
+    return {
+      ...charge,
+      // Frontend-expected fields
+      id: charge.id,
+      contract_id: charge.leaseContractId,
+      description: `Aluguel ${charge.billingPeriod}`,
+      property_address: contract ? propertyMap.get(contract.propertyId) ?? "" : "",
+      renter_name: contract ? tenantMap.get(contract.tenantId) ?? "" : "",
+      contract_monthly_rent: contract?.rentAmount ?? "0",
+      type: "RENT",
+      amount: charge.netAmount,
+      due_date: charge.dueDate,
+      status: charge.paymentStatus === "open" ? "pending" : charge.paymentStatus,
+    };
+  });
+
   return {
-    data,
+    data: enriched,
     total: totalResult[0]?.total ?? 0,
     page: params.page,
     pageSize: params.pageSize,
