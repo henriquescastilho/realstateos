@@ -19,12 +19,12 @@ O Real Estate OS automatiza o ciclo completo de administração de imóveis — 
 
 ## Equipe
 
-| Nome | Papel |
-|------|-------|
-| **Henrique Scheer de Castilho** | Fullstack & Arquitetura |
-| **Pedro Afonso Malheiros Freitas** | Backend & Integrações |
-| **Pedro Pongiluppi Thomaz** | Frontend & UX |
-| **Leonardo Costa** | Infraestrutura & DevOps |
+| Nome |
+|------|
+| **[Pedro Pongiluppi Thomaz](https://www.linkedin.com/in/pedropongelupebr)** |
+| **[Leonardo Costa](https://www.linkedin.com/in/eng-leonardo-costa)** |
+| **[Henrique Scheer de Castilho](https://www.linkedin.com/in/henrique-scheer-de-castilho-350b5a271)** |
+| **[Pedro Afonso Malheiros Freitas](https://www.linkedin.com/in/pedro-afonso-b136b9326)** |
 
 ---
 

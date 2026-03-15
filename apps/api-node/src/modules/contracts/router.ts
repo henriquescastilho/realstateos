@@ -1,5 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { eq, and } from "drizzle-orm";
 import { ok, created, noContent, paginated } from "../../lib/response";
+import { db } from "../../db";
+import { charges } from "../../db/schema";
 import {
   createContractSchema,
   updateContractSchema,
@@ -28,8 +31,13 @@ function mapContract(row: Record<string, unknown>) {
     start_date: row.startDate,
     end_date: row.endDate,
     monthly_rent: row.rentAmount,
-    due_day: 1, // not stored in schema yet
+    closing_day: row.closingDay ?? 27,
+    due_day: row.dueDateDay ?? 1,
+    payout_day: row.payoutDay ?? 4,
     status: row.operationalStatus === "pending_onboarding" ? "pending" : row.operationalStatus,
+    admin_fee_percent: row.adminFeePercent ?? "10.00",
+    admin_fee_minimum: row.adminFeeMinimum ?? "180.00",
+    agent_instructions: row.agentInstructions ?? "",
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   };
@@ -50,11 +58,37 @@ contractsRouter.get("/contracts", async (req: Request, res: Response, next: Next
   }
 });
 
-// GET /contracts/:id — detail
+// GET /contracts/:id — detail (enriched with charges)
 contractsRouter.get("/contracts/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const contract = await getContractById(req.params.id!, req.user!.org_id);
-    ok(res, mapContract(contract as unknown as Record<string, unknown>));
+    const mapped = mapContract(contract as unknown as Record<string, unknown>);
+
+    // Fetch charges for this contract
+    const contractCharges = await db
+      .select()
+      .from(charges)
+      .where(
+        and(
+          eq(charges.leaseContractId, req.params.id!),
+          eq(charges.orgId, req.user!.org_id),
+        ),
+      )
+      .orderBy(charges.dueDate);
+
+    const mappedCharges = contractCharges.map((c) => ({
+      id: c.id,
+      description: `Aluguel ${c.billingPeriod}`,
+      amount: c.netAmount,
+      due_date: c.dueDate,
+      status: c.paymentStatus,
+      issue_status: c.issueStatus,
+      billing_period: c.billingPeriod,
+      line_items: c.lineItems,
+      boleto_status: c.boletoStatus,
+    }));
+
+    ok(res, { ...mapped, charges: mappedCharges });
   } catch (err) {
     next(err);
   }

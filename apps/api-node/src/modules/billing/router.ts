@@ -5,12 +5,16 @@ import {
   generateChargesSchema,
   listChargesQuerySchema,
   issueChargeSchema,
+  addLineItemSchema,
+  removeLineItemSchema,
 } from "./validators";
 import {
   createBillingSchedule,
   generateCharge,
   listCharges,
   issueCharge,
+  addLineItem,
+  removeLineItem,
 } from "./service";
 
 export const billingRouter = Router();
@@ -95,6 +99,34 @@ billingRouter.post(
       pix_qrcode: "",
       message: "Payment generation not yet implemented",
     });
+  },
+);
+
+// POST /charges/:id/line-items — add a line item to a draft charge
+billingRouter.post(
+  "/charges/:id/line-items",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const input = addLineItemSchema.parse({ ...req.body, orgId: req.user?.org_id });
+      const result = await addLineItem(req.params.id!, input);
+      ok(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// DELETE /charges/:id/line-items/:index — remove a line item from a draft charge
+billingRouter.delete(
+  "/charges/:id/line-items/:index",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const input = removeLineItemSchema.parse({ orgId: req.user?.org_id, lineItemIndex: req.params.index });
+      const result = await removeLineItem(req.params.id!, input);
+      ok(res, result);
+    } catch (err) {
+      next(err);
+    }
   },
 );
 

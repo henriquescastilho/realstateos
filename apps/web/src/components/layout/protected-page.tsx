@@ -11,7 +11,6 @@ export function ProtectedPage({
     <section className="page">
       <header className="page-header">
         <div>
-          <p className="eyebrow">Hackathon demo</p>
           <h2>{title}</h2>
           <p>{description}</p>
         </div>

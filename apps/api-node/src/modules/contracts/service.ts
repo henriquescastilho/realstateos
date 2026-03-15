@@ -83,6 +83,11 @@ export async function createContract(input: CreateContractInput) {
       endDate: input.endDate,
       rentAmount: input.rentAmount,
       depositType: input.depositType,
+      closingDay: input.closingDay,
+      dueDateDay: input.dueDateDay,
+      payoutDay: input.payoutDay,
+      adminFeePercent: input.adminFeePercent,
+      adminFeeMinimum: input.adminFeeMinimum,
       chargeRules: input.chargeRules ?? {},
       payoutRules: input.payoutRules ?? {},
       operationalStatus: "pending_onboarding",
@@ -105,8 +110,14 @@ export async function updateContract(
   if (input.rentAmount !== undefined) updates.rentAmount = input.rentAmount;
   if (input.endDate !== undefined) updates.endDate = input.endDate;
   if (input.depositType !== undefined) updates.depositType = input.depositType;
+  if (input.closingDay !== undefined) updates.closingDay = input.closingDay;
+  if (input.dueDateDay !== undefined) updates.dueDateDay = input.dueDateDay;
+  if (input.payoutDay !== undefined) updates.payoutDay = input.payoutDay;
+  if (input.adminFeePercent !== undefined) updates.adminFeePercent = input.adminFeePercent;
+  if (input.adminFeeMinimum !== undefined) updates.adminFeeMinimum = input.adminFeeMinimum;
   if (input.chargeRules !== undefined) updates.chargeRules = input.chargeRules;
   if (input.payoutRules !== undefined) updates.payoutRules = input.payoutRules;
+  if (input.agentInstructions !== undefined) updates.agentInstructions = input.agentInstructions;
 
   const [updated] = await db
     .update(leaseContracts)

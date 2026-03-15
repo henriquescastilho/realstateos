@@ -48,8 +48,9 @@ export function statusVariant(status: string | undefined | null): BadgeVariant {
   const s = (status ?? "pending").toLowerCase();
   if (s === "paid" || s === "completed" || s === "resolved") return "paid";
   if (s === "done") return "done";
-  if (s === "pending" || s === "queued") return "pending";
+  if (s === "pending" || s === "queued" || s === "open" || s === "draft") return "pending";
   if (s === "running" || s === "in_progress") return "running";
+  if (s === "active" || s === "generated") return "success";
   if (s === "escalated") return "escalated";
   if (s === "failed" || s === "cancelled" || s === "overdue") return "failed";
   return "default";

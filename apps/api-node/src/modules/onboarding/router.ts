@@ -1,5 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
+import { eq, and } from "drizzle-orm";
 import { ok, created, paginated } from "../../lib/response";
+import { db } from "../../db";
+import { charges } from "../../db/schema";
 import {
   onboardContractSchema,
   activateContractSchema,
@@ -25,7 +28,7 @@ function mapContract(row: Record<string, unknown>) {
     start_date: row.startDate,
     end_date: row.endDate,
     monthly_rent: row.rentAmount,
-    due_day: 1,
+    due_day: row.dueDateDay ?? 1,
     status: row.operationalStatus === "pending_onboarding" ? "pending" : row.operationalStatus,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
@@ -46,13 +49,33 @@ onboardingRouter.post(
   },
 );
 
-// GET /contracts/:id — single contract with related entities
+// GET /contracts/:id — single contract with related entities + charges
 onboardingRouter.get(
   "/contracts/:id",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await getContractById(req.params.id);
-      ok(res, result);
+      const result = await getContractById(req.params.id!);
+
+      // Fetch charges for this contract
+      const contractCharges = await db
+        .select()
+        .from(charges)
+        .where(eq(charges.leaseContractId, req.params.id!))
+        .orderBy(charges.dueDate);
+
+      const mappedCharges = contractCharges.map((c) => ({
+        id: c.id,
+        description: `Aluguel ${c.billingPeriod}`,
+        amount: c.netAmount,
+        due_date: c.dueDate,
+        status: c.paymentStatus,
+        issue_status: c.issueStatus,
+        billing_period: c.billingPeriod,
+        line_items: c.lineItems,
+        boleto_status: c.boletoStatus,
+      }));
+
+      ok(res, { ...result, charges: mappedCharges });
     } catch (err) {
       next(err);
     }

@@ -234,6 +234,76 @@ export async function listCharges(params: {
 }
 
 /**
+ * Add a line item to a draft charge.
+ * Recalculates gross/net amounts.
+ */
+export async function addLineItem(chargeId: string, input: { orgId: string; type: string; description: string; amount: string; source: string }) {
+  const [existing] = await db
+    .select()
+    .from(charges)
+    .where(and(eq(charges.id, chargeId), eq(charges.orgId, input.orgId)))
+    .limit(1);
+
+  if (!existing) throw new NotFoundError("Charge", chargeId);
+  if (existing.issueStatus !== ChargeIssueStatus.DRAFT) {
+    throw new ConflictError("Can only add line items to draft charges");
+  }
+
+  const currentItems = (existing.lineItems ?? []) as Array<{ type: string; description: string; amount: string; source: string }>;
+  const newItems = [...currentItems, { type: input.type, description: input.description, amount: input.amount, source: input.source }];
+
+  const grossCents = newItems.reduce((sum, li) => sum + Math.round(parseFloat(li.amount) * 100), 0);
+  const grossAmount = (grossCents / 100).toFixed(2);
+  const netAmount = grossAmount; // no penalty/discount on draft
+
+  const [updated] = await db
+    .update(charges)
+    .set({ lineItems: newItems, grossAmount, netAmount, updatedAt: new Date() })
+    .where(eq(charges.id, chargeId))
+    .returning();
+
+  return updated;
+}
+
+/**
+ * Remove a line item from a draft charge by index.
+ * Cannot remove the base rent item (index 0).
+ */
+export async function removeLineItem(chargeId: string, input: { orgId: string; lineItemIndex: number }) {
+  const [existing] = await db
+    .select()
+    .from(charges)
+    .where(and(eq(charges.id, chargeId), eq(charges.orgId, input.orgId)))
+    .limit(1);
+
+  if (!existing) throw new NotFoundError("Charge", chargeId);
+  if (existing.issueStatus !== ChargeIssueStatus.DRAFT) {
+    throw new ConflictError("Can only remove line items from draft charges");
+  }
+
+  const currentItems = (existing.lineItems ?? []) as Array<{ type: string; description: string; amount: string; source: string }>;
+  if (input.lineItemIndex < 0 || input.lineItemIndex >= currentItems.length) {
+    throw new ValidationError("Invalid line item index");
+  }
+  if (input.lineItemIndex === 0 && currentItems[0]?.type === "rent") {
+    throw new ConflictError("Cannot remove the base rent line item");
+  }
+
+  const newItems = currentItems.filter((_, i) => i !== input.lineItemIndex);
+  const grossCents = newItems.reduce((sum, li) => sum + Math.round(parseFloat(li.amount) * 100), 0);
+  const grossAmount = (grossCents / 100).toFixed(2);
+  const netAmount = grossAmount;
+
+  const [updated] = await db
+    .update(charges)
+    .set({ lineItems: newItems, grossAmount, netAmount, updatedAt: new Date() })
+    .where(eq(charges.id, chargeId))
+    .returning();
+
+  return updated;
+}
+
+/**
  * Issue a charge (transition from draft → issued).
  * Automatically generates a Santander boleto if the org has bank credentials configured.
  * If boleto generation fails, the charge is still issued but flagged as boleto_status=failed.

@@ -11,6 +11,16 @@ export const createContractSchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   rentAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Rent amount must be a valid decimal"),
   depositType: z.string().max(50).optional(),
+  closingDay: z.coerce.number().int().min(1).max(28).optional().default(27),
+  dueDateDay: z.coerce.number().int().min(1).max(28).optional().default(1),
+  payoutDay: z.coerce.number().int().min(1).max(28).optional().default(4),
+  adminFeePercent: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((v) => {
+    const n = parseFloat(v);
+    return n >= 6 && n <= 10;
+  }, "Admin fee must be between 6% and 10%").optional().default("10.00"),
+  adminFeeMinimum: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((v) => {
+    return parseFloat(v) >= 180;
+  }, "Admin fee minimum must be at least R$180").optional().default("180.00"),
   chargeRules: z.record(z.string(), z.unknown()).optional().default({}),
   payoutRules: z.record(z.string(), z.unknown()).optional().default({}),
 });
@@ -30,8 +40,19 @@ export const updateContractSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   depositType: z.string().max(50).optional(),
+  closingDay: z.coerce.number().int().min(1).max(28).optional(),
+  dueDateDay: z.coerce.number().int().min(1).max(28).optional(),
+  payoutDay: z.coerce.number().int().min(1).max(28).optional(),
+  adminFeePercent: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((v) => {
+    const n = parseFloat(v);
+    return n >= 6 && n <= 10;
+  }, "Admin fee must be between 6% and 10%").optional(),
+  adminFeeMinimum: z.string().regex(/^\d+(\.\d{1,2})?$/).refine((v) => {
+    return parseFloat(v) >= 180;
+  }, "Admin fee minimum must be at least R$180").optional(),
   chargeRules: z.record(z.string(), z.unknown()).optional(),
   payoutRules: z.record(z.string(), z.unknown()).optional(),
+  agentInstructions: z.string().optional(),
 });
 
 export type UpdateContractInput = z.infer<typeof updateContractSchema>;

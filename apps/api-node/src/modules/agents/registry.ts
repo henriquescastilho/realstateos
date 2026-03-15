@@ -16,57 +16,57 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
   {
     id: "radar",
     name: "Radar",
-    description: "Captura boletos de condomínio, IPTU e taxas via Gemini Vision.",
+    description: "Lê boletos de condomínio, IPTU e taxas que chegam por e-mail ou WhatsApp e registra os valores automaticamente.",
     taskType: "radar_capture",
-    schedule: null, // sob demanda (email/whatsapp)
+    schedule: "Automático — quando chega um documento",
     icon: "radar",
   },
   {
     id: "maestro",
     name: "Maestro",
-    description: "Compõe cobranças consolidadas a partir das despesas capturadas.",
+    description: "Junta todas as despesas do imóvel e monta a cobrança mensal do inquilino com aluguel + encargos.",
     taskType: "maestro_compose",
-    schedule: null, // evento: expense.captured
+    schedule: "Automático — após captura de despesas",
     icon: "compose",
   },
   {
     id: "cobrador",
     name: "Cobrador",
-    description: "Envia boletos e lembretes de cobrança aos locatários.",
+    description: "Gera o boleto do inquilino e envia lembretes de cobrança por e-mail e WhatsApp até o pagamento.",
     taskType: "cobrador_collect",
-    schedule: null, // evento: charges.composed
+    schedule: "Automático — após composição da cobrança",
     icon: "payment",
   },
   {
     id: "sentinela",
     name: "Sentinela",
-    description: "Monitora pagamentos recebidos e faz reconciliação automática.",
+    description: "Confere os pagamentos recebidos no banco e marca automaticamente quais cobranças foram pagas.",
     taskType: "sentinela_watch",
-    schedule: "0 */4 * * *", // a cada 4h
+    schedule: "A cada 4 horas",
     icon: "shield",
   },
   {
     id: "pagador",
     name: "Pagador",
-    description: "Paga contas do imóvel e calcula repasses aos proprietários.",
+    description: "Paga as contas do imóvel (condomínio, IPTU) e calcula o repasse líquido para o proprietário.",
     taskType: "pagador_payout",
-    schedule: "0 9 5,15 * *", // dia 5 e 15
+    schedule: "Dias 5 e 15 de cada mês",
     icon: "wallet",
   },
   {
     id: "contador",
     name: "Contador",
-    description: "Gera extratos de repasse e envia NF simulada ao proprietário.",
+    description: "Gera o extrato de repasse detalhado e envia ao proprietário com todos os lançamentos do mês.",
     taskType: "contador_statement",
-    schedule: null, // evento: payout.completed
+    schedule: "Automático — após repasse concluído",
     icon: "receipt",
   },
   {
     id: "orquestrador",
     name: "Orquestrador",
-    description: "Encadeia agentes automaticamente por eventos de domínio.",
+    description: "Coordena todos os agentes acima, garantindo que cada etapa aconteça na ordem certa, do boleto ao repasse.",
     taskType: "orchestrator",
-    schedule: null, // sempre ativo
+    schedule: "Sempre ativo",
     icon: "hub",
   },
 ];

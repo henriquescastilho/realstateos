@@ -112,6 +112,12 @@ export const leaseContracts = pgTable("lease_contracts", {
   operationalStatus: varchar("operational_status", { length: 30 })
     .default("pending_onboarding")
     .notNull(),
+  closingDay: integer("closing_day").default(27),     // dia que fecha a fatura e gera o boleto
+  dueDateDay: integer("due_date_day").default(1),     // dia do vencimento do boleto
+  payoutDay: integer("payout_day").default(4),        // dia do repasse ao proprietário
+  adminFeePercent: numeric("admin_fee_percent", { precision: 5, scale: 2 }).default("10.00"),
+  adminFeeMinimum: numeric("admin_fee_minimum", { precision: 12, scale: 2 }).default("180.00"),
+  agentInstructions: text("agent_instructions"),
   ...timestamps(),
 }, (t) => [
   index("lease_contracts_org_id_idx").on(t.orgId),

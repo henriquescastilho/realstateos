@@ -154,10 +154,10 @@ export default function AgentsPage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <strong>{agent.name}</strong>
-                    <span className={agent.currentStatus === "active" ? "alive-dot" : "idle-dot"} />
+                    <span className="alive-dot" />
                   </div>
                   <p className="muted-text" style={{ margin: 0 }}>
-                    {agent.schedule ?? "Sob demanda (evento)"}
+                    {agent.schedule ?? "Automático"}
                   </p>
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default function AgentsPage() {
       <div className="card" style={{ marginTop: 32, padding: 24 }}>
         <h3 style={{ margin: "0 0 16px", fontSize: "1.1rem" }}>Simulação do Pipeline</h3>
         <p className="muted-text" style={{ margin: "0 0 16px" }}>
-          Execute o fluxo completo dos agentes para um contrato e receba um relatório por e-mail.
+          Execute o fluxo completo dos agentes para um contrato. Você receberá por e-mail: boleto do inquilino, extrato de repasse ao proprietário e relatório detalhado de cada agente com datas.
         </p>
 
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16, alignItems: "flex-end" }}>
@@ -204,7 +204,7 @@ export default function AgentsPage() {
             </select>
           </div>
           <div style={{ minWidth: 220 }}>
-            <label style={{ display: "block", fontSize: "0.82rem", marginBottom: 4, color: "var(--text-muted)" }}>E-mail do relatório</label>
+            <label style={{ display: "block", fontSize: "0.82rem", marginBottom: 4, color: "var(--text-muted)" }}>E-mail da simulação</label>
             <input
               type="email"
               value={simEmail}

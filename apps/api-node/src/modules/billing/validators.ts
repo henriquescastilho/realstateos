@@ -49,6 +49,25 @@ export const listChargesQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 
+// ─── Add line item to draft charge ───
+export const addLineItemSchema = z.object({
+  orgId: z.string().uuid(),
+  type: z.string().min(1).max(50),
+  description: z.string().min(1).max(255),
+  amount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid decimal"),
+  source: z.string().max(50).default("manual"),
+});
+
+export type AddLineItemInput = z.infer<typeof addLineItemSchema>;
+
+// ─── Remove line item from draft charge ───
+export const removeLineItemSchema = z.object({
+  orgId: z.string().uuid(),
+  lineItemIndex: z.coerce.number().int().min(0),
+});
+
+export type RemoveLineItemInput = z.infer<typeof removeLineItemSchema>;
+
 // ─── Issue charge ───
 export const issueChargeSchema = z.object({
   issuedBy: z.string().max(100).optional(),

@@ -13,6 +13,7 @@ const navigation = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/agents", label: "Agentes" },
   { href: "/contracts", label: "Contratos" },
+  { href: "/properties", label: "Imóveis" },
   { href: "/renters", label: "Locatários" },
   { href: "/owners", label: "Proprietários" },
   { href: "/billing", label: "Faturas" },
@@ -60,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <p className="eyebrow">REAL ESTATE OS</p>
           <h1 className="brand">Enterprise</h1>
           <p className="sidebar-copy">
-            Plataforma multi-tenant para gestão de portfólio imobiliário com IA.
+            Gestão completa de imóveis, cobranças e repasses — tudo automatizado por agentes inteligentes.
           </p>
         </div>
 

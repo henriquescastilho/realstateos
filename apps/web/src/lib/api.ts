@@ -118,6 +118,18 @@ export function nodeApiPost<T>(path: string, body?: unknown) {
   });
 }
 
+export function nodeApiPatch<T>(path: string, body?: unknown) {
+  return nodeRequest<T>(path, {
+    method: "PATCH",
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+export function nodeApiDelete<T>(path: string) {
+  return nodeRequest<T>(path, { method: "DELETE" });
+}
+
 export function apiPost<T>(path: string, body?: unknown) {
   return request<T>(path, {
     method: "POST",
