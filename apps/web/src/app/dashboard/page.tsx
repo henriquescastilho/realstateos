@@ -83,19 +83,19 @@ function KpiCard({
   sub?: string;
   accent?: "green" | "red" | "yellow";
 }) {
-  const accentColor =
+  const accentVar =
     accent === "green"
-      ? "#15803d"
+      ? "var(--color-success)"
       : accent === "red"
-        ? "#b91c1c"
+        ? "var(--color-danger)"
         : accent === "yellow"
-          ? "#b45309"
+          ? "var(--color-warning)"
           : undefined;
   return (
     <div
       style={{
-        background: "#fff",
-        border: "1px solid rgba(0,0,0,0.08)",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
         borderRadius: 10,
         padding: "20px 24px",
         display: "flex",
@@ -106,7 +106,7 @@ function KpiCard({
       <span
         style={{
           fontSize: "0.78rem",
-          color: "rgba(0,0,0,0.5)",
+          color: "var(--text-muted)",
           fontWeight: 600,
           textTransform: "uppercase",
           letterSpacing: "0.05em",
@@ -118,14 +118,14 @@ function KpiCard({
         style={{
           fontSize: "1.9rem",
           fontWeight: 700,
-          color: accentColor ?? "#111827",
+          color: accentVar ?? "var(--text-primary)",
           lineHeight: 1.1,
         }}
       >
         {value}
       </span>
       {sub && (
-        <span style={{ fontSize: "0.78rem", color: "rgba(0,0,0,0.45)" }}>
+        <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>
           {sub}
         </span>
       )}
@@ -137,7 +137,7 @@ function KpiCard({
 function BillingChart({ months }: { months: BillingMonth[] }) {
   if (!months.length)
     return (
-      <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "0.85rem" }}>
+      <p style={{ color: "var(--text-faint)", fontSize: "0.85rem" }}>
         Sem dados de cobrança.
       </p>
     );
@@ -183,7 +183,8 @@ function BillingChart({ months }: { months: BillingMonth[] }) {
               y={H + 16}
               textAnchor="middle"
               fontSize={10}
-              fill="rgba(0,0,0,0.45)"
+              fill="currentColor"
+              opacity={0.45}
             >
               {shortMonth}
             </text>
@@ -216,13 +217,13 @@ function ActivityRow({ task }: { task: TaskRecord }) {
         alignItems: "flex-start",
         gap: 10,
         padding: "8px 0",
-        borderBottom: "1px solid rgba(0,0,0,0.06)",
+        borderBottom: "1px solid var(--border-subtle)",
       }}
     >
       <Badge variant={variantMap[task.status] ?? "default"}>
         {task.status}
       </Badge>
-      <span style={{ fontSize: "0.86rem", color: "#374151", flex: 1 }}>
+      <span style={{ fontSize: "0.86rem", color: "var(--text-secondary)", flex: 1 }}>
         {msg}
       </span>
     </div>
@@ -357,7 +358,7 @@ export default function DashboardPage() {
                 gap: 16,
                 marginTop: 8,
                 fontSize: "0.75rem",
-                color: "rgba(0,0,0,0.45)",
+                color: "var(--text-faint)",
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -394,7 +395,7 @@ export default function DashboardPage() {
               <Spinner size={20} />
             </div>
           ) : tasks.length === 0 ? (
-            <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "0.85rem" }}>
+            <p style={{ color: "var(--text-faint)", fontSize: "0.85rem" }}>
               Nenhuma tarefa registrada.
             </p>
           ) : (
@@ -406,7 +407,7 @@ export default function DashboardPage() {
                 href="/tasks"
                 style={{
                   fontSize: "0.8rem",
-                  color: "#4f46e5",
+                  color: "var(--color-info)",
                   display: "block",
                   marginTop: 10,
                   textDecoration: "none",

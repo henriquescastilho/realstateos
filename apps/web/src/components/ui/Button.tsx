@@ -31,9 +31,9 @@ export function Button({
   const dangerStyle: React.CSSProperties =
     variant === "danger"
       ? {
-          background: "rgba(220, 38, 38, 0.14)",
-          color: "#991b1b",
-          borderColor: "rgba(220, 38, 38, 0.22)",
+          background: "var(--color-danger-bg)",
+          color: "var(--color-danger)",
+          borderColor: "var(--color-danger-bg)",
         }
       : {};
 

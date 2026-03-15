@@ -9,6 +9,24 @@
   --accent: #b45a2a;
   --accent-dark: #803d1d;
   --line: rgba(31, 41, 55, 0.08);
+  /* ── Semantic text colors ── */
+  --text-primary: #1f2937;
+  --text-secondary: rgba(31, 41, 55, 0.72);
+  --text-muted: rgba(31, 41, 55, 0.55);
+  --text-faint: rgba(31, 41, 55, 0.4);
+  /* ── Surfaces & borders ── */
+  --surface: #ffffff;
+  --border: rgba(31, 41, 55, 0.08);
+  --border-subtle: rgba(31, 41, 55, 0.06);
+  /* ── Status colors ── */
+  --color-success: #15803d;
+  --color-danger: #b91c1c;
+  --color-warning: #b45309;
+  --color-info: #4f46e5;
+  --color-success-bg: rgba(22, 163, 74, 0.14);
+  --color-danger-bg: rgba(220, 38, 38, 0.14);
+  --color-warning-bg: rgba(180, 90, 42, 0.16);
+  --color-info-bg: rgba(59, 130, 246, 0.14);
 }
 
 * {
@@ -63,7 +81,7 @@ a {
   text-transform: uppercase;
   letter-spacing: 0.16em;
   font-size: 0.72rem;
-  color: rgba(31, 41, 55, 0.6);
+  color: var(--text-muted);
   margin: 0 0 8px;
 }
 
@@ -73,7 +91,7 @@ a {
 }
 
 .sidebar-copy {
-  color: rgba(31, 41, 55, 0.72);
+  color: var(--text-secondary);
 }
 
 .nav {
@@ -108,7 +126,7 @@ a {
 
 .session-label {
   font-size: 0.8rem;
-  color: rgba(31, 41, 55, 0.55);
+  color: var(--text-muted);
 }
 
 .session-value {
@@ -118,7 +136,7 @@ a {
 
 .session-caption {
   margin: 10px 0 0;
-  color: rgba(31, 41, 55, 0.58);
+  color: var(--text-muted);
   font-size: 0.86rem;
 }
 
@@ -140,7 +158,7 @@ a {
 
 .page-header p {
   margin: 0;
-  color: rgba(31, 41, 55, 0.72);
+  color: var(--text-secondary);
   max-width: 62ch;
 }
 
@@ -164,8 +182,9 @@ a {
 }
 
 .card-header p {
+  color: var(--text-muted);
   margin: 6px 0 0;
-  color: rgba(31, 41, 55, 0.65);
+  color: var(--text-muted);
 }
 
 .stack {
@@ -176,7 +195,7 @@ a {
 .stack label {
   display: grid;
   gap: 6px;
-  color: rgba(31, 41, 55, 0.75);
+  color: var(--text-secondary);
 }
 
 input,
@@ -323,7 +342,7 @@ a:focus {
 
 .empty-state {
   margin: 0;
-  color: rgba(31, 41, 55, 0.62);
+  color: var(--text-muted);
 }
 
 .metric-value {
@@ -334,7 +353,7 @@ a:focus {
 
 .metric-copy {
   margin: 10px 0 0;
-  color: rgba(31, 41, 55, 0.65);
+  color: var(--text-muted);
 }
 
 .checklist {
@@ -346,7 +365,7 @@ a:focus {
   padding: 12px 14px;
   border-radius: 14px;
   background: rgba(31, 41, 55, 0.05);
-  color: rgba(31, 41, 55, 0.72);
+  color: var(--text-secondary);
 }
 
 .check-item.is-done {
@@ -404,12 +423,12 @@ a:focus {
 }
 
 .muted-text {
-  color: rgba(31, 41, 55, 0.52);
+  color: var(--text-faint);
   font-size: 0.85rem;
 }
 
 .task-message {
-  color: rgba(31, 41, 55, 0.78);
+  color: var(--text-secondary);
 }
 
 .inline-link {
@@ -611,6 +630,24 @@ a:focus {
     --accent: #d98a53;
     --accent-dark: #f0a96e;
     --line: rgba(232, 228, 220, 0.08);
+    /* ── Semantic text colors (dark) ── */
+    --text-primary: #e8e4dc;
+    --text-secondary: rgba(232, 228, 220, 0.72);
+    --text-muted: rgba(232, 228, 220, 0.55);
+    --text-faint: rgba(232, 228, 220, 0.4);
+    /* ── Surfaces & borders (dark) ── */
+    --surface: #1a1816;
+    --border: rgba(232, 228, 220, 0.08);
+    --border-subtle: rgba(232, 228, 220, 0.06);
+    /* ── Status colors (dark — lighter for readability) ── */
+    --color-success: #4ade80;
+    --color-danger: #fca5a5;
+    --color-warning: #fbbf24;
+    --color-info: #93c5fd;
+    --color-success-bg: rgba(74, 222, 128, 0.12);
+    --color-danger-bg: rgba(252, 165, 165, 0.12);
+    --color-warning-bg: rgba(251, 191, 36, 0.12);
+    --color-info-bg: rgba(147, 197, 253, 0.12);
   }
 
   body {

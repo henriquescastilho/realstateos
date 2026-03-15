@@ -87,18 +87,18 @@ export function useToast() {
 // Visual constants
 // ---------------------------------------------------------------------------
 
-const variantBg: Record<ToastVariant, string> = {
-  success: "rgba(22,163,74,0.14)",
-  error: "rgba(220,38,38,0.14)",
-  warning: "rgba(180,90,42,0.16)",
-  info: "rgba(59,130,246,0.14)",
+const variantBgVar: Record<ToastVariant, string> = {
+  success: "var(--color-success-bg)",
+  error: "var(--color-danger-bg)",
+  warning: "var(--color-warning-bg)",
+  info: "var(--color-info-bg)",
 };
 
-const variantColor: Record<ToastVariant, string> = {
-  success: "#166534",
-  error: "#991b1b",
-  warning: "#803d1d",
-  info: "#1e40af",
+const variantColorVar: Record<ToastVariant, string> = {
+  success: "var(--color-success)",
+  error: "var(--color-danger)",
+  warning: "var(--color-warning)",
+  info: "var(--color-info)",
 };
 
 // ---------------------------------------------------------------------------
@@ -128,12 +128,12 @@ export function Toast({ message, variant = "info", onDismiss }: ToastProps) {
         gap: 12,
         padding: "14px 16px",
         borderRadius: 16,
-        background: variantBg[variant],
-        color: variantColor[variant],
+        background: variantBgVar[variant],
+        color: variantColorVar[variant],
         boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
         minWidth: 280,
         maxWidth: 400,
-        border: `1px solid ${variantBg[variant]}`,
+        border: `1px solid ${variantBgVar[variant]}`,
         animation: "slideIn 0.2s ease",
       }}
     >

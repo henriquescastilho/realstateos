@@ -52,7 +52,7 @@ export function OrgSwitcher() {
         <span
           style={{
             fontSize: "0.78rem",
-            color: "rgba(31,41,55,0.55)",
+            color: "var(--text-muted)",
             textTransform: "uppercase",
             letterSpacing: "0.06em",
           }}
@@ -70,7 +70,7 @@ export function OrgSwitcher() {
         >
           {auth.user.org_name}
         </span>
-        <span style={{ fontSize: "0.8rem", color: "rgba(31,41,55,0.6)" }}>
+        <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
           {auth.user.email}
         </span>
       </button>
@@ -100,7 +100,7 @@ export function OrgSwitcher() {
                   margin: 0,
                   padding: "10px 14px 4px",
                   fontSize: "0.72rem",
-                  color: "rgba(31,41,55,0.5)",
+                  color: "var(--text-muted)",
                   textTransform: "uppercase",
                   letterSpacing: "0.06em",
                 }}

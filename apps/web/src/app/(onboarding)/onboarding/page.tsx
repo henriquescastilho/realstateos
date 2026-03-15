@@ -122,7 +122,7 @@ function Field({ label, required, hint, error, children }: FieldProps) {
       style={{
         display: "grid",
         gap: 6,
-        color: "rgba(31,41,55,0.75)",
+        color: "var(--text-secondary)",
         fontSize: "0.9rem",
       }}
     >
@@ -134,7 +134,7 @@ function Field({ label, required, hint, error, children }: FieldProps) {
       </span>
       {children}
       {hint && !error && (
-        <span style={{ fontSize: "0.78rem", color: "rgba(31,41,55,0.52)" }}>
+        <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>
           {hint}
         </span>
       )}
@@ -474,7 +474,7 @@ function SummaryRow({ label, value }: SummaryRowProps) {
         fontSize: "0.9rem",
       }}
     >
-      <span style={{ color: "rgba(31,41,55,0.55)", flexShrink: 0 }}>
+      <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>
         {label}
       </span>
       <span
@@ -509,7 +509,7 @@ function StepGoLive({ draft }: { draft: Draft }) {
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
-            color: "rgba(31,41,55,0.45)",
+            color: "var(--text-faint)",
           }}
         >
           Organização
@@ -539,7 +539,7 @@ function StepGoLive({ draft }: { draft: Draft }) {
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
-            color: "rgba(31,41,55,0.45)",
+            color: "var(--text-faint)",
           }}
         >
           Imóvel
@@ -566,7 +566,7 @@ function StepGoLive({ draft }: { draft: Draft }) {
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
-            color: "rgba(31,41,55,0.45)",
+            color: "var(--text-faint)",
           }}
         >
           Contrato
@@ -604,7 +604,7 @@ function StepGoLive({ draft }: { draft: Draft }) {
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.06em",
-              color: "rgba(31,41,55,0.45)",
+              color: "var(--text-faint)",
             }}
           >
             Conta Bancária
@@ -817,7 +817,7 @@ export default function OnboardingPage() {
             textTransform: "uppercase",
             letterSpacing: "0.16em",
             fontSize: "0.72rem",
-            color: "rgba(31,41,55,0.55)",
+            color: "var(--text-muted)",
             fontWeight: 600,
           }}
         >
@@ -836,7 +836,7 @@ export default function OnboardingPage() {
         <p
           style={{
             margin: 0,
-            color: "rgba(31,41,55,0.6)",
+            color: "var(--text-muted)",
             fontSize: "0.9rem",
           }}
         >
@@ -852,7 +852,7 @@ export default function OnboardingPage() {
             textAlign: "center",
             margin: "8px 0 0",
             fontSize: "0.78rem",
-            color: "rgba(31,41,55,0.5)",
+            color: "var(--text-muted)",
           }}
         >
           Passo {step + 1} de {STEPS.length}
@@ -885,7 +885,7 @@ export default function OnboardingPage() {
           <p
             style={{
               margin: 0,
-              color: "rgba(31,41,55,0.6)",
+              color: "var(--text-muted)",
               fontSize: "0.875rem",
             }}
           >
@@ -986,7 +986,7 @@ export default function OnboardingPage() {
               border: "none",
               cursor: "pointer",
               fontSize: "0.85rem",
-              color: "rgba(31,41,55,0.52)",
+              color: "var(--text-faint)",
               textDecoration: "underline",
               textUnderlineOffset: 3,
               padding: "4px 8px",
@@ -1006,7 +1006,7 @@ export default function OnboardingPage() {
               border: "none",
               cursor: "pointer",
               fontSize: "0.85rem",
-              color: "rgba(31,41,55,0.52)",
+              color: "var(--text-faint)",
               textDecoration: "underline",
               textUnderlineOffset: 3,
               padding: "4px 8px",

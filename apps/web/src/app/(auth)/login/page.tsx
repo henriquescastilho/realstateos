@@ -37,7 +37,7 @@ export default function LoginPage() {
         <p
           style={{
             margin: 0,
-            color: "rgba(31,41,55,0.62)",
+            color: "var(--text-muted)",
             fontSize: "0.92rem",
           }}
         >
@@ -86,7 +86,7 @@ export default function LoginPage() {
               alignItems: "center",
               gap: 8,
               fontSize: "0.88rem",
-              color: "rgba(31,41,55,0.72)",
+              color: "var(--text-secondary)",
               cursor: "pointer",
             }}
           >
@@ -122,7 +122,7 @@ export default function LoginPage() {
           marginTop: 20,
           textAlign: "center",
           fontSize: "0.88rem",
-          color: "rgba(31,41,55,0.62)",
+          color: "var(--text-muted)",
         }}
       >
         Não tem conta?{" "}

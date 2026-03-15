@@ -44,7 +44,7 @@ export function PageSpinner({ label = "Loading…" }: { label?: string }) {
         justifyContent: "center",
         gap: 16,
         padding: "80px 40px",
-        color: "rgba(31,41,55,0.5)",
+        color: "var(--text-muted)",
       }}
     >
       <Spinner size={36} />

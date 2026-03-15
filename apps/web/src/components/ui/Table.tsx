@@ -83,7 +83,7 @@ export function Table<T extends Record<string, unknown>>({
                   fontSize: "0.8rem",
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
-                  color: "rgba(31,41,55,0.55)",
+                  color: "var(--text-muted)",
                   whiteSpace: "nowrap",
                   width: col.width,
                   ...cellAlign(col.align),
@@ -102,7 +102,7 @@ export function Table<T extends Record<string, unknown>>({
                 style={{
                   textAlign: "center",
                   padding: "32px 16px",
-                  color: "rgba(31,41,55,0.45)",
+                  color: "var(--text-faint)",
                 }}
               >
                 <span
@@ -129,7 +129,7 @@ export function Table<T extends Record<string, unknown>>({
                 style={{
                   textAlign: "center",
                   padding: "32px 16px",
-                  color: "rgba(31,41,55,0.4)",
+                  color: "var(--text-faint)",
                   fontStyle: "italic",
                 }}
               >

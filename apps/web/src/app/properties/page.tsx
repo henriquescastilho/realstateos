@@ -666,7 +666,7 @@ function LoadingRow() {
         display: "flex",
         gap: 10,
         alignItems: "center",
-        color: "rgba(31,41,55,0.5)",
+        color: "var(--text-muted)",
         padding: "16px 0",
       }}
     >

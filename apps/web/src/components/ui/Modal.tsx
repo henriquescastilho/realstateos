@@ -116,7 +116,7 @@ export function Modal({
                 id="modal-description"
                 style={{
                   margin: "6px 0 0",
-                  color: "rgba(31,41,55,0.65)",
+                  color: "var(--text-muted)",
                   fontSize: "0.9rem",
                 }}
               >
@@ -139,7 +139,7 @@ export function Modal({
             cursor: "pointer",
             fontSize: "1.2rem",
             lineHeight: 1,
-            color: "rgba(31,41,55,0.5)",
+            color: "var(--text-muted)",
             padding: 4,
             borderRadius: 4,
           }}

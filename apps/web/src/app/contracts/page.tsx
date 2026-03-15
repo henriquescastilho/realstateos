@@ -468,7 +468,7 @@ function ContractDetailPanel({
               display: "flex",
               gap: 10,
               alignItems: "center",
-              color: "rgba(31,41,55,0.5)",
+              color: "var(--text-muted)",
             }}
           >
             <Spinner size={16} />
@@ -648,7 +648,7 @@ function CreateContractForm({
         />
       </div>
 
-      <label style={{ display: "grid", gap: 6, color: "rgba(31,41,55,0.75)" }}>
+      <label style={{ display: "grid", gap: 6, color: "var(--text-secondary)" }}>
         <span style={{ fontSize: "0.88rem" }}>Contrato em PDF (opcional)</span>
         <input type="file" name="contract_pdf" accept="application/pdf" />
       </label>

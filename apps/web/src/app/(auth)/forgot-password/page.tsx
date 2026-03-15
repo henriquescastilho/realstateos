@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
         <p
           style={{
             margin: 0,
-            color: "rgba(31,41,55,0.62)",
+            color: "var(--text-muted)",
             fontSize: "0.92rem",
           }}
         >
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
           marginTop: 20,
           textAlign: "center",
           fontSize: "0.88rem",
-          color: "rgba(31,41,55,0.62)",
+          color: "var(--text-muted)",
         }}
       >
         <Link href="/login" className="inline-link">

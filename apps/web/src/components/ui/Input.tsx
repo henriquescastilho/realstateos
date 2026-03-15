@@ -20,7 +20,7 @@ export function Input({
     id ?? (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
   return (
-    <label style={{ display: "grid", gap: 6, color: "rgba(31,41,55,0.75)" }}>
+    <label style={{ display: "grid", gap: 6, color: "var(--text-secondary)" }}>
       {label && <span style={{ fontSize: "0.88rem" }}>{label}</span>}
       <input
         id={inputId}

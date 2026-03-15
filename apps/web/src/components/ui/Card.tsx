@@ -35,7 +35,7 @@ export function Card({
           <div>
             {title && <h3 style={{ margin: 0 }}>{title}</h3>}
             {description && (
-              <p style={{ margin: "6px 0 0", color: "rgba(31,41,55,0.65)" }}>
+              <p style={{ margin: "6px 0 0", color: "var(--text-muted)" }}>
                 {description}
               </p>
             )}
