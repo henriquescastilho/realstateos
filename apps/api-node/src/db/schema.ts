@@ -43,6 +43,14 @@ export const properties = pgTable("properties", {
   areaSqm: numeric("area_sqm", { precision: 10, scale: 2 }),
   bedrooms: integer("bedrooms"),
   registryReference: varchar("registry_reference", { length: 100 }),
+  municipalRegistration: varchar("municipal_registration", { length: 100 }),
+  condoAdmin: jsonb("condo_admin").$type<{
+    name: string;
+    cnpj: string;
+    phone: string;
+    email: string;
+    condoFee: string;
+  }>(),
   status: varchar("status", { length: 20 }).default("active").notNull(),
   ...timestamps(),
 }, (t) => [

@@ -100,28 +100,46 @@ const TENANTS = [
   { fullName: "Aline Gonçalves Barros",   documentNumber: "690.531.067-90", email: "aline.barros@hotmail.com",     phone: "(11) 98201-2020" },
 ];
 
+// ─── Administradoras de condomínio (fictícias) ───
+const CONDO_ADMINS = [
+  { name: "Lello Condomínios",           cnpj: "61.064.209/0001-79", phone: "(11) 3147-7000", email: "contato@lello.com.br",           condoFee: "780.00" },
+  { name: "Adbens Condomínios",          cnpj: "04.825.673/0001-90", phone: "(11) 3054-3800", email: "financeiro@adbens.com.br",       condoFee: "1250.00" },
+  { name: "Habitacional Administradora", cnpj: "52.139.847/0001-33", phone: "(11) 3285-3600", email: "boleto@habitacional.com.br",     condoFee: "650.00" },
+  { name: "Graiche Administradora",      cnpj: "47.920.185/0001-12", phone: "(11) 3071-4200", email: "cobranca@graiche.com.br",        condoFee: "920.00" },
+  { name: "Itambé Administradora",       cnpj: "61.382.710/0001-05", phone: "(11) 3065-9500", email: "atendimento@itambe.com.br",      condoFee: "850.00" },
+  { name: "CIPA Administradora",         cnpj: "33.176.490/0001-87", phone: "(11) 3178-5000", email: "financeiro@cipa.com.br",         condoFee: "1100.00" },
+  { name: "Protel Administradora",       cnpj: "58.743.216/0001-48", phone: "(11) 3887-2300", email: "contato@protel.com.br",          condoFee: "580.00" },
+  { name: "Sequóia Administradora",      cnpj: "09.451.837/0001-61", phone: "(11) 3034-7100", email: "adm@sequoiacondominios.com.br",  condoFee: "1400.00" },
+];
+
 // ─── 20 imóveis (SP capital — bairros variados) ───
-const PROPERTIES = [
-  { address: "Rua Augusta, 1200 - Apto 31",                     city: "São Paulo", state: "SP", zip: "01304-001", type: "residential", areaSqm: "72.00",  bedrooms: 2 },
-  { address: "Av. Paulista, 900 - Sala 1401",                   city: "São Paulo", state: "SP", zip: "01310-100", type: "commercial",  areaSqm: "120.00", bedrooms: 0 },
-  { address: "Rua Oscar Freire, 450 - Apto 82",                 city: "São Paulo", state: "SP", zip: "01426-001", type: "residential", areaSqm: "95.00",  bedrooms: 3 },
-  { address: "Alameda Santos, 300 - Conj. 51",                  city: "São Paulo", state: "SP", zip: "01418-000", type: "commercial",  areaSqm: "55.00",  bedrooms: 0 },
-  { address: "Rua Haddock Lobo, 888 - Apto 12",                 city: "São Paulo", state: "SP", zip: "01414-001", type: "residential", areaSqm: "48.00",  bedrooms: 1 },
-  { address: "Rua da Consolação, 2100 - Apto 44",               city: "São Paulo", state: "SP", zip: "01302-100", type: "residential", areaSqm: "60.00",  bedrooms: 2 },
-  { address: "Rua Vergueiro, 3500 - Sala 210",                  city: "São Paulo", state: "SP", zip: "04101-300", type: "commercial",  areaSqm: "35.00",  bedrooms: 0 },
-  { address: "Av. Brasil, 5000 - Casa 3",                       city: "São Paulo", state: "SP", zip: "01430-001", type: "residential", areaSqm: "200.00", bedrooms: 4 },
-  { address: "Rua Teodoro Sampaio, 1700 - Apto 63",             city: "São Paulo", state: "SP", zip: "05405-150", type: "residential", areaSqm: "82.00",  bedrooms: 3 },
-  { address: "Av. Faria Lima, 3200 - Conj. 1802",               city: "São Paulo", state: "SP", zip: "04538-132", type: "commercial",  areaSqm: "90.00",  bedrooms: 0 },
-  { address: "Rua Pamplona, 518 - Apto 71",                     city: "São Paulo", state: "SP", zip: "01405-000", type: "residential", areaSqm: "68.00",  bedrooms: 2 },
-  { address: "Av. Rebouças, 1200 - Sala 305",                   city: "São Paulo", state: "SP", zip: "05402-100", type: "commercial",  areaSqm: "42.00",  bedrooms: 0 },
-  { address: "Rua Bela Cintra, 756 - Apto 54",                  city: "São Paulo", state: "SP", zip: "01415-002", type: "residential", areaSqm: "55.00",  bedrooms: 1 },
-  { address: "Rua dos Pinheiros, 900 - Apto 22",                city: "São Paulo", state: "SP", zip: "05422-001", type: "residential", areaSqm: "78.00",  bedrooms: 2 },
-  { address: "Av. Brigadeiro Luís Antônio, 2200 - Conj. 1205",  city: "São Paulo", state: "SP", zip: "01402-000", type: "commercial",  areaSqm: "65.00",  bedrooms: 0 },
-  { address: "Rua Estados Unidos, 1340 - Apto 41",              city: "São Paulo", state: "SP", zip: "01427-001", type: "residential", areaSqm: "105.00", bedrooms: 3 },
-  { address: "Rua Funchal, 411 - Sala 1503",                    city: "São Paulo", state: "SP", zip: "04551-060", type: "commercial",  areaSqm: "75.00",  bedrooms: 0 },
-  { address: "Rua Artur de Azevedo, 1200 - Apto 92",            city: "São Paulo", state: "SP", zip: "05404-003", type: "residential", areaSqm: "88.00",  bedrooms: 3 },
-  { address: "Av. Santo Amaro, 4500 - Casa 7",                  city: "São Paulo", state: "SP", zip: "04556-100", type: "residential", areaSqm: "180.00", bedrooms: 4 },
-  { address: "Rua Joaquim Floriano, 820 - Conj. 701",           city: "São Paulo", state: "SP", zip: "04534-003", type: "commercial",  areaSqm: "50.00",  bedrooms: 0 },
+// Inscrição imobiliária: prefeitura SP formato 000.000.0000.0-0 (setor.quadra.lote.unidade)
+// condoAdminIdx: index into CONDO_ADMINS (null = sem condomínio, ex: casas)
+const PROPERTIES: Array<{
+  address: string; city: string; state: string; zip: string; type: string;
+  areaSqm: string; bedrooms: number; municipalRegistration: string;
+  condoAdminIdx: number | null;
+}> = [
+  { address: "Rua Augusta, 1200 - Apto 31",                     city: "São Paulo", state: "SP", zip: "01304-001", type: "residential", areaSqm: "72.00",  bedrooms: 2, municipalRegistration: "042.035.0128.031-1", condoAdminIdx: 0 },
+  { address: "Av. Paulista, 900 - Sala 1401",                   city: "São Paulo", state: "SP", zip: "01310-100", type: "commercial",  areaSqm: "120.00", bedrooms: 0, municipalRegistration: "042.041.0045.140-3", condoAdminIdx: 1 },
+  { address: "Rua Oscar Freire, 450 - Apto 82",                 city: "São Paulo", state: "SP", zip: "01426-001", type: "residential", areaSqm: "95.00",  bedrooms: 3, municipalRegistration: "042.028.0072.082-5", condoAdminIdx: 2 },
+  { address: "Alameda Santos, 300 - Conj. 51",                  city: "São Paulo", state: "SP", zip: "01418-000", type: "commercial",  areaSqm: "55.00",  bedrooms: 0, municipalRegistration: "042.033.0091.051-8", condoAdminIdx: 3 },
+  { address: "Rua Haddock Lobo, 888 - Apto 12",                 city: "São Paulo", state: "SP", zip: "01414-001", type: "residential", areaSqm: "48.00",  bedrooms: 1, municipalRegistration: "042.030.0156.012-2", condoAdminIdx: 4 },
+  { address: "Rua da Consolação, 2100 - Apto 44",               city: "São Paulo", state: "SP", zip: "01302-100", type: "residential", areaSqm: "60.00",  bedrooms: 2, municipalRegistration: "042.037.0203.044-7", condoAdminIdx: 0 },
+  { address: "Rua Vergueiro, 3500 - Sala 210",                  city: "São Paulo", state: "SP", zip: "04101-300", type: "commercial",  areaSqm: "35.00",  bedrooms: 0, municipalRegistration: "056.012.0087.210-4", condoAdminIdx: 5 },
+  { address: "Av. Brasil, 5000 - Casa 3",                       city: "São Paulo", state: "SP", zip: "01430-001", type: "residential", areaSqm: "200.00", bedrooms: 4, municipalRegistration: "042.048.0312.001-9", condoAdminIdx: null },
+  { address: "Rua Teodoro Sampaio, 1700 - Apto 63",             city: "São Paulo", state: "SP", zip: "05405-150", type: "residential", areaSqm: "82.00",  bedrooms: 3, municipalRegistration: "063.022.0145.063-6", condoAdminIdx: 2 },
+  { address: "Av. Faria Lima, 3200 - Conj. 1802",               city: "São Paulo", state: "SP", zip: "04538-132", type: "commercial",  areaSqm: "90.00",  bedrooms: 0, municipalRegistration: "071.015.0034.180-1", condoAdminIdx: 7 },
+  { address: "Rua Pamplona, 518 - Apto 71",                     city: "São Paulo", state: "SP", zip: "01405-000", type: "residential", areaSqm: "68.00",  bedrooms: 2, municipalRegistration: "042.032.0178.071-3", condoAdminIdx: 4 },
+  { address: "Av. Rebouças, 1200 - Sala 305",                   city: "São Paulo", state: "SP", zip: "05402-100", type: "commercial",  areaSqm: "42.00",  bedrooms: 0, municipalRegistration: "063.018.0056.305-8", condoAdminIdx: 6 },
+  { address: "Rua Bela Cintra, 756 - Apto 54",                  city: "São Paulo", state: "SP", zip: "01415-002", type: "residential", areaSqm: "55.00",  bedrooms: 1, municipalRegistration: "042.029.0134.054-5", condoAdminIdx: 0 },
+  { address: "Rua dos Pinheiros, 900 - Apto 22",                city: "São Paulo", state: "SP", zip: "05422-001", type: "residential", areaSqm: "78.00",  bedrooms: 2, municipalRegistration: "063.025.0098.022-2", condoAdminIdx: 2 },
+  { address: "Av. Brigadeiro Luís Antônio, 2200 - Conj. 1205",  city: "São Paulo", state: "SP", zip: "01402-000", type: "commercial",  areaSqm: "65.00",  bedrooms: 0, municipalRegistration: "042.039.0067.120-7", condoAdminIdx: 1 },
+  { address: "Rua Estados Unidos, 1340 - Apto 41",              city: "São Paulo", state: "SP", zip: "01427-001", type: "residential", areaSqm: "105.00", bedrooms: 3, municipalRegistration: "042.027.0215.041-4", condoAdminIdx: 3 },
+  { address: "Rua Funchal, 411 - Sala 1503",                    city: "São Paulo", state: "SP", zip: "04551-060", type: "commercial",  areaSqm: "75.00",  bedrooms: 0, municipalRegistration: "071.019.0023.150-6", condoAdminIdx: 7 },
+  { address: "Rua Artur de Azevedo, 1200 - Apto 92",            city: "São Paulo", state: "SP", zip: "05404-003", type: "residential", areaSqm: "88.00",  bedrooms: 3, municipalRegistration: "063.021.0167.092-1", condoAdminIdx: 5 },
+  { address: "Av. Santo Amaro, 4500 - Casa 7",                  city: "São Paulo", state: "SP", zip: "04556-100", type: "residential", areaSqm: "180.00", bedrooms: 4, municipalRegistration: "071.034.0289.001-3", condoAdminIdx: null },
+  { address: "Rua Joaquim Floriano, 820 - Conj. 701",           city: "São Paulo", state: "SP", zip: "04534-003", type: "commercial",  areaSqm: "50.00",  bedrooms: 0, municipalRegistration: "071.016.0078.701-9", condoAdminIdx: 6 },
 ];
 
 // Valores de aluguel variados (R$)
@@ -298,19 +316,35 @@ async function seed() {
       areaSqm: "420.00",
       bedrooms: 4,
       registryReference: "CRI-SP-14-MAT-287654",
+      municipalRegistration: "071.008.0042.001-2",
+      condoAdmin: {
+        name: "Sequóia Administradora",
+        cnpj: "09.451.837/0001-61",
+        phone: "(11) 3034-7100",
+        email: "adm@sequoiacondominios.com.br",
+        condoFee: "2800.00",
+      },
       status: "active",
     })
     .returning();
   console.log(`  ★ ${adminProperty.address}`);
 
-  // 5. 20 imóveis
+  // 5. 20 imóveis (com inscrição imobiliária e administradora de condomínio)
   console.log("\nCriando 20 imoveis...");
   const propertyRows = await db
     .insert(schema.properties)
     .values(
       PROPERTIES.map((p) => ({
         orgId: org.id,
-        ...p,
+        address: p.address,
+        city: p.city,
+        state: p.state,
+        zip: p.zip,
+        type: p.type,
+        areaSqm: p.areaSqm,
+        bedrooms: p.bedrooms,
+        municipalRegistration: p.municipalRegistration,
+        condoAdmin: p.condoAdminIdx !== null ? CONDO_ADMINS[p.condoAdminIdx] : null,
         status: "active",
       }))
     )
