@@ -328,7 +328,11 @@ Inclua no relatório:
   const adminFeeAmount = (rentAmountNum * adminFeePercent / 100).toFixed(2);
   const netPayout = (rentAmountNum - parseFloat(adminFeeAmount)).toFixed(2);
 
-  // PDF 1: Boleto do inquilino
+  // Buscar chave PIX do proprietário para incluir no boleto
+  const ownerPrefs = owner?.payoutPreferences as Record<string, unknown> | null;
+  const ownerPixKey = ownerPrefs?.pixKey as string | undefined;
+
+  // PDF 1: Boleto do inquilino (com PIX Copia e Cola)
   const boletoHtml = renderBoletoHtml({
     orgName,
     tenantName,
@@ -345,6 +349,8 @@ Inclua no relatório:
     netAmount: chargeAfterIssue?.netAmount ?? String(contract.rentAmount),
     barcode: chargeAfterIssue?.barcode ?? undefined,
     digitableLine: chargeAfterIssue?.digitableLine ?? undefined,
+    pixEmv: chargeAfterIssue?.pixEmv ?? undefined,
+    pixKey: ownerPixKey,
   });
 
   // PDF 2: Extrato de repasse do proprietário
@@ -405,66 +411,65 @@ Inclua no relatório:
     pdfBuffers = { boleto: Buffer.alloc(0), statement: Buffer.alloc(0), report: Buffer.alloc(0) };
   }
 
-  // ── Step 8: Send email with 3 PDF attachments ──
+  // ── Step 8: Send 3 separate emails ──
   let emailSent = false;
   start = Date.now();
+  const periodLabel = billingPeriod.replace("-", "/");
+  let emailsSent = 0;
+
   try {
-    const periodLabel = billingPeriod.replace("-", "/");
-    const attachments = [
-      pdfBuffers.boleto.length > 0 && { filename: `boleto-${billingPeriod}.pdf`, content: pdfBuffers.boleto },
-      pdfBuffers.statement.length > 0 && { filename: `extrato-repasse-${billingPeriod}.pdf`, content: pdfBuffers.statement },
-      pdfBuffers.report.length > 0 && { filename: `relatorio-simulacao-${billingPeriod}.pdf`, content: pdfBuffers.report },
-    ].filter(Boolean) as Array<{ filename: string; content: Buffer }>;
+    // Email 1: Boleto do inquilino
+    if (pdfBuffers.boleto.length > 0) {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[REOS] Boleto — ${periodLabel} — ${tenantName} — ${propertyAddress}`,
+        body: `Boleto de aluguel para ${tenantName}, período ${periodLabel}.`,
+        html: boletoHtml,
+        orgId,
+        attachments: [{ filename: `boleto-${billingPeriod}.pdf`, content: pdfBuffers.boleto }],
+      });
+      emailsSent++;
+      console.log(`[simulation] Email 1/3 enviado: Boleto → ${adminEmail}`);
+    }
 
-    await sendEmail({
-      to: adminEmail,
-      subject: `[REOS] Simulação completa — ${periodLabel} — ${propertyAddress}`,
-      body: [
-        `Simulação do pipeline de agentes IA concluída com sucesso.`,
-        ``,
-        `Período: ${periodLabel}`,
-        `Inquilino: ${tenantName}`,
-        `Proprietário: ${ownerName}`,
-        `Imóvel: ${propertyAddress}`,
-        ``,
-        `Em anexo:`,
-        `  1. Boleto do inquilino`,
-        `  2. Extrato de repasse do proprietário`,
-        `  3. Relatório completo da imobiliária`,
-        ``,
-        `— Real Estate OS`,
-      ].join("\n"),
-      html: `<div style="font-family:sans-serif;color:#333;max-width:600px;margin:0 auto;padding:20px;">
-        <h2 style="color:#1a56db;">Simulação Concluída</h2>
-        <p>O pipeline de agentes IA foi executado com sucesso para o período <strong>${periodLabel}</strong>.</p>
-        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
-          <tr><td style="padding:8px 0;color:#666;">Inquilino:</td><td style="padding:8px 0;font-weight:600;">${tenantName}</td></tr>
-          <tr><td style="padding:8px 0;color:#666;">Proprietário:</td><td style="padding:8px 0;font-weight:600;">${ownerName}</td></tr>
-          <tr><td style="padding:8px 0;color:#666;">Imóvel:</td><td style="padding:8px 0;font-weight:600;">${propertyAddress}</td></tr>
-          <tr><td style="padding:8px 0;color:#666;">Aluguel:</td><td style="padding:8px 0;font-weight:600;">R$ ${contract.rentAmount}</td></tr>
-        </table>
-        <h3 style="margin-top:20px;">Documentos em anexo:</h3>
-        <ol>
-          <li><strong>Boleto do inquilino</strong> — cobrança gerada pelo agente Cobrador</li>
-          <li><strong>Extrato de repasse</strong> — prestação de contas ao proprietário, já descontando a taxa de administração</li>
-          <li><strong>Relatório da imobiliária</strong> — o que cada agente de IA fez + análise executiva</li>
-        </ol>
-        <p style="color:#666;font-size:13px;margin-top:24px;">— Real Estate OS</p>
-      </div>`,
-      orgId,
-      attachments,
-    });
+    // Email 2: Extrato de repasse do proprietário
+    if (pdfBuffers.statement.length > 0) {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[REOS] Extrato de Repasse — ${periodLabel} — ${ownerName}`,
+        body: `Extrato de repasse para ${ownerName}, período ${periodLabel}.`,
+        html: statementHtml,
+        orgId,
+        attachments: [{ filename: `extrato-repasse-${billingPeriod}.pdf`, content: pdfBuffers.statement }],
+      });
+      emailsSent++;
+      console.log(`[simulation] Email 2/3 enviado: Extrato → ${adminEmail}`);
+    }
 
-    emailSent = true;
+    // Email 3: Relatório da imobiliária
+    if (pdfBuffers.report.length > 0) {
+      await sendEmail({
+        to: adminEmail,
+        subject: `[REOS] Relatório da Simulação — ${periodLabel} — ${propertyAddress}`,
+        body: `Relatório completo da simulação do pipeline de agentes IA.`,
+        html: reportHtml,
+        orgId,
+        attachments: [{ filename: `relatorio-simulacao-${billingPeriod}.pdf`, content: pdfBuffers.report }],
+      });
+      emailsSent++;
+      console.log(`[simulation] Email 3/3 enviado: Relatório → ${adminEmail}`);
+    }
+
+    emailSent = emailsSent === 3;
     steps.push({
       agent: "Email",
-      status: "completed",
-      summary: `Email com 3 PDFs enviado para ${adminEmail}`,
-      output: { recipient: adminEmail, attachmentCount: attachments.length },
+      status: emailsSent > 0 ? "completed" : "failed",
+      summary: `${emailsSent}/3 emails enviados para ${adminEmail} (Boleto + Extrato + Relatório)`,
+      output: { recipient: adminEmail, emailsSent },
       durationMs: Date.now() - start,
     });
   } catch (err) {
-    steps.push({ agent: "Email", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
+    steps.push({ agent: "Email", status: "failed", summary: `${emailsSent}/3 enviados, erro: ${String(err)}`, output: { emailsSent }, durationMs: Date.now() - start });
   }
 
   return {
