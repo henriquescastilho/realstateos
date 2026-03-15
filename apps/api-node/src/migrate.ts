@@ -6,7 +6,6 @@ import path from "path";
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-  // Create migrations tracking table if not exists
   await pool.query(`
     CREATE TABLE IF NOT EXISTS __drizzle_migrations (
       id serial PRIMARY KEY,
@@ -34,7 +33,18 @@ async function main() {
     const sqlFile = path.join(migrationsDir, `${hash}.sql`);
     const sql = fs.readFileSync(sqlFile, "utf8");
     console.log(`[migrate] applying ${hash}...`);
-    await pool.query(sql);
+
+    try {
+      await pool.query(sql);
+    } catch (err: any) {
+      if (err.code === "42P07") {
+        // relation already exists — mark as applied and continue
+        console.log(`[migrate] ${hash} already exists, marking as applied`);
+      } else {
+        throw err;
+      }
+    }
+
     await pool.query(
       "INSERT INTO __drizzle_migrations (hash, created_at) VALUES ($1, $2)",
       [hash, Date.now()],
