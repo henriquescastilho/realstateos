@@ -1,4 +1,7 @@
+import { getSnapshot } from "./auth";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const NODE_API_URL = process.env.NEXT_PUBLIC_NODE_API_URL ?? "http://localhost:3001/api/v1";
 
 // In-memory token store (for MVP — replace with cookie/session in production)
 let _accessToken: string | null = null;
@@ -50,14 +53,23 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
 function authHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
-  if (_accessToken) {
-    headers["Authorization"] = `Bearer ${_accessToken}`;
+  // Use token from auth store (login flow), fallback to legacy module-level token
+  const token = getSnapshot().accessToken ?? _accessToken;
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
   }
   return headers;
 }
 
+function normalizePath(path: string): string {
+  // Strip /v1 prefix since NODE_API_URL already includes /api/v1
+  return path.replace(/^\/v1/, "");
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
+  // Route through Node API (Python API is offline)
+  const normalizedPath = normalizePath(path);
+  const response = await fetch(`${NODE_API_URL}${normalizedPath}`, {
     cache: "no-store",
     ...init,
     headers: {
@@ -65,11 +77,45 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
-  return parseResponse<T>(response);
+  const json = await parseResponse<Record<string, unknown>>(response);
+  // Node API wraps responses in { ok, data } — unwrap it
+  if (json && typeof json === "object" && "data" in json) {
+    return json.data as T;
+  }
+  return json as unknown as T;
+}
+
+async function nodeRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${NODE_API_URL}${path}`, {
+    cache: "no-store",
+    ...init,
+    headers: {
+      ...authHeaders(),
+      ...init?.headers,
+    },
+  });
+  const json = await parseResponse<Record<string, unknown>>(response);
+  // Node API wraps responses in { ok, data } — unwrap it
+  if (json && typeof json === "object" && "data" in json) {
+    return json.data as T;
+  }
+  return json as unknown as T;
 }
 
 export function apiGet<T>(path: string) {
   return request<T>(path);
+}
+
+export function nodeApiGet<T>(path: string) {
+  return nodeRequest<T>(path);
+}
+
+export function nodeApiPost<T>(path: string, body?: unknown) {
+  return nodeRequest<T>(path, {
+    method: "POST",
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
 }
 
 export function apiPost<T>(path: string, body?: unknown) {

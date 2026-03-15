@@ -48,7 +48,7 @@ billingRouter.get(
   "/charges",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listChargesQuerySchema.parse(req.query);
+      const query = listChargesQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listCharges(query);
       paginated(res, result.data, {
         total: result.total,
@@ -58,6 +58,43 @@ billingRouter.get(
     } catch (err) {
       next(err);
     }
+  },
+);
+
+// POST /charges/generate-monthly — alias for generate (frontend compat)
+billingRouter.post(
+  "/charges/generate-monthly",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const input = generateChargesSchema.parse(req.body);
+      const result = await generateCharge(input);
+      created(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /charges/consolidate — stub
+billingRouter.post(
+  "/charges/consolidate",
+  (_req: Request, res: Response) => {
+    ok(res, { total_amount: "0", items: [], message: "Consolidation not yet implemented" });
+  },
+);
+
+// POST /charges/:id/generate-payment — stub
+billingRouter.post(
+  "/charges/:id/generate-payment",
+  (_req: Request, res: Response) => {
+    ok(res, {
+      provider: "mock",
+      charge_id: _req.params.id,
+      boleto_url: "",
+      barcode: "",
+      pix_qrcode: "",
+      message: "Payment generation not yet implemented",
+    });
   },
 );
 

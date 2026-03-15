@@ -36,7 +36,7 @@ paymentsRouter.get(
   "/payments",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listPaymentsQuerySchema.parse(req.query);
+      const query = listPaymentsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listPayments(query);
       paginated(res, result.data, {
         total: result.total,
@@ -82,7 +82,7 @@ paymentsRouter.get(
   "/statements",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listStatementsQuerySchema.parse(req.query);
+      const query = listStatementsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listStatements(query);
       paginated(res, result.data, {
         total: result.total,

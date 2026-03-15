@@ -17,6 +17,24 @@ import {
 
 export const contractsRouter = Router();
 
+// Map DB row to frontend-expected format
+function mapContract(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    tenant_id: row.orgId,
+    property_id: row.propertyId,
+    renter_id: row.tenantId,
+    owner_id: row.ownerId,
+    start_date: row.startDate,
+    end_date: row.endDate,
+    monthly_rent: row.rentAmount,
+    due_day: 1, // not stored in schema yet
+    status: row.operationalStatus === "pending_onboarding" ? "pending" : row.operationalStatus,
+    created_at: row.createdAt,
+    updated_at: row.updatedAt,
+  };
+}
+
 // GET /contracts — list with filters + pagination
 contractsRouter.get("/contracts", async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -25,7 +43,8 @@ contractsRouter.get("/contracts", async (req: Request, res: Response, next: Next
       orgId: req.user?.org_id,
     });
     const { rows, total } = await listContracts(query);
-    paginated(res, rows, { total, page: query.page, pageSize: query.pageSize });
+    const mapped = rows.map((r) => mapContract(r as unknown as Record<string, unknown>));
+    paginated(res, mapped, { total, page: query.page, pageSize: query.pageSize });
   } catch (err) {
     next(err);
   }
@@ -35,7 +54,7 @@ contractsRouter.get("/contracts", async (req: Request, res: Response, next: Next
 contractsRouter.get("/contracts/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const contract = await getContractById(req.params.id!, req.user!.org_id);
-    ok(res, contract);
+    ok(res, mapContract(contract as unknown as Record<string, unknown>));
   } catch (err) {
     next(err);
   }

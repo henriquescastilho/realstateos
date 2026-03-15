@@ -23,7 +23,7 @@ agentsRouter.get(
   "/agents/tasks",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listAgentTasksQuerySchema.parse(req.query);
+      const query = listAgentTasksQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listAgentTasks(query);
       paginated(res, result.data, {
         total: result.total,
@@ -104,7 +104,7 @@ agentsRouter.get(
   "/agents/configs",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { orgId } = listAgentConfigsQuerySchema.parse(req.query);
+      const { orgId } = listAgentConfigsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const data = await listAgentConfigs(orgId);
       ok(res, data);
     } catch (err) {

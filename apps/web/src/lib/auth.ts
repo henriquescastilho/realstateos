@@ -161,7 +161,7 @@ export function isAuthenticated(): boolean {
 // API helpers — attach token to requests
 // ---------------------------------------------------------------------------
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_NODE_API_URL ?? "http://localhost:3001/api/v1";
 
 export interface LoginCredentials {
   email: string;

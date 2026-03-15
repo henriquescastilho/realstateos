@@ -55,7 +55,12 @@ async function apiFetch<T>(path: string): Promise<T> {
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(url, { headers, cache: "no-store" });
   if (!res.ok) throw new Error(`${res.status}`);
-  return res.json() as Promise<T>;
+  const json = await res.json();
+  // Node API wraps responses in { ok, data } — unwrap it
+  if (json && typeof json === "object" && "data" in json) {
+    return json.data as T;
+  }
+  return json as T;
 }
 
 function fmt(n: number | null | undefined, currency = false) {

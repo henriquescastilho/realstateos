@@ -44,8 +44,8 @@ export function Badge({ children, variant = "default", style }: BadgeProps) {
 }
 
 /** Derive variant from a status string (covers API status values). */
-export function statusVariant(status: string): BadgeVariant {
-  const s = status.toLowerCase();
+export function statusVariant(status: string | undefined | null): BadgeVariant {
+  const s = (status ?? "pending").toLowerCase();
   if (s === "paid" || s === "completed" || s === "resolved") return "paid";
   if (s === "done") return "done";
   if (s === "pending" || s === "queued") return "pending";

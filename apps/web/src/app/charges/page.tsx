@@ -1,20 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-
-import { ProtectedPage } from "@/components/layout/protected-page";
-import { Card, PageGrid } from "@/components/page-sections";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "@/lib/api";
 import type { Charge, ConsolidatedCharge, Contract, PaymentResult, Property } from "@/lib/types";
+import {
+  Badge,
+  Button,
+  Card,
+  Input,
+  Select,
+  Spinner,
+  Table,
+  statusVariant,
+} from "@/components/ui";
+import type { Column } from "@/components/ui";
 
-function monthToReferenceDate(value: FormDataEntryValue | null) {
-  const month = String(value ?? "");
-  return month ? `${month}-01` : "";
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function fmtBRL(n: string | number) {
+  return Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function normalizeStatus(status: string) {
-  return status.toLowerCase();
+function fmtDate(s: string | undefined | null) {
+  return s ? new Date(s).toLocaleDateString("pt-BR") : "—";
 }
+
+function normalizeStatus(status: string | undefined | null) {
+  return (status ?? "pending").toLowerCase();
+}
+
+function monthToRef(value: FormDataEntryValue | null) {
+  const m = String(value ?? "");
+  return m ? `${m}-01` : "";
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function ChargesPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
@@ -26,235 +50,284 @@ export default function ChargesPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  async function refresh() {
+  // Filters
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterContract, setFilterContract] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      const [contractsResponse, propertiesResponse, chargesResponse] = await Promise.all([
+      const [c, p, ch] = await Promise.all([
         apiGet<Contract[]>("/contracts"),
         apiGet<Property[]>("/properties"),
         apiGet<Charge[]>("/charges"),
       ]);
-      setContracts(contractsResponse);
-      setProperties(propertiesResponse);
-      setCharges(chargesResponse);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Falha ao carregar cobranças.");
+      setContracts(Array.isArray(c) ? c : []);
+      setProperties(Array.isArray(p) ? p : []);
+      setCharges(Array.isArray(ch) ? ch : []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Falha ao carregar cobranças.");
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    void refresh();
   }, []);
 
-  async function generateMonthlyCharge(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      setError(null);
-      setSuccess(null);
-      const formData = new FormData(event.currentTarget);
-      await apiPost<Charge[]>("/charges/generate-monthly", {
-        contract_id: String(formData.get("contract_id")),
-        reference_month: monthToReferenceDate(formData.get("reference_month")),
-      });
-      setSuccess("Cobrança mensal criada.");
-      event.currentTarget.reset();
-      await refresh();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Falha ao gerar cobrança mensal.");
-    }
-  }
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  async function consolidateCharges(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    try {
-      setError(null);
-      setSuccess(null);
-      const formData = new FormData(event.currentTarget);
-      const response = await apiPost<ConsolidatedCharge>("/charges/consolidate", {
-        contract_id: String(formData.get("contract_id")),
-        reference_month: monthToReferenceDate(formData.get("reference_month")),
-      });
-      setLastConsolidation(response);
-      setSuccess("Cobranças consolidadas.");
-      await refresh();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Falha ao consolidar cobranças.");
-    }
-  }
-
-  async function generatePayment(chargeId: string) {
-    try {
-      setError(null);
-      setSuccess(null);
-      const response = await apiPost<PaymentResult>(`/charges/${chargeId}/generate-payment`);
-      setPaymentResult(response);
-      setSuccess("Boleto/PIX gerado.");
-      await refresh();
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Falha ao gerar pagamento.");
-    }
-  }
+  // Filtered charges
+  const filtered = useMemo(() => {
+    return charges.filter((ch) => {
+      const matchStatus = !filterStatus || normalizeStatus(ch.status) === filterStatus;
+      const matchContract = !filterContract || ch.contract_id === filterContract;
+      return matchStatus && matchContract;
+    });
+  }, [charges, filterStatus, filterContract]);
 
   const consolidatedCharges = useMemo(
-    () => charges.filter((charge) => charge.type === "CONSOLIDATED"),
+    () => charges.filter((ch) => (ch.type ?? "").toUpperCase() === "CONSOLIDATED"),
     [charges],
   );
 
+  async function handleGenerate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await apiPost("/charges/generate-monthly", {
+        contract_id: String(fd.get("contract_id")),
+        reference_month: monthToRef(fd.get("reference_month")),
+      });
+      setSuccess("Cobrança mensal gerada com sucesso.");
+      (e.target as HTMLFormElement).reset();
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao gerar cobrança.");
+    }
+  }
+
+  async function handleConsolidate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    const fd = new FormData(e.currentTarget);
+    try {
+      const res = await apiPost<ConsolidatedCharge>("/charges/consolidate", {
+        contract_id: String(fd.get("contract_id")),
+        reference_month: monthToRef(fd.get("reference_month")),
+      });
+      setLastConsolidation(res);
+      setSuccess("Cobranças consolidadas.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao consolidar.");
+    }
+  }
+
+  async function handlePayment(chargeId: string) {
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await apiPost<PaymentResult>(`/charges/${chargeId}/generate-payment`);
+      setPaymentResult(res);
+      setSuccess("Boleto/PIX gerado.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao gerar pagamento.");
+    }
+  }
+
+  // Table columns
+  const columns: Column<Charge>[] = [
+    {
+      key: "type",
+      header: "Tipo",
+      render: (row) => (
+        <Badge variant={row.type === "CONSOLIDATED" ? "info" : "default"}>
+          {row.type ?? "—"}
+        </Badge>
+      ),
+    },
+    {
+      key: "property",
+      header: "Imóvel",
+      render: (row) => {
+        const p = properties.find((x) => x.id === row.property_id);
+        return <span style={{ fontWeight: 500 }}>{p?.address ?? "—"}</span>;
+      },
+    },
+    {
+      key: "description",
+      header: "Descrição",
+      render: (row) => row.description ?? "—",
+    },
+    {
+      key: "amount",
+      header: "Valor",
+      align: "right",
+      render: (row) => fmtBRL(row.amount ?? 0),
+    },
+    {
+      key: "due_date",
+      header: "Vencimento",
+      render: (row) => fmtDate(row.due_date),
+    },
+    {
+      key: "status",
+      header: "Status",
+      align: "center",
+      render: (row) => {
+        const s = normalizeStatus(row.status);
+        return <Badge variant={statusVariant(s)}>{s.toUpperCase()}</Badge>;
+      },
+    },
+  ];
+
+  const contractOptions = [
+    { value: "", label: "Todos contratos" },
+    ...contracts.map((c) => {
+      const p = properties.find((x) => x.id === c.property_id);
+      return { value: c.id, label: p?.address ?? c.id.slice(0, 8) };
+    }),
+  ];
+
+  const statusOptions = [
+    { value: "", label: "Todos status" },
+    { value: "pending", label: "Pendente" },
+    { value: "issued", label: "Emitida" },
+    { value: "paid", label: "Pago" },
+    { value: "overdue", label: "Atrasado" },
+  ];
+
   return (
-    <ProtectedPage
-      title="Cobranças"
-      description="Gere o aluguel do mês, consolide os encargos e emita boleto/PIX no mesmo fluxo."
-    >
-      {error ? <p className="error-banner">{error}</p> : null}
-      {success ? <p className="success-banner">{success}</p> : null}
+    <section className="page">
+      <header className="page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+        <div>
+          <p className="eyebrow">Financeiro</p>
+          <h2>Cobranças</h2>
+          <p>Gere o aluguel do mês, consolide os encargos e emita boleto/PIX.</p>
+        </div>
+      </header>
 
-      <PageGrid>
-        <Card title="Gerar cobrança mensal" subtitle="Ação obrigatória: Gerar cobrança mensal">
-          <form className="stack" onSubmit={generateMonthlyCharge}>
-            <label>
-              Contrato
-              <select name="contract_id" required defaultValue="">
-                <option value="" disabled>
-                  Selecione um contrato
-                </option>
-                {contracts.map((contract) => {
-                  const property = properties.find((item) => item.id === contract.property_id);
-                  return (
-                    <option key={contract.id} value={contract.id}>
-                      {property?.address ?? contract.id}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            <label>
-              Mês de referência
-              <input name="reference_month" type="month" required />
-            </label>
-            <button className="primary-button" type="submit" disabled={contracts.length === 0}>
+      {error && <p className="error-banner">{error}</p>}
+      {success && <p className="success-banner">{success}</p>}
+
+      {/* Action cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Gerar cobrança mensal</h3>
+          <form className="stack" onSubmit={handleGenerate}>
+            <Select
+              label="Contrato"
+              name="contract_id"
+              options={contractOptions.slice(1)}
+              placeholder="Selecione um contrato"
+              required
+            />
+            <Input label="Mês de referência" name="reference_month" type="month" required />
+            <Button type="submit" variant="primary" disabled={contracts.length === 0}>
               Gerar cobrança mensal
-            </button>
+            </Button>
           </form>
         </Card>
 
-        <Card title="Consolidar cobrança" subtitle="Ação obrigatória: Consolidar cobrança">
-          <form className="stack" onSubmit={consolidateCharges}>
-            <label>
-              Contrato
-              <select name="contract_id" required defaultValue="">
-                <option value="" disabled>
-                  Selecione um contrato
-                </option>
-                {contracts.map((contract) => {
-                  const property = properties.find((item) => item.id === contract.property_id);
-                  return (
-                    <option key={contract.id} value={contract.id}>
-                      {property?.address ?? contract.id}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            <label>
-              Mês de referência
-              <input name="reference_month" type="month" required />
-            </label>
-            <button className="primary-button" type="submit" disabled={contracts.length === 0}>
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Consolidar cobrança</h3>
+          <form className="stack" onSubmit={handleConsolidate}>
+            <Select
+              label="Contrato"
+              name="contract_id"
+              options={contractOptions.slice(1)}
+              placeholder="Selecione um contrato"
+              required
+            />
+            <Input label="Mês de referência" name="reference_month" type="month" required />
+            <Button type="submit" variant="primary" disabled={contracts.length === 0}>
               Consolidar cobrança
-            </button>
+            </Button>
           </form>
-          {lastConsolidation ? (
-            <div className="inline-summary">
-              <strong>Última consolidação</strong>
-              <p>Total: R$ {lastConsolidation.total_amount}</p>
-              <p>Itens: {lastConsolidation.items.length}</p>
+          {lastConsolidation && (
+            <div style={{ marginTop: 12, padding: "8px 12px", background: "var(--surface-secondary)", borderRadius: 8 }}>
+              <p style={{ margin: 0, fontSize: "0.88rem" }}>
+                <strong>Total:</strong> {fmtBRL(lastConsolidation.total_amount)} · <strong>Itens:</strong> {lastConsolidation.items?.length ?? 0}
+              </p>
             </div>
-          ) : null}
+          )}
         </Card>
-      </PageGrid>
+      </div>
 
-      <PageGrid>
-        <Card title="Cobrança consolidada">
+      {/* Consolidated + Payment result */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Cobranças consolidadas</h3>
           {consolidatedCharges.length === 0 ? (
             <p className="empty-state">Nenhuma cobrança consolidada ainda.</p>
           ) : (
-            <div className="list">
-              {consolidatedCharges.map((charge) => (
-                <article key={charge.id} className="list-row blocky">
+            <div className="stack">
+              {consolidatedCharges.map((ch) => (
+                <div key={ch.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
                   <div>
-                    <strong>{charge.description}</strong>
-                    <p>Vencimento: {charge.due_date}</p>
-                    <p>Valor total: R$ {charge.amount}</p>
+                    <p style={{ margin: 0, fontWeight: 500 }}>{ch.description}</p>
+                    <p className="muted-text" style={{ margin: "2px 0 0", fontSize: "0.8rem" }}>
+                      Vence: {fmtDate(ch.due_date)} · {fmtBRL(ch.amount)}
+                    </p>
                   </div>
                   <div className="actions">
-                    <span className={`status-pill status-${normalizeStatus(charge.status)}`}>{charge.status}</span>
-                    <button
-                      className="primary-button"
-                      type="button"
-                      onClick={() => void generatePayment(charge.id)}
-                    >
-                      Gerar boleto/PIX
-                    </button>
+                    <Badge variant={statusVariant(normalizeStatus(ch.status))}>
+                      {normalizeStatus(ch.status).toUpperCase()}
+                    </Badge>
+                    <Button size="sm" variant="primary" onClick={() => void handlePayment(ch.id)}>
+                      Gerar boleto
+                    </Button>
                   </div>
-                </article>
+                </div>
               ))}
             </div>
           )}
         </Card>
 
-        <Card title="Resultado do pagamento">
+        <Card>
+          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Resultado do pagamento</h3>
           {!paymentResult ? (
             <p className="empty-state">O retorno do boleto e do PIX aparece aqui.</p>
           ) : (
-            <div className="stack">
-              <span className="status-pill status-done">{paymentResult.provider.toUpperCase()}</span>
-              <p>
-                <strong>Boleto:</strong>{" "}
-                <a className="inline-link" href={paymentResult.boleto_url} target="_blank" rel="noreferrer">
-                  Abrir link
-                </a>
-              </p>
-              <p>
-                <strong>Linha digitável:</strong> {paymentResult.barcode}
-              </p>
-              <p>
-                <strong>PIX:</strong> {paymentResult.pix_qrcode}
-              </p>
+            <div className="stack" style={{ fontSize: "0.88rem" }}>
+              <Badge variant="success">{(paymentResult.provider ?? "mock").toUpperCase()}</Badge>
+              {paymentResult.boleto_url && (
+                <p style={{ margin: 0 }}>
+                  <strong>Boleto:</strong>{" "}
+                  <a href={paymentResult.boleto_url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>
+                    Abrir link
+                  </a>
+                </p>
+              )}
+              {paymentResult.barcode && <p style={{ margin: 0 }}><strong>Linha digitável:</strong> {paymentResult.barcode}</p>}
+              {paymentResult.pix_qrcode && <p style={{ margin: 0 }}><strong>PIX:</strong> {paymentResult.pix_qrcode}</p>}
             </div>
           )}
         </Card>
-      </PageGrid>
+      </div>
 
-      <Card title="Ledger de cobranças">
-        {loading ? (
-          <p className="empty-state">Carregando cobranças...</p>
-        ) : charges.length === 0 ? (
-          <p className="empty-state">Nenhuma cobrança gerada ainda.</p>
-        ) : (
-          <div className="list">
-            {charges.map((charge) => {
-              const property = properties.find((item) => item.id === charge.property_id);
-              return (
-                <article key={charge.id} className="list-row blocky">
-                  <div>
-                    <strong>{charge.type}</strong>
-                    <p>{property?.address ?? charge.property_id}</p>
-                    <p>{charge.description}</p>
-                  </div>
-                  <div className="detail-stack">
-                    <span className={`status-pill status-${normalizeStatus(charge.status)}`}>{charge.status}</span>
-                    <span>R$ {charge.amount}</span>
-                    <span>Vence em {charge.due_date}</span>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+      {/* Charges table */}
+      <Card>
+        <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+          <Select options={statusOptions} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} />
+          <Select options={contractOptions} value={filterContract} onChange={(e) => setFilterContract(e.target.value)} />
+        </div>
+        <p className="muted-text" style={{ marginBottom: 10 }}>
+          {filtered.length} cobrança{filtered.length !== 1 ? "s" : ""}
+        </p>
+        <Table
+          columns={columns}
+          data={filtered as unknown as Record<string, unknown>[]}
+          rowKey={(row) => (row as unknown as Charge).id}
+          loading={loading}
+          emptyText="Nenhuma cobrança encontrada."
+        />
       </Card>
-    </ProtectedPage>
+    </section>
   );
 }

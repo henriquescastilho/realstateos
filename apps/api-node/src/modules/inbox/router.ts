@@ -20,7 +20,7 @@ inboxRouter.get(
   "/inbox/threads",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listThreadsQuerySchema.parse(req.query);
+      const query = listThreadsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listThreads(query);
       paginated(res, result.data, {
         total: result.total,

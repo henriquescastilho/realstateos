@@ -41,6 +41,8 @@ import { inboxRouter } from "./modules/inbox/router";
 import { aiAssistantRouter } from "./modules/ai-assistant/router";
 import { agentsRouter } from "./modules/agents/router";
 import { analyticsRouter } from "./modules/analytics/router";
+import { propertiesRouter } from "./modules/properties/router";
+import { reportsRouter } from "./modules/reports/router";
 
 app.use("/api/v1", requireAuth, requireOrgMatch, onboardingRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, contractsRouter);
@@ -55,6 +57,8 @@ app.use("/api/v1", requireAuth, requireOrgMatch, inboxRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, aiAssistantRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, agentsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, analyticsRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, propertiesRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, reportsRouter);
 
 // ─── Global error handler (must be last) ───
 app.use(errorHandler);

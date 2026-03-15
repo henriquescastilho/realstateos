@@ -43,7 +43,7 @@ integrationsRouter.get(
   "/integrations/connectors",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listConnectorsQuerySchema.parse(req.query);
+      const query = listConnectorsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listConnectors(query);
       paginated(res, result.data, {
         total: result.total,

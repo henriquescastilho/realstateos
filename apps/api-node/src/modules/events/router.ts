@@ -33,7 +33,7 @@ eventsRouter.get(
   "/events/subscriptions",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { orgId } = listSubscriptionsQuerySchema.parse(req.query);
+      const { orgId } = listSubscriptionsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const data = await listSubscriptions(orgId);
       ok(res, data);
     } catch (err) {
@@ -61,7 +61,7 @@ eventsRouter.get(
   "/events/log",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listEventLogQuerySchema.parse(req.query);
+      const query = listEventLogQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listEventLog(query);
       paginated(res, result.data, {
         total: result.total,

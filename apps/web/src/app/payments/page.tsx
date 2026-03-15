@@ -396,7 +396,7 @@ export default function PaymentsPage() {
       key: "method",
       header: "Forma",
       render: (r) => (
-        <Badge variant="default">{(r.method as string).toUpperCase()}</Badge>
+        <Badge variant="default">{((r.method as string) ?? "—").toUpperCase()}</Badge>
       ),
     },
     {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "@/lib/api";
+import { nodeApiGet, nodeApiPost } from "@/lib/api";
 import type { Contract, Owner, Property, Renter } from "@/lib/types";
 import {
   Badge,
@@ -92,10 +92,10 @@ export default function ContractsPage() {
     setError(null);
     try {
       const [c, r, p, o] = await Promise.all([
-        apiGet<ContractDetail[]>("/contracts"),
-        apiGet<Renter[]>("/renters"),
-        apiGet<Property[]>("/properties"),
-        apiGet<Owner[]>("/owners").catch(() => [] as Owner[]),
+        nodeApiGet<ContractDetail[]>("/contracts"),
+        nodeApiGet<Renter[]>("/renters"),
+        nodeApiGet<Property[]>("/properties"),
+        nodeApiGet<Owner[]>("/owners").catch(() => [] as Owner[]),
       ]);
       setContracts(c);
       setRenters(r);
@@ -143,7 +143,7 @@ export default function ContractsPage() {
     setSelected(contract);
     setDetailLoading(true);
     try {
-      const detail = await apiGet<ContractDetail>(`/contracts/${contract.id}`);
+      const detail = await nodeApiGet<ContractDetail>(`/contracts/${contract.id}`);
       setSelected((prev) => (prev ? { ...prev, ...detail } : prev));
     } catch {
       /* keep existing data */
@@ -158,7 +158,8 @@ export default function ContractsPage() {
   ) {
     setWorkflowLoading(action);
     try {
-      await apiPost(`/contracts/${contractId}/${action}`, {});
+      const statusMap = { activate: "active", suspend: "suspended", terminate: "terminated" };
+      await nodeApiPost(`/contracts/${contractId}/transition`, { status: statusMap[action] });
       await load();
       const nextStatus =
         action === "activate"
@@ -180,7 +181,7 @@ export default function ContractsPage() {
     setCreateError(null);
     const fd = new FormData(e.currentTarget);
     try {
-      await apiPost<Contract>("/contracts", Object.fromEntries(fd));
+      await nodeApiPost<Contract>("/contracts", Object.fromEntries(fd));
       setShowCreate(false);
       (e.target as HTMLFormElement).reset();
       await load();

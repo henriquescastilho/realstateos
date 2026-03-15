@@ -36,7 +36,7 @@ aiAssistantRouter.get(
   "/ai-assistant/conversations",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listConversationsQuerySchema.parse(req.query);
+      const query = listConversationsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listConversations(query);
       paginated(res, result.data, {
         total: result.total,
@@ -94,7 +94,7 @@ aiAssistantRouter.get(
   "/ai-assistant/documents",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listDocumentsQuerySchema.parse(req.query);
+      const query = listDocumentsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listDocuments(query);
       paginated(res, result.data, {
         total: result.total,

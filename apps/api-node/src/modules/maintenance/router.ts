@@ -60,7 +60,7 @@ maintenanceRouter.get(
   "/maintenance/tickets",
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const query = listTicketsQuerySchema.parse(req.query);
+      const query = listTicketsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const result = await listTickets(query);
       paginated(res, result.data, {
         total: result.total,
