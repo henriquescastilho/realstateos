@@ -424,20 +424,22 @@ export async function getAccountBalance(orgId: string): Promise<AccountBalanceRe
       };
     }
 
-    const data = (await res.json()) as {
-      availableAmount?: number;
-      blockedAmount?: number;
-      totalAmount?: number;
-      currency?: string;
-    };
+    const data = await res.json();
+    console.log(`[bank] Org ${orgId} balance response:`, JSON.stringify(data));
+
+    // Santander sandbox may return balance nested or at root level
+    const payload = data?.data ?? data;
+    const available = payload?.availableAmount ?? payload?.availableBalance ?? payload?.available ?? 0;
+    const blocked = payload?.blockedAmount ?? payload?.blockedBalance ?? 0;
+    const total = payload?.totalAmount ?? payload?.totalBalance ?? (available + blocked);
 
     return {
       success: true,
       provider: "santander",
-      availableBalance: data.availableAmount ?? 0,
-      blockedBalance: data.blockedAmount ?? 0,
-      totalBalance: data.totalAmount ?? (data.availableAmount ?? 0) + (data.blockedAmount ?? 0),
-      currency: data.currency ?? "BRL",
+      availableBalance: Number(available) || 0,
+      blockedBalance: Number(blocked) || 0,
+      totalBalance: Number(total) || 0,
+      currency: payload?.currency ?? "BRL",
       updatedAt: new Date().toISOString(),
     };
   } catch (err) {
