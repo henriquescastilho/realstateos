@@ -19,7 +19,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { ok, created } from "../../lib/response";
 import { db } from "../../db";
-import { agentTasks } from "../../db/schema";
+import { agentTasks, organizations } from "../../db/schema";
 import { eq, sql } from "drizzle-orm";
 
 export const stubsRouter = Router();
@@ -191,12 +191,19 @@ stubsRouter.get(
 // ─── /org/profile ───
 
 stubsRouter.get("/org/profile", async (req: Request, res: Response) => {
+  const orgId = req.user!.org_id;
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+
   ok(res, {
-    id: req.user!.org_id,
-    name: "Minha Imobiliária",
-    email: req.user!.email ?? "contato@imobiliaria.com",
+    id: orgId,
+    name: org?.name ?? "Minha Imobiliária",
+    email: req.user!.email ?? "",
     phone: "",
-    document: "",
+    document: org?.document ?? "",
     address: "",
     city: "",
     state: "",
