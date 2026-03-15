@@ -10,6 +10,7 @@ import { handleCobradorCollect } from "./handlers/cobrador-collect";
 import { handleSentinelaWatch } from "./handlers/sentinela-watch";
 import { handlePagadorPayout } from "./handlers/pagador-payout";
 import { handleContadorStatement } from "./handlers/contador-statement";
+import { handleRenewalDraft } from "./handlers/renovador-renewal";
 
 export interface TaskExecutionResult {
   status: "completed" | "escalated" | "failed";
@@ -31,6 +32,14 @@ const handlers: Record<string, TaskHandler> = {
   sentinela_watch: handleSentinelaWatch,
   pagador_payout: handlePagadorPayout,
   contador_statement: handleContadorStatement,
+  renewal_draft: async (task) => {
+    const result = await handleRenewalDraft(task.orgId);
+    return {
+      status: result.failed === result.processed && result.processed > 0 ? "failed" : "completed",
+      output: result,
+      confidence: result.processed > 0 ? result.successful / result.processed : 1,
+    };
+  },
 };
 
 /**

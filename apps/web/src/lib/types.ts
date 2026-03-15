@@ -24,7 +24,7 @@ export type Property = {
   state: string;
   zip: string;
   owner_id: string;
-  iptu_registration_number?: string | null;
+  municipal_registration?: string | null;
 };
 
 export type Contract = {

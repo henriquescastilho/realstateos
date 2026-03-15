@@ -55,6 +55,13 @@ interface ApiContractResponse {
     agentInstructions?: string | null;
     chargeRules?: Record<string, unknown>;
     payoutRules?: Record<string, unknown>;
+    readjustmentRule?: {
+      index: string;
+      frequency: number;
+      lastReadjustment?: string;
+      nextReadjustment?: string;
+      fixedPercent?: string;
+    } | null;
   };
   property?: {
     id: string;
@@ -96,6 +103,13 @@ interface ContractView {
   renter_name: string;
   owner_name: string;
   charges: ChargeRow[];
+  readjustment_rule: {
+    index: string;
+    frequency: number;
+    lastReadjustment?: string;
+    nextReadjustment?: string;
+    fixedPercent?: string;
+  } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -281,6 +295,9 @@ export default function ContractDetailPage() {
   const [cfgPayoutDay, setCfgPayoutDay] = useState(4);
   const [cfgAdminPercent, setCfgAdminPercent] = useState("10.00");
   const [cfgAdminMin, setCfgAdminMin] = useState("180.00");
+  const [cfgReadjIndex, setCfgReadjIndex] = useState("IGPM");
+  const [cfgReadjFrequency, setCfgReadjFrequency] = useState(12);
+  const [cfgReadjNext, setCfgReadjNext] = useState("");
   const [cfgSaving, setCfgSaving] = useState(false);
   const [cfgSaved, setCfgSaved] = useState(false);
 
@@ -313,6 +330,7 @@ export default function ContractDetailPage() {
         renter_name: data.tenant?.fullName ?? "—",
         owner_name: data.owner?.fullName ?? "—",
         charges: data.charges ?? [],
+        readjustment_rule: c.readjustmentRule ?? null,
       };
 
       setView(v);
@@ -322,6 +340,11 @@ export default function ContractDetailPage() {
       setCfgPayoutDay(v.payout_day);
       setCfgAdminPercent(v.admin_fee_percent);
       setCfgAdminMin(v.admin_fee_minimum);
+      if (v.readjustment_rule) {
+        setCfgReadjIndex(v.readjustment_rule.index);
+        setCfgReadjFrequency(v.readjustment_rule.frequency);
+        setCfgReadjNext(v.readjustment_rule.nextReadjustment ?? "");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Falha ao carregar contrato.");
     } finally {
@@ -371,6 +394,11 @@ export default function ContractDetailPage() {
         payoutDay: cfgPayoutDay,
         adminFeePercent: cfgAdminPercent,
         adminFeeMinimum: cfgAdminMin,
+        readjustmentRule: {
+          index: cfgReadjIndex,
+          frequency: cfgReadjFrequency,
+          nextReadjustment: cfgReadjNext || undefined,
+        },
       });
       setCfgSaved(true);
       setTimeout(() => setCfgSaved(false), 2000);
@@ -1076,6 +1104,55 @@ export default function ContractDetailPage() {
                   </div>
                   <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2 }}>
                     Sobre aluguel de {fmtBRL(view.rent_amount)}
+                  </span>
+                </FormField>
+              </div>
+            </div>
+
+            <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20 }}>
+              <h3 style={{ margin: "0 0 4px", fontSize: "1rem" }}>Reajuste Automático</h3>
+              <p style={{ margin: "0 0 16px", color: "var(--text-secondary)", fontSize: "0.84rem" }}>
+                Índice e frequência do reajuste contratual do aluguel.
+              </p>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+                <FormField label="Índice de reajuste">
+                  <select
+                    value={cfgReadjIndex}
+                    onChange={(e) => setCfgReadjIndex(e.target.value)}
+                    className="form-input"
+                  >
+                    <option value="IGPM">IGP-M (FGV)</option>
+                    <option value="IPCA">IPCA (IBGE)</option>
+                    <option value="INPC">INPC (IBGE)</option>
+                    <option value="fixed">Percentual fixo</option>
+                  </select>
+                </FormField>
+
+                <FormField label="Frequência (meses)">
+                  <input
+                    type="number"
+                    min={1}
+                    max={60}
+                    value={cfgReadjFrequency}
+                    onChange={(e) => setCfgReadjFrequency(Math.min(60, Math.max(1, Number(e.target.value) || 12)))}
+                    className="form-input"
+                    placeholder="12"
+                  />
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2 }}>
+                    12 = anual (padrão)
+                  </span>
+                </FormField>
+
+                <FormField label="Próximo reajuste">
+                  <input
+                    type="date"
+                    value={cfgReadjNext}
+                    onChange={(e) => setCfgReadjNext(e.target.value)}
+                    className="form-input"
+                  />
+                  <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 2 }}>
+                    Data do próximo reajuste
                   </span>
                 </FormField>
               </div>

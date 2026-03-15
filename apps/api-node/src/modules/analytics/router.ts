@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { ok } from "../../lib/response";
 import { db } from "../../db";
-import { leaseContracts, properties, charges, agentTasks } from "../../db/schema";
-import { eq, and, sql, gte, lte } from "drizzle-orm";
+import { leaseContracts, properties, charges, agentTasks, tenants, owners } from "../../db/schema";
+import { eq, and, sql, gte, lte, desc } from "drizzle-orm";
 
 export const analyticsRouter = Router();
 
@@ -153,6 +153,90 @@ analyticsRouter.get(
       }));
 
       ok(res, items);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /analytics/delinquent — List overdue charges with tenant and property details
+analyticsRouter.get(
+  "/analytics/delinquent",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.org_id;
+
+      const rows = await db
+        .select({
+          tenant_name: tenants.fullName,
+          tenant_email: tenants.email,
+          property_address: properties.address,
+          billing_period: charges.billingPeriod,
+          amount: charges.grossAmount,
+          due_date: charges.dueDate,
+          days_overdue: sql<number>`(current_date - ${charges.dueDate}::date)::int`,
+        })
+        .from(charges)
+        .innerJoin(leaseContracts, eq(charges.leaseContractId, leaseContracts.id))
+        .innerJoin(tenants, eq(leaseContracts.tenantId, tenants.id))
+        .innerJoin(properties, eq(leaseContracts.propertyId, properties.id))
+        .where(
+          and(
+            eq(charges.orgId, orgId),
+            eq(charges.paymentStatus, "overdue"),
+          ),
+        )
+        .orderBy(desc(sql`(current_date - ${charges.dueDate}::date)`));
+
+      ok(res, rows);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /analytics/expiring-contracts — Contracts expiring this month or next month
+analyticsRouter.get(
+  "/analytics/expiring-contracts",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.org_id;
+
+      // Window: first day of current month to last day of next month
+      const now = new Date();
+      const firstOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+      const lastOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0)
+        .toISOString()
+        .slice(0, 10);
+
+      const rows = await db
+        .select({
+          contract_id: leaseContracts.id,
+          property_address: properties.address,
+          tenant_name: tenants.fullName,
+          owner_name: owners.fullName,
+          end_date: leaseContracts.endDate,
+          end_day: sql<number>`extract(day from ${leaseContracts.endDate}::date)::int`,
+          monthly_rent: leaseContracts.rentAmount,
+          readjustment_rule: leaseContracts.readjustmentRule,
+        })
+        .from(leaseContracts)
+        .innerJoin(properties, eq(leaseContracts.propertyId, properties.id))
+        .innerJoin(tenants, eq(leaseContracts.tenantId, tenants.id))
+        .innerJoin(owners, eq(leaseContracts.ownerId, owners.id))
+        .where(
+          and(
+            eq(leaseContracts.orgId, orgId),
+            eq(leaseContracts.operationalStatus, "active"),
+            gte(leaseContracts.endDate, firstOfCurrentMonth),
+            lte(leaseContracts.endDate, lastOfNextMonth),
+          ),
+        )
+        .orderBy(leaseContracts.endDate);
+
+      ok(res, rows);
     } catch (err) {
       next(err);
     }

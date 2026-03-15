@@ -348,6 +348,10 @@ async function seed() {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + (i % 3 === 0 ? 24 : 12)); // 12 ou 24 meses
 
+    const readjustIndex = ["IGPM", "IPCA", "INPC", "IGPM", "IPCA"][i % 5];
+    const nextReadj = new Date(startDate);
+    nextReadj.setMonth(nextReadj.getMonth() + 12);
+
     contractValues.push({
       orgId: org.id,
       propertyId: propertyRows[i].id,
@@ -365,6 +369,12 @@ async function seed() {
       payoutRules: {
         adminFeePercent: "10.00",
         payoutDay: [10, 15, 20, 25][i % 4],
+      },
+      readjustmentRule: {
+        index: readjustIndex,
+        frequency: 12,
+        lastReadjustment: startDate.toISOString().split("T")[0],
+        nextReadjustment: nextReadj.toISOString().split("T")[0],
       },
       operationalStatus: "active",
     });
@@ -391,17 +401,40 @@ async function seed() {
       depositType: "caucao",
       chargeRules: { dueDateDay: 10, lateFeePercent: "2.00", dailyInterestPercent: "0.033" },
       payoutRules: { adminFeePercent: "10.00", payoutDay: 15 },
+      readjustmentRule: {
+        index: "IGPM",
+        frequency: 12,
+        lastReadjustment: new Date(today.getFullYear(), today.getMonth() - 3, 1).toISOString().split("T")[0],
+        nextReadjustment: new Date(today.getFullYear(), today.getMonth() + 9, 1).toISOString().split("T")[0],
+      },
       operationalStatus: "active",
     })
     .returning();
   console.log(`  ★ Proprietario: ${ADMIN_USER.fullName} → Inquilino: ${tenantRows[0].fullName} | R$ 12.500,00`);
 
-  // Henrique como INQUILINO em imóvel de alto padrão
+  // Henrique como INQUILINO em imóvel de alto padrão (imóvel exclusivo)
+  const [adminRentedProperty] = await db
+    .insert(schema.properties)
+    .values({
+      orgId: org.id,
+      address: "Rua Amauri, 255 - Apto 181",
+      city: "São Paulo",
+      state: "SP",
+      zip: "01448-000",
+      type: "residential",
+      areaSqm: "150.00",
+      bedrooms: 3,
+      municipalRegistration: "071.009.0055.181-4",
+      status: "active",
+    })
+    .returning();
+  console.log(`  ★ Imovel para Henrique alugar: ${adminRentedProperty.address}`);
+
   const [adminAsTenantContract] = await db
     .insert(schema.leaseContracts)
     .values({
       orgId: org.id,
-      propertyId: propertyRows[2].id, // Rua Oscar Freire, 450 - Apto 82
+      propertyId: adminRentedProperty.id,
       ownerId: ownerRows[2].id,       // Ana Paula Oliveira
       tenantId: adminTenant.id,
       startDate: new Date(today.getFullYear(), today.getMonth() - 6, 1).toISOString().split("T")[0],
@@ -410,6 +443,12 @@ async function seed() {
       depositType: "seguro_fianca",
       chargeRules: { dueDateDay: 5, lateFeePercent: "2.00", dailyInterestPercent: "0.033" },
       payoutRules: { adminFeePercent: "10.00", payoutDay: 10 },
+      readjustmentRule: {
+        index: "IPCA",
+        frequency: 12,
+        lastReadjustment: new Date(today.getFullYear(), today.getMonth() - 6, 1).toISOString().split("T")[0],
+        nextReadjustment: new Date(today.getFullYear(), today.getMonth() + 6, 1).toISOString().split("T")[0],
+      },
       operationalStatus: "active",
     })
     .returning();
@@ -500,6 +539,13 @@ async function seed() {
       status = "open";
     }
     allChargeValues.push(buildCharge(allContracts[i], i, currentMonth, status));
+  }
+
+  // Next month — all open (faturas do próximo mês já geradas)
+  const nextDate = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+  const nextMonth = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}`;
+  for (let i = 0; i < allContracts.length; i++) {
+    allChargeValues.push(buildCharge(allContracts[i], i, nextMonth, "open"));
   }
 
   const chargeRows = await db.insert(schema.charges).values(allChargeValues).returning();

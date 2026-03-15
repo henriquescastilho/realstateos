@@ -53,6 +53,11 @@ const EVENT_HANDLERS: Record<
     });
   },
 
+  "contract.expiring": async (orgId, _payload) => {
+    // Triggered by a scheduler (cron) or manual event to scan all expiring contracts
+    await createAgentTask(orgId, "renewal_draft", { orgId });
+  },
+
   "payout.completed": async (orgId, payload) => {
     // When payout is done, trigger Contador to generate statement
     const ownerId = payload.ownerId as string;

@@ -39,7 +39,7 @@ propertiesRouter.get("/properties", async (req: Request, res: Response, next: Ne
       state: p.state,
       zip: p.zip,
       owner_id: ownerByProperty.get(p.id) ?? null,
-      iptu_registration_number: p.registryReference ?? null,
+      municipal_registration: p.municipalRegistration ?? null,
       type: p.type,
       area_sqm: p.areaSqm,
       bedrooms: p.bedrooms,

@@ -117,6 +117,13 @@ export const leaseContracts = pgTable("lease_contracts", {
   payoutDay: integer("payout_day").default(4),        // dia do repasse ao proprietário
   adminFeePercent: numeric("admin_fee_percent", { precision: 5, scale: 2 }).default("10.00"),
   adminFeeMinimum: numeric("admin_fee_minimum", { precision: 12, scale: 2 }).default("180.00"),
+  readjustmentRule: jsonb("readjustment_rule").$type<{
+    index: string;             // "IGPM" | "IPCA" | "INPC" | "fixed"
+    frequency: number;         // meses (12 = anual)
+    lastReadjustment?: string; // ISO date
+    nextReadjustment?: string; // ISO date
+    fixedPercent?: string;     // usado quando index = "fixed"
+  }>(),
   agentInstructions: text("agent_instructions"),
   ...timestamps(),
 }, (t) => [

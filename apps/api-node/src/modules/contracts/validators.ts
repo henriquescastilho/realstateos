@@ -53,6 +53,13 @@ export const updateContractSchema = z.object({
   chargeRules: z.record(z.string(), z.unknown()).optional(),
   payoutRules: z.record(z.string(), z.unknown()).optional(),
   agentInstructions: z.string().optional(),
+  readjustmentRule: z.object({
+    index: z.enum(["IGPM", "IPCA", "INPC", "fixed"]),
+    frequency: z.number().int().min(1).max(60),
+    lastReadjustment: z.string().optional(),
+    nextReadjustment: z.string().optional(),
+    fixedPercent: z.string().optional(),
+  }).optional(),
 });
 
 export type UpdateContractInput = z.infer<typeof updateContractSchema>;

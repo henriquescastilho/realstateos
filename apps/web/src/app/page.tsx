@@ -11,7 +11,6 @@ export default function LandingPage() {
       <nav className="lp-nav">
         <div className="lp-nav-inner">
           <div className="lp-logo">
-            <Image src="/logo.png" alt="Real Estate OS" width={32} height={32} style={{ borderRadius: 6 }} />
             <span>Real Estate OS</span>
           </div>
           <Link href="/login" className="lp-nav-cta">

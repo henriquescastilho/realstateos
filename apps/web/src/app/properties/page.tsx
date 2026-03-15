@@ -118,7 +118,7 @@ export default function PropertiesPage() {
         p.address.toLowerCase().includes(q) ||
         p.city.toLowerCase().includes(q) ||
         owner?.name.toLowerCase().includes(q) ||
-        (p.iptu_registration_number ?? "").toLowerCase().includes(q);
+        (p.municipal_registration ?? "").toLowerCase().includes(q);
       const matchOwner = !filterOwner || p.owner_id === filterOwner;
       const matchCity = !filterCity || p.city === filterCity;
       return matchSearch && matchOwner && matchCity;
@@ -212,7 +212,7 @@ export default function PropertiesPage() {
     {
       key: "iptu",
       header: "Inscrição IPTU",
-      render: (row) => row.iptu_registration_number ?? "—",
+      render: (row) => row.municipal_registration ?? "—",
     },
     {
       key: "status",
@@ -416,7 +416,7 @@ function PropertyDetailPanel({
           <DetailField label="CEP" value={property.zip} />
           <DetailField
             label="Inscrição IPTU"
-            value={property.iptu_registration_number ?? "Não informado"}
+            value={property.municipal_registration ?? "Não informado"}
           />
           <DetailField
             label="Contratos ativos"
@@ -721,7 +721,7 @@ function CreatePropertyForm({
         <Input label="CEP" name="zip" placeholder="01000-000" required />
         <Input
           label="Inscrição IPTU"
-          name="iptu_registration_number"
+          name="municipal_registration"
           placeholder="IPTU-001"
         />
       </div>

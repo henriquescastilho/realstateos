@@ -60,17 +60,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <aside className={`sidebar${sidebarOpen ? " sidebar-open" : ""}`}>
         <div className="sidebar-top">
-          <Image
+          <img
             src="/logo.png"
             alt="Real Estate OS"
             width={140}
-            height={140}
+            height={91}
             style={{ margin: "0 auto 8px", display: "block" }}
-            priority
           />
-          <p className="sidebar-copy" style={{ textAlign: "center" }}>
-            Gestão completa de imóveis, cobranças e repasses — tudo automatizado por agentes inteligentes.
-          </p>
         </div>
 
         <nav className="nav" aria-label="Navegação principal">

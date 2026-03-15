@@ -118,6 +118,7 @@ export async function updateContract(
   if (input.chargeRules !== undefined) updates.chargeRules = input.chargeRules;
   if (input.payoutRules !== undefined) updates.payoutRules = input.payoutRules;
   if (input.agentInstructions !== undefined) updates.agentInstructions = input.agentInstructions;
+  if (input.readjustmentRule !== undefined) updates.readjustmentRule = input.readjustmentRule;
 
   const [updated] = await db
     .update(leaseContracts)

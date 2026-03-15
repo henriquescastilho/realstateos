@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ProtectedPage } from "@/components/layout/protected-page";
 import { Badge } from "@/components/ui/Badge";
+import type { BadgeVariant } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -32,6 +33,24 @@ interface BillingMonth {
 
 interface BillingAnalytics {
   months: BillingMonth[];
+}
+
+interface DelinquentTenant {
+  tenant_name: string;
+  property_address: string;
+  period: string;
+  amount: number;
+  due_date: string;
+  days_overdue: number;
+}
+
+interface ExpiringContract {
+  property_address: string;
+  tenant_name: string;
+  owner_name: string;
+  end_date: string;
+  rent_amount: number;
+  readjustment_index: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -201,15 +220,12 @@ function BillingChart({ months }: { months: BillingMonth[] }) {
 }
 
 function ActivityRow({ task }: { task: TaskRecord }) {
-  const variantMap: Record<
-    string,
-    "success" | "error" | "warning" | "info" | "default"
-  > = {
-    DONE: "success",
-    FAILED: "error",
-    ESCALATED: "warning",
-    RUNNING: "info",
-    PENDING: "default",
+  const variantMap: Record<string, BadgeVariant> = {
+    DONE: "done",
+    FAILED: "failed",
+    ESCALATED: "escalated",
+    RUNNING: "running",
+    PENDING: "pending",
   };
   const msg =
     typeof task.payload?.message === "string"
@@ -243,6 +259,8 @@ export default function DashboardPage() {
   const [kpis, setKpis] = useState<PortfolioKPIs | null>(null);
   const [billing, setBilling] = useState<BillingMonth[]>([]);
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
+  const [delinquents, setDelinquents] = useState<DelinquentTenant[]>([]);
+  const [expiringContracts, setExpiringContracts] = useState<ExpiringContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -251,17 +269,24 @@ export default function DashboardPage() {
       setLoading(true);
       setError(null);
       try {
-        const [kpisData, billingData, tasksData] = await Promise.allSettled([
-          apiFetch<PortfolioKPIs>("/analytics/portfolio"),
-          apiFetch<BillingAnalytics>("/analytics/billing"),
-          apiFetch<TaskRecord[]>("/analytics/tasks?per_page=10"),
-        ]);
+        const [kpisData, billingData, tasksData, delinquentsData, expiringData] =
+          await Promise.allSettled([
+            apiFetch<PortfolioKPIs>("/analytics/portfolio"),
+            apiFetch<BillingAnalytics>("/analytics/billing"),
+            apiFetch<TaskRecord[]>("/analytics/tasks?per_page=10"),
+            apiFetch<DelinquentTenant[]>("/analytics/delinquent"),
+            apiFetch<ExpiringContract[]>("/analytics/expiring-contracts"),
+          ]);
         if (kpisData.status === "fulfilled") setKpis(kpisData.value);
         if (billingData.status === "fulfilled")
           setBilling(billingData.value.months ?? []);
         if (tasksData.status === "fulfilled") {
           setTasks((tasksData.value ?? []).slice(0, 8));
         }
+        if (delinquentsData.status === "fulfilled")
+          setDelinquents(delinquentsData.value ?? []);
+        if (expiringData.status === "fulfilled")
+          setExpiringContracts(expiringData.value ?? []);
       } catch (e) {
         setError(
           e instanceof Error ? e.message : "Erro ao carregar dashboard.",
@@ -394,6 +419,250 @@ export default function DashboardPage() {
               >
                 Ver todas <Icon name="arrow-right" size={14} />
               </Link>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Inadimplentes */}
+      <div style={{ marginTop: 28 }}>
+        <Card
+          title="Inadimplentes"
+          actions={
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: "var(--color-danger)",
+                display: "inline-block",
+                flexShrink: 0,
+              }}
+              aria-hidden="true"
+            />
+          }
+        >
+          {loading ? (
+            <div style={{ textAlign: "center", padding: 20 }}>
+              <Spinner size={20} />
+            </div>
+          ) : delinquents.length === 0 ? (
+            <p style={{ color: "var(--text-faint)", fontSize: "0.85rem" }}>
+              Nenhum inadimplente.
+            </p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "0.84rem",
+                }}
+              >
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--text-muted)",
+                      textAlign: "left",
+                    }}
+                  >
+                    {["Inquilino", "Imóvel", "Período", "Valor", "Vencimento", "Atraso"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "6px 10px",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {delinquents.map((d, i) => (
+                    <tr
+                      key={i}
+                      style={{
+                        borderBottom: "1px solid var(--border-subtle)",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                        {d.tenant_name}
+                      </td>
+                      <td
+                        style={{
+                          padding: "8px 10px",
+                          maxWidth: 200,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {d.property_address}
+                      </td>
+                      <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                        {d.period}
+                      </td>
+                      <td style={{ padding: "8px 10px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                        {fmt(d.amount, true)}
+                      </td>
+                      <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                        {d.due_date
+                          ? new Date(d.due_date).toLocaleDateString("pt-BR")
+                          : "—"}
+                      </td>
+                      <td style={{ padding: "8px 10px" }}>
+                        <Badge variant="danger">
+                          {d.days_overdue}d
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      {/* Contratos Vencendo */}
+      <div style={{ marginTop: 18 }}>
+        <Card
+          title="Contratos Vencendo"
+          actions={
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: "var(--color-warning)",
+                display: "inline-block",
+                flexShrink: 0,
+              }}
+              aria-hidden="true"
+            />
+          }
+        >
+          {loading ? (
+            <div style={{ textAlign: "center", padding: 20 }}>
+              <Spinner size={20} />
+            </div>
+          ) : expiringContracts.length === 0 ? (
+            <p style={{ color: "var(--text-faint)", fontSize: "0.85rem" }}>
+              Nenhum contrato vence este mês.
+            </p>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  fontSize: "0.84rem",
+                }}
+              >
+                <thead>
+                  <tr
+                    style={{
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--text-muted)",
+                      textAlign: "left",
+                    }}
+                  >
+                    {["Imóvel", "Inquilino", "Proprietário", "Vencimento", "Aluguel", "Índice"].map(
+                      (h) => (
+                        <th
+                          key={h}
+                          style={{
+                            padding: "6px 10px",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.04em",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {h}
+                        </th>
+                      ),
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {expiringContracts.map((c, i) => {
+                    const endDate = c.end_date ? new Date(c.end_date) : null;
+                    const day = endDate
+                      ? endDate.toLocaleDateString("pt-BR")
+                      : "—";
+                    const dayNum = endDate ? endDate.getDate() : null;
+                    return (
+                      <tr
+                        key={i}
+                        style={{
+                          borderBottom: "1px solid var(--border-subtle)",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            maxWidth: 200,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {c.property_address}
+                        </td>
+                        <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                          {c.tenant_name}
+                        </td>
+                        <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                          {c.owner_name}
+                        </td>
+                        <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
+                          {dayNum !== null && (
+                            <span
+                              style={{
+                                fontWeight: 700,
+                                color: "var(--color-warning)",
+                                marginRight: 4,
+                              }}
+                            >
+                              Dia {dayNum}
+                            </span>
+                          )}
+                          <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>
+                            {day}
+                          </span>
+                        </td>
+                        <td
+                          style={{
+                            padding: "8px 10px",
+                            whiteSpace: "nowrap",
+                            fontVariantNumeric: "tabular-nums",
+                          }}
+                        >
+                          {fmt(c.rent_amount, true)}
+                        </td>
+                        <td style={{ padding: "8px 10px" }}>
+                          <Badge variant="warning">
+                            {c.readjustment_index ?? "—"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </Card>

@@ -38,6 +38,7 @@ function mapContract(row: Record<string, unknown>) {
     admin_fee_percent: row.adminFeePercent ?? "10.00",
     admin_fee_minimum: row.adminFeeMinimum ?? "180.00",
     agent_instructions: row.agentInstructions ?? "",
+    readjustment_rule: row.readjustmentRule ?? null,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
   };
