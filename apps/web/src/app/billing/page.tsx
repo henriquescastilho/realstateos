@@ -434,7 +434,7 @@ export default function BillingPage() {
         <div
           style={{ display: "flex", justifyContent: "center", padding: "3rem" }}
         >
-          <Spinner size="lg" label="Carregando faturas…" />
+          <Spinner size={32} label="Carregando faturas…" />
         </div>
       ) : error ? (
         <Card>
@@ -611,7 +611,7 @@ export default function BillingPage() {
           >
             {detailLoading && (
               <div style={{ display: "flex", justifyContent: "center" }}>
-                <Spinner size="sm" />
+                <Spinner size={16} />
               </div>
             )}
 
