@@ -28,14 +28,17 @@ const navigation = [
 ];
 
 const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/onboarding"];
+const EXACT_PUBLIC = ["/"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const isPublicRoute = PUBLIC_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/"),
-  );
+  const isPublicRoute =
+    EXACT_PUBLIC.includes(pathname) ||
+    PUBLIC_PREFIXES.some(
+      (p) => pathname === p || pathname.startsWith(p + "/"),
+    );
 
   if (isPublicRoute) {
     return <>{children}</>;
