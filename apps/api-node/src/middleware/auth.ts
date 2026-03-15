@@ -71,9 +71,9 @@ export function requireAuth(
   const token = parts[1];
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET, {
+    const decoded = jwt.verify(token, JWT_SECRET as string, {
       algorithms: [JWT_ALGORITHM],
-    }) as JWTPayload;
+    }) as unknown as JWTPayload;
 
     if (!decoded.sub || !decoded.org_id) {
       throw new UnauthorizedError(
