@@ -4,8 +4,8 @@ import { UnauthorizedError, ForbiddenError } from "../lib/errors";
 
 // ─── Config ───
 
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_ALGORITHM = "HS256";
+const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_ALGORITHM = "HS256" as const;
 
 if (!JWT_SECRET && process.env.NODE_ENV !== "test") {
   throw new Error("JWT_SECRET environment variable is required");
