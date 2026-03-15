@@ -78,7 +78,7 @@ const OWNERS = [
 
 // ─── 20 inquilinos (CPF, email, telefone únicos) ───
 const TENANTS = [
-  { fullName: "Pedro Henrique Martins",   documentNumber: "501.642.178-01", email: "pedro.martins@gmail.com",      phone: "(11) 98201-2001" },
+  { fullName: "Pedro Henrique Martins",   documentNumber: "501.642.178-01", email: "henrique009.hsc@gmail.com",    phone: "(11) 98201-2001" },
   { fullName: "Juliana Ribeiro Campos",   documentNumber: "512.753.289-12", email: "juliana.campos@gmail.com",     phone: "(11) 98201-2002" },
   { fullName: "Rafael Augusto Nunes",     documentNumber: "523.864.390-23", email: "rafael.nunes@outlook.com",     phone: "(11) 98201-2003" },
   { fullName: "Camila de Souza Pinto",    documentNumber: "534.975.401-34", email: "camila.pinto@gmail.com",       phone: "(11) 98201-2004" },

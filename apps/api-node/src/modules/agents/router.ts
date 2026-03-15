@@ -18,6 +18,7 @@ import {
   getRecentOrchestratorEvents,
 } from "./service";
 import { extractBoletoData } from "./handlers/radar-capture";
+import { runSimulation } from "./handlers/simulation";
 
 export const agentsRouter = Router();
 
@@ -158,6 +159,58 @@ agentsRouter.post(
       }
 
       ok(res, { bills: results });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /agents/simulation/contracts — list contracts with owner/tenant/property for simulation picker
+agentsRouter.get(
+  "/agents/simulation/contracts",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user?.org_id as string;
+      const { db: database } = await import("../../db");
+      const { leaseContracts, owners, tenants, properties } = await import("../../db/schema");
+      const { eq } = await import("drizzle-orm");
+
+      const rows = await database
+        .select({
+          id: leaseContracts.id,
+          ownerName: owners.fullName,
+          tenantName: tenants.fullName,
+          address: properties.address,
+          rentAmount: leaseContracts.rentAmount,
+        })
+        .from(leaseContracts)
+        .innerJoin(owners, eq(owners.id, leaseContracts.ownerId))
+        .innerJoin(tenants, eq(tenants.id, leaseContracts.tenantId))
+        .innerJoin(properties, eq(properties.id, leaseContracts.propertyId))
+        .where(eq(leaseContracts.orgId, orgId));
+
+      ok(res, rows);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /agents/simulate — run full pipeline simulation for a contract
+agentsRouter.post(
+  "/agents/simulate",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user?.org_id as string;
+      const { contractId, email } = req.body as { contractId: string; email: string };
+
+      if (!contractId || !email) {
+        res.status(422).json({ ok: false, error: { code: "VALIDATION_ERROR", message: "contractId and email are required" } });
+        return;
+      }
+
+      const result = await runSimulation(orgId, contractId, email);
+      ok(res, result);
     } catch (err) {
       next(err);
     }
