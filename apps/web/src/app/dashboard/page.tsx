@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import type { TaskRecord } from "@/lib/types";
+import { getBalanceSnapshot, formatBRL } from "@/lib/balance";
 
 // ---------------------------------------------------------------------------
 // Types matching the analytics API response
@@ -27,6 +28,7 @@ interface PortfolioKPIs {
 interface BillingMonth {
   month: string; // "YYYY-MM"
   total_charged: number;
+  total_net: number;
   total_paid: number;
   payment_rate_pct: number;
 }
@@ -157,7 +159,7 @@ function KpiCard({
   );
 }
 
-/** Minimal SVG bar chart for billing trend */
+/** Minimal SVG line chart for billing trend with saldo */
 function BillingChart({ months }: { months: BillingMonth[] }) {
   if (!months.length)
     return (
@@ -166,55 +168,157 @@ function BillingChart({ months }: { months: BillingMonth[] }) {
       </p>
     );
   const recent = months.slice(-6);
-  const maxVal = Math.max(...recent.map((m) => m.total_charged), 1);
-  const W = 480;
-  const H = 120;
-  const barW = Math.floor((W - 24) / recent.length) - 6;
+
+  // Saldo fictício: acumula a diferença (líquido - bruto) mês a mês a partir do saldo Santander
+  const santanderBalance = getBalanceSnapshot() / 100; // cents → reais
+  const saldoData: number[] = [];
+  let runningBalance = santanderBalance;
+  for (let i = recent.length - 1; i >= 0; i--) {
+    // Reconstruct backwards: subtract the monthly delta to get previous balance
+    saldoData[i] = runningBalance;
+    const delta = recent[i].total_paid - recent[i].total_charged;
+    runningBalance -= delta;
+  }
+
+  const allValues = [
+    ...recent.map((m) => m.total_charged || 0),
+    ...recent.map((m) => m.total_net || 0),
+    ...saldoData.map((v) => v || 0),
+  ];
+  const maxVal = Math.max(...allValues, 1);
+  const minVal = Math.min(...allValues, 0);
+  const range = maxVal - minVal || 1;
+
+  const W = 560;
+  const H = 160;
+  const PAD_L = 60;
+  const PAD_R = 120;
+  const chartW = W - PAD_L - PAD_R;
+
+  function toX(i: number) {
+    return PAD_L + (i / Math.max(recent.length - 1, 1)) * chartW;
+  }
+  function toY(val: number) {
+    const v = val || 0;
+    return H - ((v - minVal) / range) * (H - 20) - 10;
+  }
+
+  function makeLine(data: number[]) {
+    return data.map((v, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(" ");
+  }
+
+  const grossData = recent.map((m) => m.total_charged || 0);
+  const netData = recent.map((m) => m.total_net || 0);
+  const grossLine = makeLine(grossData);
+  const netLine = makeLine(netData);
+  const saldoLine = makeLine(saldoData);
+
+  // Area fill between gross and net lines
+  const areaPath = (() => {
+    const top = grossData.map((v, i) => `${i === 0 ? "M" : "L"}${toX(i).toFixed(1)},${toY(v).toFixed(1)}`).join(" ");
+    const bottom = [...netData].reverse().map((v, i) => {
+      const idx = netData.length - 1 - i;
+      return `L${toX(idx).toFixed(1)},${toY(v).toFixed(1)}`;
+    }).join(" ");
+    return `${top} ${bottom} Z`;
+  })();
+
+  // Smart label positioning: spread labels if too close
+  const spreadLabels = (labels: { y: number; color: string; text: string }[]) => {
+    const sorted = labels.map((l, i) => ({ ...l, orig: i })).sort((a, b) => a.y - b.y);
+    const MIN_GAP = 14;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i].y - sorted[i - 1].y < MIN_GAP) {
+        sorted[i].y = sorted[i - 1].y + MIN_GAP;
+      }
+    }
+    return sorted.sort((a, b) => a.orig - b.orig);
+  };
+
+  const lastIdx = recent.length - 1;
+  const labelX = toX(lastIdx) + 8;
+  const endLabels = spreadLabels([
+    { y: toY(grossData[lastIdx]), color: "#ef4444", text: fmt(grossData[lastIdx], true) },
+    { y: toY(netData[lastIdx]), color: "#22c55e", text: fmt(netData[lastIdx], true) },
+    { y: toY(saldoData[lastIdx]), color: "#4f46e5", text: fmt(saldoData[lastIdx], true) },
+  ]);
+
+  // Y axis values
+  const yAxisValues = [0, 0.5, 1].map((pct) => ({
+    y: H - pct * (H - 20) - 10,
+    val: minVal + pct * range,
+  }));
 
   return (
     <svg
-      viewBox={`0 0 ${W} ${H + 28}`}
+      viewBox={`0 0 ${W} ${H + 32}`}
       style={{ width: "100%", maxWidth: W, display: "block" }}
-      aria-label="Tendência de cobranças mensais"
+      aria-label="Faturamento e saldo"
     >
-      {recent.map((m, i) => {
-        const x = 12 + i * (barW + 6);
-        const chargedH = Math.round((m.total_charged / maxVal) * H);
-        const paidH = Math.round((m.total_paid / maxVal) * H);
-        const shortMonth = m.month.slice(5); // "MM"
+      {/* Grid lines + Y axis labels */}
+      {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
+        const y = H - pct * (H - 20) - 10;
         return (
-          <g key={m.month}>
-            {/* charged bar */}
-            <rect
-              x={x}
-              y={H - chargedH}
-              width={barW}
-              height={chargedH}
-              rx={3}
-              fill="rgba(79,70,229,0.18)"
-            />
-            {/* paid bar */}
-            <rect
-              x={x}
-              y={H - paidH}
-              width={barW}
-              height={paidH}
-              rx={3}
-              fill="#4f46e5"
-            />
-            <text
-              x={x + barW / 2}
-              y={H + 16}
-              textAnchor="middle"
-              fontSize={10}
-              fill="currentColor"
-              opacity={0.45}
-            >
-              {shortMonth}
-            </text>
-          </g>
+          <line key={pct} x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="currentColor" opacity={0.06} />
         );
       })}
+      {yAxisValues.map(({ y, val }) => (
+        <text key={val} x={PAD_L - 6} y={y + 3} textAnchor="end" fontSize={9} fill="currentColor" opacity={0.35}>
+          {fmt(val, true)}
+        </text>
+      ))}
+
+      {/* Area between Bruto and Líquido */}
+      <path d={areaPath} fill="rgba(239,68,68,0.08)" stroke="none" />
+
+      {/* Faturamento Bruto (dashed) */}
+      <path d={grossLine} fill="none" stroke="#ef4444" strokeWidth={2.5} strokeLinejoin="round" strokeDasharray="4,2" />
+      {recent.map((m, i) => (
+        <circle key={`g-${i}`} cx={toX(i)} cy={toY(m.total_charged)} r={3.5} fill="#ef4444" />
+      ))}
+
+      {/* Faturamento Líquido (solid) */}
+      <path d={netLine} fill="none" stroke="#22c55e" strokeWidth={2.5} strokeLinejoin="round" />
+      {recent.map((m, i) => (
+        <circle key={`n-${i}`} cx={toX(i)} cy={toY(m.total_net)} r={3.5} fill="#22c55e" />
+      ))}
+
+      {/* Saldo */}
+      <path d={saldoLine} fill="none" stroke="#4f46e5" strokeWidth={2} strokeDasharray="6,3" strokeLinejoin="round" />
+      {saldoData.map((v, i) => (
+        <circle key={`s-${i}`} cx={toX(i)} cy={toY(v)} r={3} fill="#4f46e5" />
+      ))}
+
+      {/* Inline labels at first point */}
+      {recent.length > 1 && (
+        <>
+          <text x={toX(0) - 4} y={toY(grossData[0]) - 8} fontSize={8} fill="#ef4444" fontWeight={600} textAnchor="start">Bruto</text>
+          <text x={toX(0) - 4} y={toY(netData[0]) + 14} fontSize={8} fill="#22c55e" fontWeight={600} textAnchor="start">Líquido</text>
+          <text x={toX(0) - 4} y={toY(saldoData[0]) - 8} fontSize={8} fill="#4f46e5" fontWeight={600} textAnchor="start">Saldo</text>
+        </>
+      )}
+
+      {/* X axis labels */}
+      {recent.map((m, i) => (
+        <text
+          key={m.month}
+          x={toX(i)}
+          y={H + 18}
+          textAnchor="middle"
+          fontSize={10}
+          fill="currentColor"
+          opacity={0.45}
+        >
+          {m.month.slice(5)}
+        </text>
+      ))}
+
+      {/* Value labels on last points (smart-spaced) */}
+      {recent.length > 0 && endLabels.map((l, i) => (
+        <text key={i} x={labelX} y={l.y + 3} fontSize={9} fill={l.color} fontWeight={600}>
+          {l.text}
+        </text>
+      ))}
     </svg>
   );
 }
@@ -353,7 +457,7 @@ export default function DashboardPage() {
 
       {/* Charts + Activity */}
       <div className="grid-2col" style={{ gap: 18, alignItems: "start" }}>
-        <Card title="Tendência de cobranças (últimos 6 meses)">
+        <Card title="Faturamento & Saldo (últimos 6 meses)">
           <div style={{ marginTop: 8 }}>
             <BillingChart months={billing} />
             <div
@@ -363,31 +467,45 @@ export default function DashboardPage() {
                 marginTop: 8,
                 fontSize: "0.75rem",
                 color: "var(--text-faint)",
+                flexWrap: "wrap",
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span
                   style={{
                     width: 10,
-                    height: 10,
+                    height: 3,
                     borderRadius: 2,
-                    background: "#4f46e5",
+                    background: "#ef4444",
                     display: "inline-block",
                   }}
                 />
-                Pago
+                Faturamento Bruto
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <span
                   style={{
                     width: 10,
-                    height: 10,
+                    height: 3,
                     borderRadius: 2,
-                    background: "rgba(79,70,229,0.18)",
+                    background: "#22c55e",
                     display: "inline-block",
                   }}
                 />
-                Cobrado
+                Faturamento Líquido
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <span
+                  style={{
+                    width: 10,
+                    height: 2,
+                    borderRadius: 2,
+                    background: "#4f46e5",
+                    display: "inline-block",
+                    borderTop: "2px dashed #4f46e5",
+                  }}
+                />
+                Saldo
               </span>
             </div>
           </div>

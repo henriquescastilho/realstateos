@@ -105,6 +105,7 @@ analyticsRouter.get(
         .select({
           month: charges.billingPeriod,
           total_charged: sql<number>`coalesce(sum(${charges.grossAmount}::numeric), 0)::float`,
+          total_net: sql<number>`coalesce(sum(${charges.netAmount}::numeric), 0)::float`,
           total_paid: sql<number>`coalesce(sum(case when ${charges.paymentStatus} = 'paid' then ${charges.grossAmount}::numeric else 0 end), 0)::float`,
         })
         .from(charges)
@@ -115,6 +116,7 @@ analyticsRouter.get(
       const months = rows.map((r) => ({
         month: r.month,
         total_charged: r.total_charged,
+        total_net: r.total_net,
         total_paid: r.total_paid,
         payment_rate_pct:
           r.total_charged > 0
