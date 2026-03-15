@@ -31,11 +31,11 @@ async function processMessage(job: Job<MessageJob>): Promise<void> {
     const sender = await getChannelSender(orgId, channel);
 
     if (sender) {
-      const result = await sender.send({ to: recipient, subject: rendered.subject, body: rendered.body });
+      const result = await sender.send({ to: recipient, subject: rendered.subject, body: rendered.body, html: rendered.html });
       success = result.success;
       error = result.error;
     } else if (channel === "email") {
-      const result = await sendEmail({ to: recipient, subject: rendered.subject, body: rendered.body });
+      const result = await sendEmail({ to: recipient, subject: rendered.subject, body: rendered.body, html: rendered.html, orgId });
       success = result.success;
       error = result.error;
     } else if (channel === "whatsapp") {

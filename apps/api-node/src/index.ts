@@ -27,6 +27,10 @@ app.use("/api/v1", authRouter);
 import { webhooksRouter } from "./modules/webhooks/router";
 app.use("/api/v1", webhooksRouter);
 
+// ─── Email template preview (no auth — dev only) ───
+import { previewRouter } from "./modules/communications/preview-router";
+app.use("/api/v1", previewRouter);
+
 // ─── Module routers (auth + org-scoping) ───
 import { onboardingRouter } from "./modules/onboarding/router";
 import { contractsRouter } from "./modules/contracts/router";

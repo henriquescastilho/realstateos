@@ -6,7 +6,7 @@ import { sendWhatsApp } from "./channels/whatsapp";
 import { sendEmail } from "./channels/email";
 
 export interface ChannelSender {
-  send(payload: { to: string; subject?: string; body: string }): Promise<{
+  send(payload: { to: string; subject?: string; body: string; html?: string }): Promise<{
     success: boolean;
     error?: string;
     messageId?: string;
@@ -62,6 +62,8 @@ export async function getChannelSender(
           to: payload.to,
           subject: payload.subject ?? "",
           body: payload.body,
+          html: payload.html,
+          orgId,
         });
       },
     };

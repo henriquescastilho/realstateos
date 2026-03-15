@@ -1,7 +1,14 @@
 /**
- * Message templates for tenant and owner communications.
- * Each template returns { subject, body } for the given channel.
+ * Templates de mensagem para comunicações com inquilinos e proprietários.
+ * Cada template retorna { subject, body, html? } para o canal indicado.
  */
+
+import {
+  renderBoletoHtml,
+  renderStatementHtml,
+  type BoletoTemplateData,
+  type StatementTemplateData,
+} from "./html-templates";
 
 export interface TemplateData {
   tenantName?: string;
@@ -14,20 +21,36 @@ export interface TemplateData {
   ticketDescription?: string;
   paymentDate?: string;
   statementPeriod?: string;
+  // Campos estendidos para templates HTML
+  orgName?: string;
+  lineItems?: Array<{ description: string; amount: string }> | string; // string quando JSON do templateData
+  grossAmount?: string;
+  penaltyAmount?: string;
+  discountAmount?: string;
+  netAmount?: string;
+  barcode?: string;
+  digitableLine?: string;
+  pixKey?: string;
+  // Campos específicos do extrato
+  entries?: Array<{ type: string; description: string; amount: string }>;
+  totalPayout?: string;
+  payoutBank?: { bankCode: string; branch: string; account: string; pixKey?: string };
+  payoutDate?: string;
 }
 
 export interface RenderedTemplate {
   subject: string;
   body: string;
+  html?: string;
 }
 
 type TemplateFn = (data: TemplateData) => RenderedTemplate;
 
 const templates: Record<string, TemplateFn> = {
-  // ─── Billing ───
-  charge_issued: (data) => ({
-    subject: `Boleto disponível - Vencimento ${data.dueDate}`,
-    body: [
+  // ─── Cobranças ───
+  charge_issued: (data) => {
+    const subject = `Boleto disponível — Vencimento ${data.dueDate}`;
+    const body = [
       `Olá ${data.tenantName ?? "Inquilino"},`,
       ``,
       `Seu boleto referente ao imóvel ${data.propertyAddress ?? ""} para o período ${data.billingPeriod ?? ""} está disponível.`,
@@ -35,11 +58,38 @@ const templates: Record<string, TemplateFn> = {
       `Vencimento: ${data.dueDate ?? ""}`,
       ``,
       `Em caso de dúvidas, entre em contato conosco.`,
-    ].join("\n"),
-  }),
+    ].join("\n");
+
+    // Gera versão HTML se tiver os dados estendidos (inclui dados do Santander)
+    let html: string | undefined;
+    if (data.orgName && data.lineItems && data.netAmount) {
+      const parsedItems: Array<{ description: string; amount: string }> =
+        typeof data.lineItems === "string"
+          ? JSON.parse(data.lineItems)
+          : data.lineItems;
+
+      html = renderBoletoHtml({
+        orgName: data.orgName,
+        tenantName: data.tenantName ?? "Inquilino",
+        propertyAddress: data.propertyAddress ?? "",
+        billingPeriod: data.billingPeriod ?? "",
+        dueDate: data.dueDate ?? "",
+        lineItems: parsedItems,
+        grossAmount: data.grossAmount ?? data.amount ?? "0.00",
+        penaltyAmount: data.penaltyAmount ?? "0.00",
+        discountAmount: data.discountAmount ?? "0.00",
+        netAmount: data.netAmount,
+        barcode: data.barcode,
+        digitableLine: data.digitableLine,
+        pixKey: data.pixKey,
+      });
+    }
+
+    return { subject, body, html };
+  },
 
   charge_overdue: (data) => ({
-    subject: `Aviso de atraso - Imóvel ${data.propertyAddress ?? ""}`,
+    subject: `Aviso de atraso — Imóvel ${data.propertyAddress ?? ""}`,
     body: [
       `Olá ${data.tenantName ?? "Inquilino"},`,
       ``,
@@ -51,9 +101,9 @@ const templates: Record<string, TemplateFn> = {
     ].join("\n"),
   }),
 
-  // ─── Payments ───
+  // ─── Pagamentos ───
   payment_confirmed: (data) => ({
-    subject: `Pagamento confirmado - ${data.billingPeriod ?? ""}`,
+    subject: `Pagamento confirmado — ${data.billingPeriod ?? ""}`,
     body: [
       `Olá ${data.tenantName ?? "Inquilino"},`,
       ``,
@@ -63,22 +113,40 @@ const templates: Record<string, TemplateFn> = {
     ].join("\n"),
   }),
 
-  // ─── Statements ───
-  statement_ready: (data) => ({
-    subject: `Extrato disponível - ${data.statementPeriod ?? ""}`,
-    body: [
+  // ─── Extratos ───
+  statement_ready: (data) => {
+    const subject = `Extrato de repasse — ${data.statementPeriod ?? ""}`;
+    const body = [
       `Olá ${data.ownerName ?? "Proprietário"},`,
       ``,
       `O extrato de repasse referente ao período ${data.statementPeriod ?? ""} está disponível.`,
       `Imóvel: ${data.propertyAddress ?? ""}`,
+      `Valor líquido: R$ ${data.totalPayout ?? "0,00"}`,
       ``,
       `Acesse o sistema para visualizar os detalhes.`,
-    ].join("\n"),
-  }),
+    ].join("\n");
 
-  // ─── Maintenance ───
+    // Gera versão HTML se tiver os dados estendidos
+    let html: string | undefined;
+    if (data.orgName && data.entries && data.totalPayout) {
+      html = renderStatementHtml({
+        orgName: data.orgName,
+        ownerName: data.ownerName ?? "Proprietário",
+        propertyAddress: data.propertyAddress ?? "",
+        statementPeriod: data.statementPeriod ?? "",
+        entries: data.entries,
+        totalPayout: data.totalPayout,
+        payoutBank: data.payoutBank,
+        payoutDate: data.payoutDate,
+      });
+    }
+
+    return { subject, body, html };
+  },
+
+  // ─── Manutenção ───
   maintenance_opened: (data) => ({
-    subject: `Chamado de manutenção aberto - #${data.ticketId ?? ""}`,
+    subject: `Chamado de manutenção aberto — #${data.ticketId ?? ""}`,
     body: [
       `Olá ${data.tenantName ?? "Inquilino"},`,
       ``,
@@ -92,7 +160,7 @@ const templates: Record<string, TemplateFn> = {
   }),
 
   maintenance_resolved: (data) => ({
-    subject: `Chamado resolvido - #${data.ticketId ?? ""}`,
+    subject: `Chamado resolvido — #${data.ticketId ?? ""}`,
     body: [
       `Olá ${data.tenantName ?? "Inquilino"},`,
       ``,
@@ -104,8 +172,8 @@ const templates: Record<string, TemplateFn> = {
 };
 
 /**
- * Render a template by name with the given data.
- * Throws if template not found.
+ * Renderiza um template pelo nome com os dados fornecidos.
+ * Lança erro se o template não for encontrado.
  */
 export function renderTemplate(
   templateType: string,
@@ -119,7 +187,7 @@ export function renderTemplate(
 }
 
 /**
- * List available template types.
+ * Lista os tipos de template disponíveis.
  */
 export function getAvailableTemplates(): string[] {
   return Object.keys(templates);

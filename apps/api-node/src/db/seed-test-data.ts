@@ -29,6 +29,27 @@ const db = drizzle(pool, { schema });
 const ORG = {
   name: "L CASTILHO IMOVEIS",
   document: "30.395.589/0001-35",
+  smtpSettings: {
+    host: "smtppro.zoho.com",
+    port: 587,
+    user: "lcastilho@lcastilho.com.br",
+    pass: "T3WMP0wphzv0",
+    from: "lcastilho@lcastilho.com.br",
+  },
+};
+
+// ─── Admin da imobiliária (único que faz login no sistema) ───
+// Proprietários e inquilinos NÃO fazem login.
+// Proprietários recebem: extrato de repasse + avisos por email.
+// Inquilinos recebem: boleto + avisos por email.
+
+const ADMIN_USER = {
+  fullName: "Henrique Scheer de Castilho",
+  documentNumber: "847.623.190-72",
+  email: "henrique009.hsc@gmail.com",   // email pessoal (recebe boleto/extrato na demo)
+  phone: "(11) 99900-0001",
+  loginEmail: "lcastilho@lcastilho.com.br",  // email da imobiliária (login no sistema)
+  loginPassword: "123@123",
 };
 
 // ─── 20 proprietários (CPF, email, telefone únicos) ───
@@ -193,7 +214,43 @@ async function seed() {
   const [org] = await db.insert(schema.organizations).values(ORG).returning();
   console.log(`  Org: ${org.name} | CNPJ: ${ORG.document} | ID: ${org.id}`);
 
-  // 2. 20 proprietários
+  // 2. Henrique — admin da imobiliária (login) + cadastrado como proprietário e inquilino fictício para demo
+  // Na vida real, proprietários/inquilinos NÃO logam. Recebem tudo por email.
+  // Aqui usamos o mesmo email só para facilitar a demonstração no hackathon.
+  console.log("\n★ Criando Henrique (admin + proprietario ficticio + inquilino ficticio)...");
+
+  const [adminOwner] = await db
+    .insert(schema.owners)
+    .values({
+      orgId: org.id,
+      ...ADMIN_USER,
+      payoutPreferences: {
+        bankCode: "033",
+        branch: "0001",
+        account: "99000-1",
+        accountType: "corrente",
+        pixKey: ADMIN_USER.email,
+      },
+      status: "active",
+    })
+    .returning();
+  console.log(`  ★ Proprietario: ${adminOwner.fullName} | CPF: ${adminOwner.documentNumber} (recebe extrato por email)`);
+
+  const [adminTenant] = await db
+    .insert(schema.tenants)
+    .values({
+      orgId: org.id,
+      fullName: ADMIN_USER.fullName,
+      documentNumber: ADMIN_USER.documentNumber,
+      email: ADMIN_USER.email,
+      phone: ADMIN_USER.phone,
+      guaranteeProfile: { type: "caucao", details: "3 meses de caucao depositados" },
+      status: "active",
+    })
+    .returning();
+  console.log(`  ★ Inquilino:    ${adminTenant.fullName} | CPF: ${adminTenant.documentNumber} (recebe boleto por email)`);
+
+  // 3. 20 proprietários
   console.log("\nCriando 20 proprietarios...");
   const ownerRows = await db
     .insert(schema.owners)
@@ -227,7 +284,26 @@ async function seed() {
     console.log(`  ${t.fullName.padEnd(35)} CPF: ${t.documentNumber}`);
   }
 
-  // 4. 20 imóveis
+  // 4. Imóvel do admin (alto padrão)
+  console.log("\nCriando imovel do admin...");
+  const [adminProperty] = await db
+    .insert(schema.properties)
+    .values({
+      orgId: org.id,
+      address: "Rua Jerônimo da Veiga, 384 - Cobertura Duplex",
+      city: "São Paulo",
+      state: "SP",
+      zip: "04536-001",
+      type: "residential",
+      areaSqm: "420.00",
+      bedrooms: 4,
+      registryReference: "CRI-SP-14-MAT-287654",
+      status: "active",
+    })
+    .returning();
+  console.log(`  ★ ${adminProperty.address}`);
+
+  // 5. 20 imóveis
   console.log("\nCriando 20 imoveis...");
   const propertyRows = await db
     .insert(schema.properties)
@@ -279,9 +355,52 @@ async function seed() {
     console.log(`  #${String(i + 1).padStart(2, "0")} ${ownerRows[i].fullName.padEnd(30)} -> ${tenantRows[i].fullName.padEnd(28)} R$ ${RENT_VALUES[i]}`);
   }
 
-  // 6. Billing schedules (todos os 20)
+  // Contratos do Henrique (demo)
+  console.log("\n★ Criando contratos do Henrique (demo)...");
+
+  // Henrique como PROPRIETARIO da cobertura duplex → inquilino fictício
+  const [adminAsOwnerContract] = await db
+    .insert(schema.leaseContracts)
+    .values({
+      orgId: org.id,
+      propertyId: adminProperty.id,
+      ownerId: adminOwner.id,
+      tenantId: tenantRows[0].id, // primeiro inquilino aluga a cobertura
+      startDate: new Date(today.getFullYear(), today.getMonth() - 3, 1).toISOString().split("T")[0],
+      endDate: new Date(today.getFullYear(), today.getMonth() + 21, 1).toISOString().split("T")[0],
+      rentAmount: "12500.00",
+      depositType: "caucao",
+      chargeRules: { dueDateDay: 10, lateFeePercent: "2.00", dailyInterestPercent: "0.033" },
+      payoutRules: { adminFeePercent: "10.00", payoutDay: 15 },
+      operationalStatus: "active",
+    })
+    .returning();
+  console.log(`  ★ Proprietario: ${ADMIN_USER.fullName} → Inquilino: ${tenantRows[0].fullName} | R$ 12.500,00`);
+
+  // Henrique como INQUILINO em imóvel de alto padrão
+  const [adminAsTenantContract] = await db
+    .insert(schema.leaseContracts)
+    .values({
+      orgId: org.id,
+      propertyId: propertyRows[2].id, // Rua Oscar Freire, 450 - Apto 82
+      ownerId: ownerRows[2].id,       // Ana Paula Oliveira
+      tenantId: adminTenant.id,
+      startDate: new Date(today.getFullYear(), today.getMonth() - 6, 1).toISOString().split("T")[0],
+      endDate: new Date(today.getFullYear(), today.getMonth() + 18, 1).toISOString().split("T")[0],
+      rentAmount: "4200.00",
+      depositType: "seguro_fianca",
+      chargeRules: { dueDateDay: 5, lateFeePercent: "2.00", dailyInterestPercent: "0.033" },
+      payoutRules: { adminFeePercent: "10.00", payoutDay: 10 },
+      operationalStatus: "active",
+    })
+    .returning();
+  console.log(`  ★ Inquilino: ${ADMIN_USER.fullName} → Proprietaria: ${ownerRows[2].fullName} | R$ 4.200,00`);
+
+  // 6. Billing schedules (todos os 22 contratos — 20 base + 2 Henrique)
   console.log("\nCriando billing schedules...");
-  const scheduleValues = contractRows.map((c, i) => ({
+  const allContracts = [...contractRows, adminAsOwnerContract, adminAsTenantContract];
+  const allRentAmounts = [...RENT_VALUES, "12500.00", "4200.00"];
+  const scheduleValues = allContracts.map((c, i) => ({
     orgId: org.id,
     leaseContractId: c.id,
     dueDateRule: ["first_business_day", "fixed_day_5", "fixed_day_10", "fixed_day_15"][i % 4],
@@ -296,31 +415,37 @@ async function seed() {
     status: "active",
   }));
   const scheduleRows = await db.insert(schema.billingSchedules).values(scheduleValues).returning();
-  console.log(`  ${scheduleRows.length} billing schedules criados`);
+  console.log(`  ${scheduleRows.length} billing schedules criados (incl. 2 do Henrique)`);
 
-  // 7. Cobranças do mês atual (20)
-  console.log("\nGerando cobrancas do mes atual (${currentMonth})...");
-  const chargeValues = contractRows.map((c, i) => {
+  // 7. Cobranças históricas (últimos 5 meses — todos pagos) + mês atual
+  // Gera dados para o gráfico de tendência de 6 meses do dashboard
+  console.log("\nGerando cobrancas dos ultimos 6 meses...");
+
+  const allChargeValues: Array<{
+    orgId: string;
+    leaseContractId: string;
+    billingPeriod: string;
+    lineItems: Array<{ type: string; description: string; amount: string; source: string }>;
+    grossAmount: string;
+    discountAmount: string;
+    penaltyAmount: string;
+    netAmount: string;
+    issueStatus: string;
+    paymentStatus: string;
+    dueDate: string;
+  }> = [];
+
+  // Helper: build charge for a contract
+  function buildCharge(c: typeof allContracts[0], i: number, period: string, status: "paid" | "overdue" | "open") {
     const rent = parseFloat(c.rentAmount);
     const condo = i % 3 === 0 ? 780 : 0;
     const iptu = i % 5 === 0 ? 450 : 0;
     const gross = rent + condo + iptu;
 
-    // Mix de status realista: 5 pagos, 3 atrasados, 12 em aberto
-    let issueStatus: string;
-    let paymentStatus: string;
-    if (i < 5) {
-      issueStatus = "issued"; paymentStatus = "paid";
-    } else if (i < 8) {
-      issueStatus = "issued"; paymentStatus = "overdue";
-    } else {
-      issueStatus = "issued"; paymentStatus = "open";
-    }
-
     return {
       orgId: org.id,
       leaseContractId: c.id,
-      billingPeriod: currentMonth,
+      billingPeriod: period,
       lineItems: [
         { type: "rent", description: "Aluguel", amount: c.rentAmount, source: "contract" },
         ...(condo ? [{ type: "condominium", description: "Condominio", amount: "780.00", source: "document" }] : []),
@@ -328,33 +453,63 @@ async function seed() {
       ],
       grossAmount: gross.toFixed(2),
       discountAmount: "0.00",
-      penaltyAmount: paymentStatus === "overdue" ? (gross * 0.02).toFixed(2) : "0.00",
-      netAmount: paymentStatus === "overdue" ? (gross * 1.02).toFixed(2) : gross.toFixed(2),
-      issueStatus,
-      paymentStatus,
-      dueDate: `${currentMonth}-${String([5, 10, 15, 20][i % 4]).padStart(2, "0")}`,
+      penaltyAmount: status === "overdue" ? (gross * 0.02).toFixed(2) : "0.00",
+      netAmount: status === "overdue" ? (gross * 1.02).toFixed(2) : gross.toFixed(2),
+      issueStatus: "issued",
+      paymentStatus: status,
+      dueDate: `${period}-${String([5, 10, 15, 20][i % 4]).padStart(2, "0")}`,
     };
-  });
-  const chargeRows = await db.insert(schema.charges).values(chargeValues).returning();
+  }
+
+  // Past 5 months — all paid (populates trend chart)
+  for (let m = 5; m >= 1; m--) {
+    const pastDate = new Date(today.getFullYear(), today.getMonth() - m, 1);
+    const pastMonth = `${pastDate.getFullYear()}-${String(pastDate.getMonth() + 1).padStart(2, "0")}`;
+    for (let i = 0; i < allContracts.length; i++) {
+      allChargeValues.push(buildCharge(allContracts[i], i, pastMonth, "paid"));
+    }
+  }
+
+  // Current month — mix realista: 15 paid, 3 overdue, 4 open (total 22)
+  for (let i = 0; i < allContracts.length; i++) {
+    let status: "paid" | "overdue" | "open";
+    if (i < 15) {
+      status = "paid";
+    } else if (i < 18) {
+      status = "overdue";
+    } else {
+      status = "open";
+    }
+    allChargeValues.push(buildCharge(allContracts[i], i, currentMonth, status));
+  }
+
+  const chargeRows = await db.insert(schema.charges).values(allChargeValues).returning();
   const paid = chargeRows.filter((c) => c.paymentStatus === "paid");
   const overdue = chargeRows.filter((c) => c.paymentStatus === "overdue");
   const open = chargeRows.filter((c) => c.paymentStatus === "open");
-  console.log(`  ${chargeRows.length} cobrancas: ${paid.length} pagas, ${overdue.length} atrasadas, ${open.length} em aberto`);
+  console.log(`  ${chargeRows.length} cobrancas total (6 meses)`);
+  console.log(`  Mes atual: ${paid.filter(c => c.billingPeriod === currentMonth).length} pagas, ${overdue.length} atrasadas, ${open.length} em aberto`);
+  console.log(`  Meses anteriores: ${paid.filter(c => c.billingPeriod !== currentMonth).length} pagas (historico)`);
 
-  // 8. Pagamentos (5 pagos)
+  // 8. Pagamentos (todos os pagos)
   console.log("\nRegistrando pagamentos...");
   if (paid.length > 0) {
-    const paymentValues = paid.map((c, i) => ({
-      orgId: org.id,
-      chargeId: c.id,
-      receivedAmount: c.netAmount,
-      receivedAt: new Date(today.getFullYear(), today.getMonth(), [3, 4, 5, 6, 7][i % 5]),
-      paymentMethod: i % 2 === 0 ? "pix" : "boleto",
-      bankReference: `LCASTILHO-${currentMonth}-${String(i + 1).padStart(3, "0")}`,
-      reconciliationStatus: "matched",
-    }));
+    const paymentValues = paid.map((c, i) => {
+      // For historical months, payment on day 3-7 of that month; for current month, same
+      const period = c.billingPeriod;
+      const [year, month] = period.split("-").map(Number);
+      return {
+        orgId: org.id,
+        chargeId: c.id,
+        receivedAmount: c.netAmount,
+        receivedAt: new Date(year, month - 1, [3, 4, 5, 6, 7][i % 5]),
+        paymentMethod: i % 2 === 0 ? "pix" : "boleto",
+        bankReference: `LCASTILHO-${period}-${String(i + 1).padStart(3, "0")}`,
+        reconciliationStatus: "matched",
+      };
+    });
     const paymentRows = await db.insert(schema.payments).values(paymentValues).returning();
-    console.log(`  ${paymentRows.length} pagamentos (${paymentRows.filter((p) => p.paymentMethod === "pix").length} PIX, ${paymentRows.filter((p) => p.paymentMethod === "boleto").length} boleto)`);
+    console.log(`  ${paymentRows.length} pagamentos registrados`);
   }
 
   // 9. Tickets de manutenção
@@ -378,15 +533,19 @@ async function seed() {
   console.log(" BANCO DE TESTES — L CASTILHO IMOVEIS");
   console.log("=".repeat(60));
   console.log(`  Organizacao:    ${org.name} (${ORG.document})`);
-  console.log(`  Proprietarios:  ${ownerRows.length}`);
+  console.log(`  Admin:          ${ADMIN_USER.fullName} (${ADMIN_USER.email})`);
+  console.log(`  Proprietarios:  ${ownerRows.length + 1} (incl. admin)`);
   console.log(`  Inquilinos:     ${tenantRows.length}`);
-  console.log(`  Imoveis:        ${propertyRows.length}`);
-  console.log(`  Contratos:      ${contractRows.length}`);
+  console.log(`  Imoveis:        ${propertyRows.length + 1} (incl. admin)`);
+  console.log(`  Contratos:      ${contractRows.length + 2} (incl. 2 do Henrique)`);
   console.log(`  Schedules:      ${scheduleRows.length}`);
   console.log(`  Cobrancas:      ${chargeRows.length} (${paid.length} pagas, ${overdue.length} atrasadas, ${open.length} abertas)`);
   console.log(`  Pagamentos:     ${paid.length}`);
   console.log(`  Tickets:        ${ticketRows.length}`);
   console.log(`\n  Org ID: ${org.id}`);
+  console.log(`  Login (admin): ${ADMIN_USER.loginEmail} / ${ADMIN_USER.loginPassword}`);
+  console.log(`  Email demo:    ${ADMIN_USER.email} (recebe boleto/extrato)`);
+  console.log(`  Proprietarios/inquilinos NAO logam — recebem tudo por email.`);
   console.log("=".repeat(60));
 }
 

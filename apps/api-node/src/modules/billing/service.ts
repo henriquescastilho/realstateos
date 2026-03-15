@@ -6,12 +6,15 @@ import {
   leaseContracts,
   tenants,
   properties,
+  owners,
+  organizations,
 } from "../../db/schema";
 import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
 import { ChargeIssueStatus, LeaseContractStatus, BoletoStatus } from "../../types/domain";
 import { calculateCharge } from "./calculator";
 import { generateBoleto, getOrgBankCredentials } from "../integrations/connectors/bank";
 import { emitDomainEvent } from "../../lib/events";
+import { sendMessage } from "../communications/service";
 import type { CreateBillingScheduleInput, GenerateChargesInput } from "./validators";
 
 /**
@@ -277,6 +280,11 @@ export async function issueCharge(chargeId: string) {
     boletoStatus: boletoResult.status,
   }).catch((e) => console.error("[billing] Event emit error:", e));
 
+  // ─── Enviar email do boleto ao inquilino com dados do Santander ───
+  await sendChargeIssuedEmail(updated).catch((e) =>
+    console.error("[billing] Erro ao enviar email do boleto:", e),
+  );
+
   return updated;
 }
 
@@ -372,4 +380,97 @@ async function attemptBoletoGeneration(charge: {
       error: errorMsg,
     };
   }
+}
+
+/**
+ * Envia email HTML do boleto ao inquilino após emissão da cobrança.
+ * Inclui dados reais do Santander: código de barras, linha digitável, chave PIX.
+ */
+async function sendChargeIssuedEmail(charge: {
+  id: string;
+  orgId: string;
+  leaseContractId: string;
+  billingPeriod: string;
+  dueDate: string;
+  lineItems: Array<{ type: string; description: string; amount: string; source: string }> | null;
+  grossAmount: string;
+  penaltyAmount: string;
+  discountAmount: string;
+  netAmount: string;
+  barcode: string | null;
+  digitableLine: string | null;
+}): Promise<void> {
+  // Buscar contrato, inquilino, imóvel e organização
+  const [contract] = await db
+    .select()
+    .from(leaseContracts)
+    .where(eq(leaseContracts.id, charge.leaseContractId))
+    .limit(1);
+  if (!contract) return;
+
+  const [tenant] = await db
+    .select()
+    .from(tenants)
+    .where(eq(tenants.id, contract.tenantId))
+    .limit(1);
+  if (!tenant?.email) return;
+
+  const [property] = await db
+    .select()
+    .from(properties)
+    .where(eq(properties.id, contract.propertyId))
+    .limit(1);
+
+  const [org] = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, charge.orgId))
+    .limit(1);
+
+  // Buscar chave PIX do proprietário (owner do contrato)
+  const [owner] = await db
+    .select()
+    .from(owners)
+    .where(eq(owners.id, contract.ownerId))
+    .limit(1);
+
+  const pixKey = (owner?.payoutPreferences as Record<string, unknown>)?.pixKey as string | undefined;
+
+  const lineItems = (charge.lineItems ?? []).map((li) => ({
+    description: li.description,
+    amount: li.amount,
+  }));
+
+  const propertyAddress = property
+    ? `${property.address}, ${property.city}/${property.state}`
+    : "";
+
+  await sendMessage({
+    orgId: charge.orgId,
+    entityType: "charge",
+    entityId: charge.id,
+    channel: "email",
+    templateType: "charge_issued",
+    recipient: tenant.email,
+    templateData: {
+      orgName: org?.name ?? "",
+      tenantName: tenant.fullName,
+      propertyAddress,
+      billingPeriod: charge.billingPeriod,
+      dueDate: charge.dueDate,
+      amount: charge.netAmount,
+      // Dados estendidos para o template HTML
+      lineItems: JSON.stringify(lineItems),
+      grossAmount: charge.grossAmount,
+      penaltyAmount: charge.penaltyAmount,
+      discountAmount: charge.discountAmount,
+      netAmount: charge.netAmount,
+      // Dados do Santander
+      barcode: charge.barcode ?? "",
+      digitableLine: charge.digitableLine ?? "",
+      pixKey: pixKey ?? "",
+    },
+  });
+
+  console.log(`[billing] Email do boleto enviado para ${tenant.email} (cobrança ${charge.id})`);
 }
