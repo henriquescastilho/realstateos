@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, nodeApiGet } from "@/lib/api";
 import type { Contract, Owner, Property } from "@/lib/types";
 import {
   Badge,
@@ -87,8 +87,8 @@ export default function PropertiesPage() {
     setError(null);
     try {
       const [p, o] = await Promise.all([
-        apiGet<PropertyDetail[]>("/properties"),
-        apiGet<Owner[]>("/owners"),
+        nodeApiGet<PropertyDetail[]>("/properties"),
+        nodeApiGet<Owner[]>("/owners"),
       ]);
       setProperties(p);
       setOwners(o);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, nodeApiGet } from "@/lib/api";
 import type { Contract, Renter } from "@/lib/types";
 import {
   Badge,
@@ -133,7 +133,7 @@ export default function RentersPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiGet<RenterDetail[]>("/v1/renters");
+      const data = await nodeApiGet<RenterDetail[]>("/renters");
       setRenters(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao carregar locatários");

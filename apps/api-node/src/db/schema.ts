@@ -27,6 +27,7 @@ export const organizations = pgTable("organizations", {
   id: id(),
   name: varchar("name", { length: 255 }).notNull(),
   document: varchar("document", { length: 20 }),
+  smtpSettings: jsonb("smtp_settings"),
   ...timestamps(),
 });
 

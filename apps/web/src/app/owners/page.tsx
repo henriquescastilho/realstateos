@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { apiGet, apiPost } from "@/lib/api";
+import { apiGet, apiPost, nodeApiGet } from "@/lib/api";
 import type { Owner, Property } from "@/lib/types";
 import {
   Badge,
@@ -147,7 +147,7 @@ export default function OwnersPage() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiGet<OwnerDetail[]>("/v1/owners");
+      const data = await nodeApiGet<OwnerDetail[]>("/owners");
       setOwners(data);
     } catch (e) {
       setError(

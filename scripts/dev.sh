@@ -47,7 +47,7 @@ stop_all() {
 # Docker Compose PostgreSQL uses default local-dev credentials
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/realestateos}" # placeholder
 export REDIS_URL="${REDIS_URL:-redis://localhost:6379}" # placeholder
-export JWT_SECRET="${JWT_SECRET:-dev-secret-do-not-use-in-production}" # placeholder
+export JWT_SECRET="${JWT_SECRET:-dev-only-unsafe-secret-replace-in-production}" # must match docker-compose.yml
 
 # ─── Infra only ───
 start_infra() {
@@ -129,17 +129,8 @@ run_tests() {
   log "Testes concluidos."
 }
 
-# ─── Main ───
-case "${1:-all}" in
-  --stop)
-    stop_all
-    ;;
-  --infra)
-    check_deps
-    start_infra
-    log "Infra rodando. API e Web precisam ser iniciados manualmente."
-    ;;
-  all)
+# ─── Start full environment (infra + seed + tests + API + Web) ───
+start_full() {
     check_deps
     start_infra
     run_seed
@@ -194,19 +185,32 @@ case "${1:-all}" in
     echo ""
     echo -e "  Logs:    ${YELLOW}$LOG_DIR/${NC}"
     echo -e "  Parar:   ${YELLOW}./scripts/dev.sh --stop${NC}"
-    echo -e "  Seed:    ${YELLOW}./scripts/dev.sh --seed${NC}"
     echo -e "${CYAN}═══════════════════════════════════════════════════${NC}"
     echo ""
 
     # Wait for any background process to exit
     wait
+}
+
+# ─── Main ───
+case "${1:-all}" in
+  --stop)
+    stop_all
+    ;;
+  --infra)
+    check_deps
+    start_infra
+    log "Infra rodando. API e Web precisam ser iniciados manualmente."
+    ;;
+  --seed|all)
+    start_full
     ;;
   *)
-    echo "Uso: ./scripts/dev.sh [--infra|--seed|--stop]"
+    echo "Uso: ./scripts/dev.sh [--seed|--infra|--stop]"
     echo ""
-    echo "  (sem flag)  Sobe tudo: infra + API + Web"
+    echo "  (sem flag)  Sobe tudo: infra + banco de teste + API + Web"
+    echo "  --seed      Mesmo que sem flag (sobe tudo)"
     echo "  --infra     Sobe so PostgreSQL, Redis, MinIO"
-    echo "  --seed      Sobe tudo + popula banco de teste"
     echo "  --stop      Para tudo"
     exit 0
     ;;

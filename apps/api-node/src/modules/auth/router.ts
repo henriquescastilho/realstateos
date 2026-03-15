@@ -5,7 +5,7 @@ import { ok } from "../../lib/response";
 import { generateToken } from "../../middleware/auth";
 import { authRateLimit } from "../../middleware/security";
 import { db } from "../../db";
-import { organizations } from "../../db/schema";
+import { organizations, owners } from "../../db/schema";
 
 export const authRouter = Router();
 
@@ -21,8 +21,8 @@ const tokenRequestSchema = z.object({
 }));
 
 /**
- * POST /auth/login — Login with email/password (dev: no password check).
- * Finds the first org and generates a token.
+ * POST /auth/login — Login para admin da imobiliária (dev: sem validação de senha).
+ * Proprietários e inquilinos NÃO logam — recebem extrato/boleto/avisos por email.
  */
 const loginSchema = z.object({
   email: z.string().email(),
@@ -36,12 +36,22 @@ authRouter.post(
     try {
       const input = loginSchema.parse(req.body);
 
-      // Dev mode: find first org, no password validation
+      // Find org
       const [org] = await db.select().from(organizations).limit(1);
       if (!org) {
         res.status(400).json({ detail: "No organization found. Run seed first." });
         return;
       }
+
+      // Resolve display name: check owners table, then fallback to email prefix
+      const [ownerRecord] = await db
+        .select({ fullName: owners.fullName })
+        .from(owners)
+        .where(eq(owners.email, input.email))
+        .limit(1);
+
+      // For org email (e.g. lcastilho@lcastilho.com.br), show org admin name
+      const displayName = ownerRecord?.fullName ?? org.name;
 
       const token = generateToken({
         sub: input.email,
@@ -61,7 +71,7 @@ authRouter.post(
         user: {
           id: input.email,
           email: input.email,
-          name: input.email.split("@")[0],
+          name: displayName,
           role: "admin",
           org_id: org.id,
           org_name: org.name,

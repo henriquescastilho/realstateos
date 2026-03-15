@@ -221,7 +221,7 @@ export async function replyToThread(
       error = result.error;
       externalMessageId = result.messageId;
     } else if (thread.channel === "email") {
-      const result = await sendEmail({ to: thread.contactIdentifier, subject: "Re: Mensagem", body: content });
+      const result = await sendEmail({ to: thread.contactIdentifier, subject: "Re: Mensagem", body: content, orgId });
       success = result.success;
       error = result.error;
       externalMessageId = result.messageId;

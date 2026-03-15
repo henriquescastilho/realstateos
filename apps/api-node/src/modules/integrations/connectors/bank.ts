@@ -103,11 +103,30 @@ export async function getOrgBankCredentials(
 
 // ─── mTLS Agent (per org, cached) ───
 
-function buildOrgTlsAgent(creds: BankCredentialsRow): https.Agent | null {
-  if (!creds.certPath || !creds.keyPath) {
-    console.error(`[bank] Org ${creds.orgId}: cert_path or key_path not configured`);
-    return null;
+/**
+ * Load cert/key either from base64 env vars (Railway/cloud) or from filesystem.
+ * Env var convention: BANK_CERT_B64 and BANK_KEY_B64 for a single-org setup,
+ * or BANK_CERT_B64_{ORG_SLUG} / BANK_KEY_B64_{ORG_SLUG} for multi-org.
+ */
+function loadCertAndKey(
+  creds: BankCredentialsRow,
+): { cert: Buffer; key: Buffer } | null {
+  // Attempt 1: org-specific env vars (slug uppercased, hyphens to underscores)
+  const slugKey = creds.orgId.toUpperCase().replace(/-/g, "_");
+  const certB64 =
+    process.env[`BANK_CERT_B64_${slugKey}`] ?? process.env.BANK_CERT_B64;
+  const keyB64 =
+    process.env[`BANK_KEY_B64_${slugKey}`] ?? process.env.BANK_KEY_B64;
+
+  if (certB64 && keyB64) {
+    return {
+      cert: Buffer.from(certB64, "base64"),
+      key: Buffer.from(keyB64, "base64"),
+    };
   }
+
+  // Attempt 2: filesystem (local dev)
+  if (!creds.certPath || !creds.keyPath) return null;
 
   const certAbsolute = path.resolve(CERTS_ROOT, creds.certPath);
   const keyAbsolute = path.resolve(CERTS_ROOT, creds.keyPath);
@@ -119,9 +138,22 @@ function buildOrgTlsAgent(creds: BankCredentialsRow): https.Agent | null {
     return null;
   }
 
-  return new https.Agent({
+  return {
     cert: fs.readFileSync(certAbsolute),
     key: fs.readFileSync(keyAbsolute),
+  };
+}
+
+function buildOrgTlsAgent(creds: BankCredentialsRow): https.Agent | null {
+  const keys = loadCertAndKey(creds);
+  if (!keys) {
+    console.error(`[bank] Org ${creds.orgId}: no certificate available (env or filesystem)`);
+    return null;
+  }
+
+  return new https.Agent({
+    cert: keys.cert,
+    key: keys.key,
     rejectUnauthorized: true,
   });
 }
@@ -428,15 +460,21 @@ export async function registerBankCredentials(input: {
       ? "https://trust-open.api.santander.com.br"
       : "https://trust-sandbox.api.santander.com.br");
 
-  // Validate cert files exist
-  const certAbsolute = path.resolve(CERTS_ROOT, input.certPath);
-  const keyAbsolute = path.resolve(CERTS_ROOT, input.keyPath);
+  // Validate cert availability (env vars or filesystem)
+  const slugKey = input.orgId.toUpperCase().replace(/-/g, "_");
+  const hasEnvCerts =
+    !!(process.env[`BANK_CERT_B64_${slugKey}`] ?? process.env.BANK_CERT_B64) &&
+    !!(process.env[`BANK_KEY_B64_${slugKey}`] ?? process.env.BANK_KEY_B64);
 
-  if (!fs.existsSync(certAbsolute)) {
-    throw new Error(`Certificate not found: ${certAbsolute}`);
-  }
-  if (!fs.existsSync(keyAbsolute)) {
-    throw new Error(`Private key not found: ${keyAbsolute}`);
+  if (!hasEnvCerts) {
+    const certAbsolute = path.resolve(CERTS_ROOT, input.certPath);
+    const keyAbsolute = path.resolve(CERTS_ROOT, input.keyPath);
+    if (!fs.existsSync(certAbsolute)) {
+      throw new Error(`Certificate not found: ${certAbsolute}`);
+    }
+    if (!fs.existsSync(keyAbsolute)) {
+      throw new Error(`Private key not found: ${keyAbsolute}`);
+    }
   }
 
   // Upsert
