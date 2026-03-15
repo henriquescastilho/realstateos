@@ -32,7 +32,7 @@ O Real Estate OS automatiza o ciclo completo de administração de imóveis — 
 
 Administradoras de imóveis ainda operam com processos manuais e fragmentados:
 
-- Boletos de condomínio e IPTU chegam por e-mail e WhatsApp, e alguém precisa abrir, ler, digitar e lançar cada um manualmente.
+- Boletos de condomínio e IPTU chegam por e-mail, e alguém precisa abrir, ler, digitar e lançar cada um manualmente.
 - Cobranças são compostas em planilhas, com risco constante de erro e atraso.
 - Pagamentos recebidos precisam ser reconciliados um a um contra os boletos emitidos.
 - O repasse ao proprietário exige calcular aluguel recebido menos despesas menos taxa de administração — tudo manual.
@@ -54,7 +54,7 @@ O sistema opera com **7 agentes especializados** coordenados por um **Orquestrad
 
 ```
   Boleto chega           Cobranças              Boleto enviado         Pagamento
-  (e-mail/WhatsApp)      compostas              ao locatário           recebido
+  (e-mail)               compostas              ao locatário           recebido
        │                    │                       │                     │
        ▼                    ▼                       ▼                     ▼
    ┌────────┐  expense  ┌─────────┐  charges   ┌──────────┐ payment  ┌───────────┐
@@ -77,7 +77,7 @@ O sistema opera com **7 agentes especializados** coordenados por um **Orquestrad
 ### Os 7 Agentes em Detalhe
 
 #### 1. Radar — Captura de Documentos
-**Disparo:** Sob demanda (e-mail, WhatsApp ou upload manual)
+**Disparo:** Sob demanda (e-mail ou upload manual)
 
 O Radar recebe imagens ou PDFs de boletos e usa o **Gemini Vision** para extrair automaticamente: valor, data de vencimento, código de barras, linha digitável, tipo (condomínio, IPTU ou taxa), CNPJ do emissor e mês de referência.
 
@@ -95,7 +95,7 @@ O Maestro consolida todas as despesas capturadas do mês e compõe as cobranças
 #### 3. Cobrador — Emissão e Cobrança
 **Disparo:** Automático, ao receber `charges.composed`
 
-O Cobrador gera boletos bancários (integração Santander) com código de barras e linha digitável, e envia ao locatário por e-mail e WhatsApp. Ele também agenda lembretes automáticos:
+O Cobrador gera boletos bancários (integração Santander) com código de barras e linha digitável, e envia ao locatário por e-mail. Ele também agenda lembretes automáticos:
 - 3 dias antes do vencimento
 - 1 dia antes do vencimento
 - 1 dia após o vencimento (aviso de atraso)
@@ -173,7 +173,6 @@ Cada tarefa criada pelo Orquestrador entra em uma fila BullMQ e é processada pe
 
 ### Comunicações Multicanal
 - Envio de e-mails com templates HTML para cobranças, atrasos, pagamentos e extratos
-- Integração WhatsApp via Evolution API
 - Inbox unificado com threads por contato
 - Lembretes automáticos antes e depois do vencimento
 
