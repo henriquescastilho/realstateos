@@ -70,11 +70,11 @@ propertiesRouter.get("/owners", async (req: Request, res: Response, next: NextFu
       .where(eq(leaseContracts.orgId, orgId));
 
     const propertyRows2 = await db
-      .select({ id: properties.id, address: properties.address })
+      .select({ id: properties.id, address: properties.address, city: properties.city, state: properties.state })
       .from(properties)
       .where(eq(properties.orgId, orgId));
 
-    const propertyMap2 = new Map(propertyRows2.map((p) => [p.id, p.address]));
+    const propertyMap2 = new Map(propertyRows2.map((p) => [p.id, p]));
 
     const contractsByOwner = new Map<string, typeof contractRows>();
     for (const c of contractRows) {
@@ -92,9 +92,20 @@ propertiesRouter.get("/owners", async (req: Request, res: Response, next: NextFu
         document: o.documentNumber,
         email: o.email ?? "",
         phone: o.phone ?? "",
+        properties: [...new Map(ownerContracts.map((c) => {
+          const prop = propertyMap2.get(c.propertyId);
+          return [c.propertyId, {
+            id: c.propertyId,
+            address: prop?.address ?? c.propertyId,
+            city: prop?.city ?? "",
+            state: prop?.state ?? "",
+            monthly_rent: c.rentAmount,
+            active_contract_status: c.operationalStatus,
+          }];
+        })).values()],
         contracts: ownerContracts.map((c) => ({
           id: c.id,
-          property_address: propertyMap2.get(c.propertyId) ?? c.propertyId,
+          property_address: propertyMap2.get(c.propertyId)?.address ?? c.propertyId,
           monthly_rent: c.rentAmount,
           start_date: c.startDate,
           end_date: c.endDate,

@@ -324,7 +324,7 @@ export default function OwnersPage() {
         const count = props?.length ?? 0;
         return (
           <Badge variant={count > 0 ? "info" : "default"}>
-            {count} imóvel{count !== 1 ? "is" : ""}
+            {count} {count === 1 ? "imóvel" : "imóveis"}
           </Badge>
         );
       },
