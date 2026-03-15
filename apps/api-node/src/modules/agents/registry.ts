@@ -16,7 +16,7 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
   {
     id: "radar",
     name: "Radar",
-    description: "Lê boletos de condomínio, IPTU e taxas que chegam por e-mail ou WhatsApp e registra os valores automaticamente.",
+    description: "Lê boletos de condomínio, IPTU e taxas que chegam por e-mail e registra os valores automaticamente.",
     taskType: "radar_capture",
     schedule: "Automático — quando chega um documento",
     icon: "radar",
@@ -32,7 +32,7 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
   {
     id: "cobrador",
     name: "Cobrador",
-    description: "Gera o boleto do inquilino e envia lembretes de cobrança por e-mail e WhatsApp até o pagamento.",
+    description: "Gera o boleto do inquilino e envia lembretes de cobrança por e-mail até o pagamento.",
     taskType: "cobrador_collect",
     schedule: "Automático — após composição da cobrança",
     icon: "payment",
