@@ -139,20 +139,10 @@ case "${1:-all}" in
     start_infra
     log "Infra rodando. API e Web precisam ser iniciados manualmente."
     ;;
-  --seed)
+  all)
     check_deps
     start_infra
     run_seed
-    ;;&  # fall through to start services
-  all|--seed)
-    check_deps
-
-    # Only start infra if not already done (--seed already did it)
-    if [ "${1:-all}" = "all" ]; then
-      start_infra
-    fi
-
-    # Run tests first
     run_tests
 
     # Create log dir

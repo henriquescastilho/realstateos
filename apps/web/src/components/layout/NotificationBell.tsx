@@ -22,20 +22,24 @@ function fmtTime(ts: number) {
   return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
+const AUTH_SERVER_SNAPSHOT: ReturnType<typeof getSnapshot> = {
+  user: null,
+  accessToken: null,
+  refreshToken: null,
+  orgs: [],
+};
+
+const NOTIF_SERVER_SNAPSHOT: ReturnType<typeof getNotifSnapshot> = {
+  notifications: [],
+  unread: 0,
+};
+
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const auth = useSyncExternalStore(subscribe, getSnapshot, () => ({
-    user: null,
-    accessToken: null,
-    orgs: [],
-    currentOrgId: null,
-  }));
+  const auth = useSyncExternalStore(subscribe, getSnapshot, () => AUTH_SERVER_SNAPSHOT);
 
-  const state = useSyncExternalStore(subscribeNotif, getNotifSnapshot, () => ({
-    notifications: [],
-    unread: 0,
-  }));
+  const state = useSyncExternalStore(subscribeNotif, getNotifSnapshot, () => NOTIF_SERVER_SNAPSHOT);
 
   // Start / stop WebSocket based on auth state
   useEffect(() => {

@@ -22,9 +22,7 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(circle at top left, rgba(189, 121, 61, 0.22), transparent 30%),
-    linear-gradient(180deg, #f8f5ef 0%, #efe6d8 100%);
+  background: #f5f1e8;
 }
 
 button,
@@ -52,8 +50,8 @@ a {
   flex-direction: column;
   justify-content: space-between;
   gap: 24px;
-  background: rgba(254, 250, 242, 0.72);
-  backdrop-filter: blur(18px);
+  background: #f5f1e8;
+  overflow-y: auto;
 }
 
 .sidebar-top {
@@ -126,6 +124,8 @@ a {
 
 .page-frame {
   padding: 40px;
+  background: var(--sand);
+  flex: 1;
 }
 
 .page {
@@ -609,13 +609,11 @@ a:focus {
   }
 
   body {
-    background:
-      radial-gradient(circle at top left, rgba(180, 90, 42, 0.18), transparent 30%),
-      linear-gradient(180deg, #131210 0%, #0f0e0c 100%);
+    background: #0f0e0c;
   }
 
   .sidebar {
-    background: rgba(20, 18, 14, 0.8);
+    background: #131210;
   }
 
   input, select, textarea {

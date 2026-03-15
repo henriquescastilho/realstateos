@@ -3,10 +3,18 @@
 import React, { useSyncExternalStore, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSnapshot, subscribe, switchOrg, clearAuth } from "@/lib/auth";
+import type { AuthState } from "@/lib/auth";
+
+const SERVER_SNAPSHOT: AuthState = {
+  user: null,
+  accessToken: null,
+  refreshToken: null,
+  orgs: [],
+};
 
 export function OrgSwitcher() {
   const router = useRouter();
-  const auth = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const auth = useSyncExternalStore(subscribe, getSnapshot, () => SERVER_SNAPSHOT);
   const [open, setOpen] = useState(false);
 
   if (!auth.user) return null;

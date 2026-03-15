@@ -107,6 +107,71 @@ def _run_migrations() -> None:
         log.warning("Alembic migration failed (non-fatal): %s", exc)
 
 
+def _ensure_password_column() -> None:
+    """Add password_hash column to users table if missing."""
+    import logging  # noqa: PLC0415
+
+    from sqlalchemy import inspect, text  # noqa: PLC0415
+
+    from app.db import engine  # noqa: PLC0415
+
+    log = logging.getLogger(__name__)
+    try:
+        insp = inspect(engine)
+        columns = [c["name"] for c in insp.get_columns("users")]
+        if "password_hash" not in columns:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN password_hash VARCHAR(255)"))
+            log.info("Added password_hash column to users table")
+    except Exception as exc:
+        log.warning("Could not check/add password_hash column: %s", exc)
+
+
+def _seed_admin_user() -> None:
+    """Ensure default admin user exists."""
+    import logging  # noqa: PLC0415
+
+    from sqlalchemy import select  # noqa: PLC0415
+
+    from app.db import SessionLocal  # noqa: PLC0415
+    from app.models.tenant import Tenant  # noqa: PLC0415
+    from app.models.user import User  # noqa: PLC0415
+
+    log = logging.getLogger(__name__)
+    db = SessionLocal()
+    try:
+        existing = db.scalar(select(User).where(User.email == "lcastilho@lcastilho.com.br"))
+        if existing:
+            if not existing.password_hash:
+                existing.set_password("123@123")
+                db.commit()
+                log.info("Updated password for admin user lcastilho@lcastilho.com.br")
+            return
+
+        # Find or create tenant
+        tenant = db.scalar(select(Tenant).where(Tenant.name == "L CASTILHO IMOVEIS"))
+        if not tenant:
+            tenant = Tenant(name="L CASTILHO IMOVEIS")
+            db.add(tenant)
+            db.flush()
+
+        user = User(
+            tenant_id=tenant.id,
+            name="L Castilho",
+            email="lcastilho@lcastilho.com.br",
+            role="admin",
+        )
+        user.set_password("123@123")
+        db.add(user)
+        db.commit()
+        log.info("Seeded admin user lcastilho@lcastilho.com.br")
+    except Exception as exc:
+        log.warning("Could not seed admin user: %s", exc)
+        db.rollback()
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -117,6 +182,8 @@ async def lifespan(app: FastAPI):
     from app.workers.scheduler import start_scheduler  # noqa: PLC0415
 
     _run_migrations()
+    _ensure_password_column()
+    _seed_admin_user()
     dlq = init_dlq_worker(redis_url=settings.redis_url, db_factory=SessionLocal)
     start_scheduler()
     yield

@@ -25,9 +25,19 @@ const navigation = [
   { href: "/maintenance", label: "Manutenção" },
 ];
 
+const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/onboarding"];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isPublicRoute = PUBLIC_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
+
+  if (isPublicRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="app-shell">
@@ -71,7 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           display: "flex",
           flexDirection: "column",
           minHeight: "100vh",
-          overflow: "hidden",
+          minWidth: 0,
         }}
       >
         <header
@@ -81,8 +91,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             justifyContent: "space-between",
             padding: "0.625rem 2.5rem",
             borderBottom: "1px solid var(--line)",
-            background: "rgba(254, 250, 242, 0.72)",
-            backdropFilter: "blur(18px)",
+            background: "var(--sand)",
             position: "sticky",
             top: 0,
             zIndex: 50,

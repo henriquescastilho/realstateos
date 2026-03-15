@@ -119,6 +119,7 @@ export function setAuth(
 export function clearAuth() {
   _state = { user: null, accessToken: null, refreshToken: null, orgs: [] };
   clearPersisted();
+  document.cookie = "ro_auth=; path=/; max-age=0";
   notify();
 }
 
@@ -217,6 +218,7 @@ export async function login(creds: LoginCredentials): Promise<void> {
     data.orgs ?? [],
     creds.remember,
   );
+  document.cookie = "ro_auth=1; path=/; max-age=604800; SameSite=Lax";
 }
 
 export async function register(data: RegisterData): Promise<void> {
@@ -228,6 +230,7 @@ export async function register(data: RegisterData): Promise<void> {
     resp.orgs ?? [],
     true,
   );
+  document.cookie = "ro_auth=1; path=/; max-age=604800; SameSite=Lax";
 }
 
 export async function refreshAccessToken(): Promise<boolean> {

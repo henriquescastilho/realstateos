@@ -8,11 +8,13 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.config import settings
+from app.models.tenant import Tenant
 from app.models.user import User
 from app.schemas.auth import TokenRequest, TokenResponse
 
@@ -30,10 +32,18 @@ class CurrentUser:
     email: str
 
 
-def _create_access_token(data: dict) -> str:
+def _create_access_token(data: dict, expires_minutes: int | None = None) -> str:
     payload = data.copy()
     payload["exp"] = datetime.now(tz=timezone.utc) + timedelta(
-        minutes=settings.access_token_expire_minutes
+        minutes=expires_minutes or settings.access_token_expire_minutes
+    )
+    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+
+
+def _create_refresh_token(data: dict) -> str:
+    payload = {"sub": data["sub"], "type": "refresh"}
+    payload["exp"] = datetime.now(tz=timezone.utc) + timedelta(
+        days=settings.refresh_token_expire_days
     )
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
@@ -47,6 +57,29 @@ def _decode_token(token: str) -> dict:
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+
+def _build_auth_response(user: User, tenant: Tenant) -> dict:
+    token_data = {
+        "sub": user.id,
+        "tenant_id": user.tenant_id,
+        "org_id": user.tenant_id,
+        "role": user.role,
+        "email": user.email,
+    }
+    return {
+        "access_token": _create_access_token(token_data),
+        "refresh_token": _create_refresh_token(token_data),
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+            "org_id": user.tenant_id,
+            "org_name": tenant.name,
+        },
+        "orgs": [{"id": tenant.id, "name": tenant.name}],
+    }
 
 
 def get_current_user(
@@ -90,24 +123,100 @@ def get_optional_user(
 
 
 # ---------------------------------------------------------------------------
+# Request/Response models
+# ---------------------------------------------------------------------------
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: EmailStr
+    password: str
+    org_name: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+# ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
 
 
+@router.post("/login")
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    """Authenticate with email + password."""
+    user = db.scalar(select(User).where(User.email == payload.email))
+    if user is None or not user.check_password(payload.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="E-mail ou senha inválidos",
+        )
+    tenant = db.get(Tenant, user.tenant_id)
+    if tenant is None:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Tenant not found")
+    return _build_auth_response(user, tenant)
+
+
+@router.post("/register")
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    """Create a new user + tenant (org)."""
+    existing = db.scalar(select(User).where(User.email == payload.email))
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado")
+
+    tenant = Tenant(name=payload.org_name)
+    db.add(tenant)
+    db.flush()
+
+    user = User(
+        tenant_id=tenant.id,
+        name=payload.name,
+        email=payload.email,
+        role="admin",
+    )
+    user.set_password(payload.password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    db.refresh(tenant)
+
+    return _build_auth_response(user, tenant)
+
+
+@router.post("/refresh")
+def refresh_token(payload: RefreshRequest, db: Session = Depends(get_db)):
+    """Exchange a refresh token for a new access token."""
+    decoded = _decode_token(payload.refresh_token)
+    if decoded.get("type") != "refresh":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    user = db.get(User, decoded["sub"])
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+
+    token_data = {
+        "sub": user.id,
+        "tenant_id": user.tenant_id,
+        "org_id": user.tenant_id,
+        "role": user.role,
+        "email": user.email,
+    }
+    return {"access_token": _create_access_token(token_data)}
+
+
 @router.post("/token", response_model=TokenResponse)
 def issue_token(payload: TokenRequest, db: Session = Depends(get_db)) -> TokenResponse:
-    """Issue a JWT for a user identified by (tenant_id, email).
-
-    For the hackathon demo the user record is auto-created if missing.
-    In production this would validate credentials properly.
-    """
+    """Issue a JWT for a user identified by (tenant_id, email). Legacy/demo endpoint."""
     user = db.scalar(
         select(User).where(User.tenant_id == payload.tenant_id, User.email == payload.email)
     )
     if user is None:
-        # Auto-provision demo user — remove in production
-        from app.models.tenant import Tenant  # noqa: PLC0415
-
         tenant = db.get(Tenant, payload.tenant_id)
         if tenant is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tenant not found")
@@ -120,7 +229,6 @@ def issue_token(payload: TokenRequest, db: Session = Depends(get_db)) -> TokenRe
         db.add(user)
         db.commit()
         db.refresh(user)
-        logger.info("Auto-provisioned demo user %s for tenant %s", user.email, user.tenant_id)
 
     token_data = {
         "sub": user.id,

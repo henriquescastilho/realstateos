@@ -46,13 +46,14 @@ async function apiFetch<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-function fmt(n: number, currency = false) {
+function fmt(n: number | null | undefined, currency = false) {
+  const val = n ?? 0;
   if (currency)
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(n);
-  return new Intl.NumberFormat("pt-BR").format(n);
+    }).format(val);
+  return new Intl.NumberFormat("pt-BR").format(val);
 }
 
 // ---------------------------------------------------------------------------
@@ -327,7 +328,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             title="Inadimplência (3m)"
-            value={kpis ? `${kpis.default_rate_3m_pct.toFixed(1)}%` : "—"}
+            value={kpis ? `${(kpis.default_rate_3m_pct ?? 0).toFixed(1)}%` : "—"}
             accent={kpis && kpis.default_rate_3m_pct > 10 ? "red" : "green"}
           />
           <KpiCard
