@@ -2,7 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { ok } from "../../lib/response";
 import { db } from "../../db";
 import { leaseContracts, properties, charges, agentTasks, tenants, owners } from "../../db/schema";
-import { eq, and, sql, gte, lte, desc } from "drizzle-orm";
+import { eq, and, sql, gte, lte, lt, desc } from "drizzle-orm";
 
 export const analyticsRouter = Router();
 
@@ -186,6 +186,7 @@ analyticsRouter.get(
           and(
             eq(charges.orgId, orgId),
             eq(charges.paymentStatus, "overdue"),
+            lt(charges.dueDate, sql`current_date`),
           ),
         )
         .orderBy(desc(sql`(current_date - ${charges.dueDate}::date)`));
