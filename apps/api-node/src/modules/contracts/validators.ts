@@ -11,8 +11,8 @@ export const createContractSchema = z.object({
   endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
   rentAmount: z.string().regex(/^\d+(\.\d{1,2})?$/, "Rent amount must be a valid decimal"),
   depositType: z.string().max(50).optional(),
-  chargeRules: z.record(z.unknown()).optional().default({}),
-  payoutRules: z.record(z.unknown()).optional().default({}),
+  chargeRules: z.record(z.string(), z.unknown()).optional().default({}),
+  payoutRules: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 export type CreateContractInput = z.infer<typeof createContractSchema>;
@@ -30,8 +30,8 @@ export const updateContractSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .optional(),
   depositType: z.string().max(50).optional(),
-  chargeRules: z.record(z.unknown()).optional(),
-  payoutRules: z.record(z.unknown()).optional(),
+  chargeRules: z.record(z.string(), z.unknown()).optional(),
+  payoutRules: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type UpdateContractInput = z.infer<typeof updateContractSchema>;

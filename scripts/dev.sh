@@ -46,12 +46,14 @@ stop_all() {
 # ─── Database URL ───
 # Docker Compose PostgreSQL uses default local-dev credentials
 export DATABASE_URL="${DATABASE_URL:-postgresql://postgres:postgres@localhost:5432/realestateos}" # placeholder
+export REDIS_URL="${REDIS_URL:-redis://localhost:6379}" # placeholder
+export JWT_SECRET="${JWT_SECRET:-dev-secret-do-not-use-in-production}" # placeholder
 
 # ─── Infra only ───
 start_infra() {
-  log "Subindo infra (PostgreSQL + Redis + MinIO)..."
+  log "Subindo infra (PostgreSQL + Redis + MinIO + API Python)..."
   cd "$ROOT_DIR"
-  docker compose up -d
+  docker compose up -d db redis minio minio-init api worker web
   log "Aguardando PostgreSQL..."
 
   # Wait for PostgreSQL to be ready
@@ -63,9 +65,25 @@ start_infra() {
   done
 
   # Run migrations
-  log "Rodando migrations..."
+  log "Rodando migrations (Drizzle)..."
   cd "$API_DIR"
   DATABASE_URL="$DATABASE_URL" npx drizzle-kit push --force 2>&1 | tail -3
+
+  # Wait for API Python
+  log "Aguardando API Python..."
+  for i in {1..15}; do
+    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+
+  if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+    log "API Python rodando (porta 8000)"
+  else
+    warn "API Python pode demorar. Veja: docker compose logs api"
+  fi
+
   log "Infra pronta."
 }
 
@@ -103,6 +121,14 @@ check_deps() {
   fi
 }
 
+# ─── Testes ───
+run_tests() {
+  log "Rodando testes Node.js..."
+  cd "$API_DIR"
+  npm test 2>&1
+  log "Testes concluidos."
+}
+
 # ─── Main ───
 case "${1:-all}" in
   --stop)
@@ -126,13 +152,16 @@ case "${1:-all}" in
       start_infra
     fi
 
+    # Run tests first
+    run_tests
+
     # Create log dir
     mkdir -p "$LOG_DIR"
 
     # Start API Node (background)
     log "Iniciando API Node (porta 3001)..."
     cd "$API_DIR"
-    DATABASE_URL="$DATABASE_URL" PORT=3001 NODE_ENV=development npx ts-node src/index.ts > "$LOG_DIR/api-node.log" 2>&1 &
+    DATABASE_URL="$DATABASE_URL" REDIS_URL="$REDIS_URL" JWT_SECRET="$JWT_SECRET" PORT=3001 NODE_ENV=development npx ts-node --transpile-only src/index.ts > "$LOG_DIR/api-node.log" 2>&1 &
     API_PID=$!
 
     # Wait for API to be ready
@@ -166,6 +195,7 @@ case "${1:-all}" in
     echo -e "${CYAN}═══════════════════════════════════════════════════${NC}"
     echo -e "${CYAN}  Real Estate OS — Dev Environment${NC}"
     echo -e "${CYAN}═══════════════════════════════════════════════════${NC}"
+    echo -e "  ${GREEN}API Python${NC} http://localhost:8000  (Docker)"
     echo -e "  ${GREEN}API Node${NC}   http://localhost:3001  (PID $API_PID)"
     echo -e "  ${GREEN}Web${NC}        http://localhost:3000  (PID $WEB_PID)"
     echo -e "  ${GREEN}PostgreSQL${NC} localhost:5432"
