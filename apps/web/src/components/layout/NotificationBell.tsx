@@ -16,6 +16,7 @@ import {
 } from "@/lib/ws";
 import { getSnapshot, subscribe } from "@/lib/auth";
 import { showToast } from "@/components/ui/Toast";
+import { Icon } from "@/components/ui/Icon";
 
 function fmtTime(ts: number) {
   const d = new Date(ts);
@@ -115,7 +116,7 @@ export function NotificationBell() {
         }}
         aria-label={`Notificações (${state.unread} não lidas)`}
       >
-        🔔
+        <Icon name="bell" size={20} />
         {state.unread > 0 && (
           <span
             style={{

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { ProtectedPage } from "@/components/layout/protected-page";
 import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
@@ -411,7 +412,7 @@ export default function DashboardPage() {
                   textDecoration: "none",
                 }}
               >
-                Ver todas →
+                Ver todas <Icon name="arrow-right" size={14} />
               </Link>
             </div>
           )}

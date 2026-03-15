@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { NotificationBell } from "./NotificationBell";
+import { Icon } from "@/components/ui/Icon";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard" },
@@ -103,7 +104,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label="Abrir menu"
             onClick={() => setSidebarOpen((v) => !v)}
           >
-            {sidebarOpen ? "✕" : "☰"}
+            <Icon name={sidebarOpen ? "close" : "menu"} size={20} />
           </button>
           <NotificationBell />
         </header>

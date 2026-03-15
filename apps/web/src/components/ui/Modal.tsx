@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { Icon } from "./Icon";
 
 export interface ModalProps {
   open: boolean;
@@ -143,7 +144,7 @@ export function Modal({
             borderRadius: 4,
           }}
         >
-          ✕
+          <Icon name="close" size={18} />
         </button>
 
         {/* Body */}

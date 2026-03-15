@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useSyncExternalStore } from "react";
+import { Icon } from "./Icon";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -153,7 +154,7 @@ export function Toast({ message, variant = "info", onDismiss }: ToastProps) {
           flexShrink: 0,
         }}
       >
-        ×
+        <Icon name="close" size={16} />
       </button>
     </div>
   );
