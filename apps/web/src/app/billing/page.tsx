@@ -64,6 +64,7 @@ function fmtBRL(s: string | number) {
 }
 
 const STATUS_OPTIONS = [
+  { value: "open", label: "Em aberto" },
   { value: "", label: "Todos" },
   { value: "pending", label: "Pendente" },
   { value: "paid", label: "Pago" },
@@ -144,10 +145,11 @@ export default function BillingPage() {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("list");
 
-  // Filters
+  // Filters — default to open invoices (pending + overdue)
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState("open");
   const [filterType, setFilterType] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
   const [calYear, setCalYear] = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
 
@@ -167,7 +169,7 @@ export default function BillingPage() {
       const data = await apiGet<ChargeDetail[]>("/v1/charges");
       setCharges(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao carregar cobranças");
+      setError(e instanceof Error ? e.message : "Erro ao carregar faturas");
     } finally {
       setLoading(false);
     }
@@ -200,9 +202,17 @@ export default function BillingPage() {
 
   const filtered = useMemo(() => {
     return charges.filter((c) => {
-      if (filterStatus && c.status?.toLowerCase() !== filterStatus)
+      const st = c.status?.toLowerCase();
+      if (filterStatus === "open") {
+        if (st !== "pending" && st !== "overdue" && st !== "partial") return false;
+      } else if (filterStatus && st !== filterStatus) {
         return false;
+      }
       if (filterType && c.type !== filterType) return false;
+      if (filterMonth && c.due_date) {
+        const chargeMonth = c.due_date.slice(0, 7); // "YYYY-MM"
+        if (chargeMonth !== filterMonth) return false;
+      }
       if (search) {
         const q = search.toLowerCase();
         const match =
@@ -213,7 +223,7 @@ export default function BillingPage() {
       }
       return true;
     });
-  }, [charges, filterStatus, filterType, search]);
+  }, [charges, filterStatus, filterType, filterMonth, search]);
 
   // ---------------------------------------------------------------------------
   // KPIs
@@ -301,8 +311,8 @@ export default function BillingPage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">Financeiro</p>
-          <h2>Cobranças</h2>
-          <p>Gestão de cobranças e faturas do portfólio</p>
+          <h2>Faturas</h2>
+          <p>Gestão de faturas do portfólio</p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
           <Button
@@ -358,7 +368,7 @@ export default function BillingPage() {
             {fmtBRL(kpis.overdueAmount)}
           </p>
         </Card>
-        <Card title="Cobranças em atraso">
+        <Card title="Faturas em atraso">
           <p
             style={{
               fontSize: "1.5rem",
@@ -401,13 +411,30 @@ export default function BillingPage() {
             options={TYPE_OPTIONS}
           />
         </div>
+        <div style={{ minWidth: 150 }}>
+          <Input
+            type="month"
+            value={filterMonth}
+            onChange={(e) => setFilterMonth(e.target.value)}
+            placeholder="Filtrar mês"
+          />
+        </div>
+        {filterMonth && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setFilterMonth("")}
+          >
+            Limpar mês
+          </Button>
+        )}
       </div>
 
       {loading ? (
         <div
           style={{ display: "flex", justifyContent: "center", padding: "3rem" }}
         >
-          <Spinner size="lg" label="Carregando cobranças…" />
+          <Spinner size="lg" label="Carregando faturas…" />
         </div>
       ) : error ? (
         <Card>
@@ -424,7 +451,7 @@ export default function BillingPage() {
           columns={columns}
           data={filtered as unknown as Record<string, unknown>[]}
           rowKey={(r) => (r as unknown as ChargeDetail).id}
-          emptyText="Nenhuma cobrança encontrada"
+          emptyText="Nenhuma fatura encontrada"
           onRowClick={(r) => void openDetail(r as unknown as ChargeDetail)}
         />
       ) : (
@@ -576,7 +603,7 @@ export default function BillingPage() {
       <Modal
         open={!!selected}
         onClose={() => setSelected(null)}
-        title={selected?.description ?? selected?.type ?? "Cobrança"}
+        title={selected?.description ?? selected?.type ?? "Fatura"}
       >
         {selected && (
           <div
@@ -687,7 +714,7 @@ export default function BillingPage() {
                     marginBottom: "0.75rem",
                   }}
                 >
-                  Composição da cobrança
+                  Composição da fatura
                 </p>
                 <div
                   style={{

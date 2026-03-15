@@ -1,11 +1,11 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { getBalanceSnapshot, subscribeBalance, formatBRL } from "@/lib/balance";
+import { getBalanceSnapshot, subscribeBalance, formatBRL, fetchBalanceFromAPI } from "@/lib/balance";
 import { Icon } from "@/components/ui/Icon";
 
 export function BalanceWidget() {
-  const balance = useSyncExternalStore(subscribeBalance, getBalanceSnapshot, () => 5_400_000);
+  const balance = useSyncExternalStore(subscribeBalance, getBalanceSnapshot, () => 0);
 
   return (
     <div
@@ -24,6 +24,21 @@ export function BalanceWidget() {
     >
       <Icon name="account_balance" size={16} />
       <span>Saldo: {formatBRL(balance)}</span>
+      <button
+        onClick={() => void fetchBalanceFromAPI()}
+        title="Atualizar saldo"
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "inherit",
+          padding: 0,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <Icon name="refresh" size={14} />
+      </button>
     </div>
   );
 }

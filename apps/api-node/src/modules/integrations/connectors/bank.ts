@@ -383,6 +383,73 @@ export async function generatePixQR(req: PixQRRequest): Promise<PixQRResponse> {
   }
 }
 
+// ─── Balance ───
+
+export interface AccountBalanceResponse {
+  success: boolean;
+  provider: "santander" | "stub";
+  availableBalance?: number;
+  blockedBalance?: number;
+  totalBalance?: number;
+  currency?: string;
+  updatedAt?: string;
+  error?: string;
+}
+
+export async function getAccountBalance(orgId: string): Promise<AccountBalanceResponse> {
+  const creds = await requireCreds(orgId);
+
+  try {
+    const token = await getToken(creds);
+
+    const urlPath = creds.workspaceId
+      ? `/account_management/v2/workspaces/${creds.workspaceId}/balance`
+      : "/account_management/v2/balance";
+
+    const res = await santanderFetch(creds, urlPath, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "X-Application-Key": creds.clientId,
+      },
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[bank] Org ${orgId} balance error: ${res.status}`, errText);
+      return {
+        success: false,
+        provider: "santander",
+        error: `Santander API error: ${res.status} — ${errText}`,
+      };
+    }
+
+    const data = (await res.json()) as {
+      availableAmount?: number;
+      blockedAmount?: number;
+      totalAmount?: number;
+      currency?: string;
+    };
+
+    return {
+      success: true,
+      provider: "santander",
+      availableBalance: data.availableAmount ?? 0,
+      blockedBalance: data.blockedAmount ?? 0,
+      totalBalance: data.totalAmount ?? (data.availableAmount ?? 0) + (data.blockedAmount ?? 0),
+      currency: data.currency ?? "BRL",
+      updatedAt: new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error(`[bank] Org ${orgId} balance failed:`, err);
+    return {
+      success: false,
+      provider: "santander",
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 // ─── Health (per org) ───
 
 export async function checkBankHealth(orgId: string): Promise<{

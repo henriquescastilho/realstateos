@@ -127,8 +127,9 @@ function BarChart({
               x={padLeft - 4}
               y={y + 4}
               textAnchor="end"
-              fontSize={9}
-              fill="var(--color-muted)"
+              fontSize={13}
+              fontWeight={500}
+              fill="#ffffff"
             >
               {fmtBRL(maxVal * p)}
             </text>
@@ -158,10 +159,11 @@ function BarChart({
             })}
             <text
               x={groupX + groupWidth / 2}
-              y={height - 6}
+              y={height - 4}
               textAnchor="middle"
-              fontSize={9}
-              fill="var(--color-muted)"
+              fontSize={13}
+              fontWeight={500}
+              fill="#ffffff"
             >
               {label}
             </text>
@@ -227,8 +229,9 @@ function LineChart({
               x={padLeft - 4}
               y={y + 4}
               textAnchor="end"
-              fontSize={9}
-              fill="var(--color-muted)"
+              fontSize={13}
+              fontWeight={500}
+              fill="#ffffff"
             >
               {formatY ? formatY(val) : val.toFixed(1)}
             </text>
@@ -250,10 +253,11 @@ function LineChart({
             <circle cx={x} cy={y} r={3} fill={color} />
             <text
               x={x}
-              y={height - 6}
+              y={height - 4}
               textAnchor="middle"
-              fontSize={9}
-              fill="var(--color-muted)"
+              fontSize={13}
+              fontWeight={500}
+              fill="#ffffff"
             >
               {labels[i]}
             </text>

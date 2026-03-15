@@ -16,6 +16,7 @@ import { checkConnectorsHealth } from "./health";
 import {
   generateBoleto,
   generatePixQR,
+  getAccountBalance,
   checkBankHealth,
   registerBankCredentials,
 } from "./connectors/bank";
@@ -112,6 +113,24 @@ integrationsRouter.get(
       const orgId = req.user!.org_id;
       const health = await checkBankHealth(orgId);
       ok(res, health);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /integrations/bank/balance — get account balance from Santander
+integrationsRouter.get(
+  "/integrations/bank/balance",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user!.org_id;
+      const result = await getAccountBalance(orgId);
+      if (result.success) {
+        ok(res, result);
+      } else {
+        res.status(502).json({ ok: false, error: result.error });
+      }
     } catch (err) {
       next(err);
     }
