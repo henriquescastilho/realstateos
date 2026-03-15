@@ -10,6 +10,7 @@ from app.middleware.rate_limiter import RateLimitMiddleware
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.openapi import OPENAPI_TAGS
 from app.routes.router import hackathon_router
+from app.middleware.audit import AuditLogMiddleware
 from app.utils.logging import CorrelationIdMiddleware, configure_logging
 from app.versioning import VersionNegotiationMiddleware, include_versioned_routes
 

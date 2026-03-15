@@ -1,6 +1,6 @@
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,6 @@ from app.services.santander import generate_payment_payload
 from app.services.task_service import create_task_record
 
 router = APIRouter()
-billing_limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get(

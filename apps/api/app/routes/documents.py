@@ -14,8 +14,6 @@ from app.schemas.document import DocumentRead
 from app.schemas.pagination import PaginatedResponse, PaginationParams
 from app.services.document_ingestion import upload_monthly_bill
 
-upload_limiter = Limiter(key_func=get_remote_address)
-
 router = APIRouter()
 
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB

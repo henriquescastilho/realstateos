@@ -1,14 +1,5 @@
-## ─── Stage 1: uv installer ────────────────────────────────────────────────────
-FROM python:3.12-slim AS uv-installer
-
-# Install uv (fast Rust-based pip replacement)
-ADD https://astral.sh/uv/install.sh /tmp/install-uv.sh
-RUN sh /tmp/install-uv.sh && mv /root/.local/bin/uv /usr/local/bin/uv
-
-## ─── Stage 2: dependency builder ─────────────────────────────────────────────
+## ─── Stage 1: dependency builder ─────────────────────────────────────────────
 FROM python:3.12-slim AS builder
-
-COPY --from=uv-installer /usr/local/bin/uv /usr/local/bin/uv
 
 WORKDIR /app
 
@@ -22,17 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy only manifests first — maximises layer cache
 COPY pyproject.toml ./
 
-# Install all dependencies into /app/.venv
-ENV UV_PROJECT_ENVIRONMENT=/app/.venv
-RUN uv venv /app/.venv \
- && uv pip install --python /app/.venv/bin/python --no-cache -e .
+# Install all dependencies system-wide (no venv complexity across stages)
+RUN pip install --no-cache-dir .
 
-## ─── Stage 3: security scan ──────────────────────────────────────────────────
-# Trivy scan is run in CI, not in the Docker build itself.
-# To run locally: docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-#   aquasec/trivy image realstateos-api:latest
-
-## ─── Stage 4: production image ───────────────────────────────────────────────
+## ─── Stage 2: production image ───────────────────────────────────────────────
 FROM python:3.12-slim AS production
 
 # Metadata labels
@@ -55,18 +39,16 @@ RUN groupadd -g 1001 appgroup \
 
 WORKDIR /app
 
-# Copy virtualenv from builder
-COPY --from=builder /app/.venv /app/.venv
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application source (owned by appuser)
 COPY --chown=appuser:appgroup . .
 
-# Activate venv
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
-    # Prevent Python from buffering logs
     PYTHONHASHSEED=random
 
 # Drop root
@@ -77,4 +59,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -fsS http://localhost:8000/health || exit 1
 
-CMD ["sh", "scripts/start-api.sh"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
