@@ -83,8 +83,17 @@ propertiesRouter.get("/owners", async (req: Request, res: Response, next: NextFu
       contractsByOwner.set(c.ownerId, list);
     }
 
+    // Build stable contract codes
+    const allContractsSorted = [...contractRows].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    const contractCodeMap = new Map(
+      allContractsSorted.map((c, i) => [c.id, `REOS-${String(i + 1).padStart(4, "0")}`]),
+    );
+
     const result = ownerRows.map((o) => {
       const ownerContracts = contractsByOwner.get(o.id) ?? [];
+      const payout = o.payoutPreferences as Record<string, string> | null;
       return {
         id: o.id,
         tenant_id: o.orgId,
@@ -92,6 +101,13 @@ propertiesRouter.get("/owners", async (req: Request, res: Response, next: NextFu
         document: o.documentNumber,
         email: o.email ?? "",
         phone: o.phone ?? "",
+        bank_account: payout ? {
+          bank_code: payout.bankCode ?? "",
+          agency: payout.branch ?? "",
+          account: payout.account ?? "",
+          account_type: payout.accountType ?? "corrente",
+          pix_key: payout.pixKey ?? "",
+        } : null,
         properties: [...new Map(ownerContracts.map((c) => {
           const prop = propertyMap2.get(c.propertyId);
           return [c.propertyId, {
@@ -105,6 +121,7 @@ propertiesRouter.get("/owners", async (req: Request, res: Response, next: NextFu
         })).values()],
         contracts: ownerContracts.map((c) => ({
           id: c.id,
+          code: contractCodeMap.get(c.id) ?? c.id.slice(0, 8),
           property_address: propertyMap2.get(c.propertyId)?.address ?? c.propertyId,
           monthly_rent: c.rentAmount,
           start_date: c.startDate,
@@ -152,6 +169,14 @@ propertiesRouter.get("/renters", async (req: Request, res: Response, next: NextF
       contractsByTenant.set(c.tenantId, list);
     }
 
+    // Build a stable index to generate contract codes (REOS-0001, etc.)
+    const allContractsSorted = [...contractRows].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    const contractCodeMap = new Map(
+      allContractsSorted.map((c, i) => [c.id, `REOS-${String(i + 1).padStart(4, "0")}`]),
+    );
+
     const result = tenantRows.map((t) => {
       const renterContracts = contractsByTenant.get(t.id) ?? [];
       return {
@@ -163,6 +188,7 @@ propertiesRouter.get("/renters", async (req: Request, res: Response, next: NextF
         phone: t.phone ?? "",
         contracts: renterContracts.map((c) => ({
           id: c.id,
+          code: contractCodeMap.get(c.id) ?? c.id.slice(0, 8),
           property_address: propertyMap.get(c.propertyId) ?? c.propertyId,
           monthly_rent: c.rentAmount,
           start_date: c.startDate,

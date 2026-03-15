@@ -208,108 +208,11 @@ export default function ChargesPage() {
         <div>
           <p className="eyebrow">Financeiro</p>
           <h2>Cobranças</h2>
-          <p>Gere o aluguel do mês, consolide os encargos e emita boleto/PIX.</p>
+          <p>Acompanhe as cobranças geradas automaticamente pelos agentes.</p>
         </div>
       </header>
 
       {error && <p className="error-banner">{error}</p>}
-      {success && <p className="success-banner">{success}</p>}
-
-      {/* Action cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
-        <Card>
-          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Gerar cobrança mensal</h3>
-          <form className="stack" onSubmit={handleGenerate}>
-            <Select
-              label="Contrato"
-              name="contract_id"
-              options={contractOptions.slice(1)}
-              placeholder="Selecione um contrato"
-              required
-            />
-            <Input label="Mês de referência" name="reference_month" type="month" required />
-            <Button type="submit" variant="primary" disabled={contracts.length === 0}>
-              Gerar cobrança mensal
-            </Button>
-          </form>
-        </Card>
-
-        <Card>
-          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Consolidar cobrança</h3>
-          <form className="stack" onSubmit={handleConsolidate}>
-            <Select
-              label="Contrato"
-              name="contract_id"
-              options={contractOptions.slice(1)}
-              placeholder="Selecione um contrato"
-              required
-            />
-            <Input label="Mês de referência" name="reference_month" type="month" required />
-            <Button type="submit" variant="primary" disabled={contracts.length === 0}>
-              Consolidar cobrança
-            </Button>
-          </form>
-          {lastConsolidation && (
-            <div style={{ marginTop: 12, padding: "8px 12px", background: "var(--surface-secondary)", borderRadius: 8 }}>
-              <p style={{ margin: 0, fontSize: "0.88rem" }}>
-                <strong>Total:</strong> {fmtBRL(lastConsolidation.total_amount)} · <strong>Itens:</strong> {lastConsolidation.items?.length ?? 0}
-              </p>
-            </div>
-          )}
-        </Card>
-      </div>
-
-      {/* Consolidated + Payment result */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 16 }}>
-        <Card>
-          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Cobranças consolidadas</h3>
-          {consolidatedCharges.length === 0 ? (
-            <p className="empty-state">Nenhuma cobrança consolidada ainda.</p>
-          ) : (
-            <div className="stack">
-              {consolidatedCharges.map((ch) => (
-                <div key={ch.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)" }}>
-                  <div>
-                    <p style={{ margin: 0, fontWeight: 500 }}>{ch.description}</p>
-                    <p className="muted-text" style={{ margin: "2px 0 0", fontSize: "0.8rem" }}>
-                      Vence: {fmtDate(ch.due_date)} · {fmtBRL(ch.amount)}
-                    </p>
-                  </div>
-                  <div className="actions">
-                    <Badge variant={statusVariant(normalizeStatus(ch.status))}>
-                      {normalizeStatus(ch.status).toUpperCase()}
-                    </Badge>
-                    <Button size="sm" variant="primary" onClick={() => void handlePayment(ch.id)}>
-                      Gerar boleto
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <Card>
-          <h3 style={{ margin: "0 0 12px", fontSize: "1rem" }}>Resultado do pagamento</h3>
-          {!paymentResult ? (
-            <p className="empty-state">O retorno do boleto e do PIX aparece aqui.</p>
-          ) : (
-            <div className="stack" style={{ fontSize: "0.88rem" }}>
-              <Badge variant="success">{(paymentResult.provider ?? "mock").toUpperCase()}</Badge>
-              {paymentResult.boleto_url && (
-                <p style={{ margin: 0 }}>
-                  <strong>Boleto:</strong>{" "}
-                  <a href={paymentResult.boleto_url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>
-                    Abrir link
-                  </a>
-                </p>
-              )}
-              {paymentResult.barcode && <p style={{ margin: 0 }}><strong>Linha digitável:</strong> {paymentResult.barcode}</p>}
-              {paymentResult.pix_qrcode && <p style={{ margin: 0 }}><strong>PIX:</strong> {paymentResult.pix_qrcode}</p>}
-            </div>
-          )}
-        </Card>
-      </div>
 
       {/* Charges table */}
       <Card>

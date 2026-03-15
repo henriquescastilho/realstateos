@@ -23,9 +23,10 @@ import { exportCSV } from "@/lib/export-csv";
 
 interface OwnerDetail extends Owner {
   properties?: PropertySummary[];
+  contracts?: ContractSummary[];
   revenue_summary?: RevenueSummary;
   documents?: DocItem[];
-  bank_account?: BankAccount;
+  bank_account?: BankAccount | null;
 }
 
 interface PropertySummary {
@@ -52,11 +53,22 @@ interface DocItem {
 }
 
 interface BankAccount {
-  bank_name: string;
+  bank_code?: string;
+  bank_name?: string;
   agency: string;
   account: string;
   account_type: string;
   pix_key?: string;
+}
+
+interface ContractSummary {
+  id: string;
+  code?: string;
+  property_address: string;
+  monthly_rent: string;
+  start_date: string;
+  end_date: string;
+  status: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -94,7 +106,7 @@ function validateDoc(doc: string): boolean {
 // Tab types
 // ---------------------------------------------------------------------------
 
-type DetailTab = "info" | "properties" | "revenue" | "documents";
+type DetailTab = "info" | "contracts" | "revenue";
 
 // ---------------------------------------------------------------------------
 // Page
@@ -135,10 +147,6 @@ export default function OwnersPage() {
   });
   const [docError, setDocError] = useState<string | null>(null);
 
-  // Document upload
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadType, setUploadType] = useState("RG");
-  const [uploading, setUploading] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Load owners
@@ -260,31 +268,6 @@ export default function OwnersPage() {
     [form, load],
   );
 
-  // ---------------------------------------------------------------------------
-  // Upload document
-  // ---------------------------------------------------------------------------
-
-  const handleUpload = useCallback(async () => {
-    if (!uploadFile || !selected) return;
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", uploadFile);
-      fd.append("folder", `owners/${selected.id}`);
-      fd.append("type", uploadType);
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"}/v1/uploads`,
-        { method: "POST", body: fd },
-      );
-      setUploadFile(null);
-      const detail = await apiGet<OwnerDetail>(`/v1/owners/${selected.id}`);
-      setSelected(detail);
-    } catch {
-      // silent
-    } finally {
-      setUploading(false);
-    }
-  }, [uploadFile, uploadType, selected]);
 
   // ---------------------------------------------------------------------------
   // Columns
@@ -434,13 +417,12 @@ export default function OwnersPage() {
               }}
             >
               {(
-                ["info", "properties", "revenue", "documents"] as DetailTab[]
+                ["info", "contracts", "revenue"] as DetailTab[]
               ).map((tab) => {
                 const labels: Record<DetailTab, string> = {
                   info: "Informações",
-                  properties: "Imóveis",
+                  contracts: "Contratos",
                   revenue: "Receitas",
-                  documents: "Documentos",
                 };
                 return (
                   <button
@@ -473,180 +455,34 @@ export default function OwnersPage() {
             {activeTab === "info" && (
               <div
                 style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1.5rem",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "1rem",
                 }}
               >
-                {/* Personal */}
-                <div>
-                  <p
-                    style={{
-                      fontSize: "0.75rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      color: "var(--color-muted)",
-                      marginBottom: "0.75rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Dados pessoais
-                  </p>
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: "1rem",
-                    }}
-                  >
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--color-muted)",
-                          marginBottom: "0.25rem",
-                        }}
-                      >
-                        Nome completo
-                      </p>
-                      <p style={{ fontWeight: 500 }}>{selected.name}</p>
-                    </div>
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--color-muted)",
-                          marginBottom: "0.25rem",
-                        }}
-                      >
-                        CPF / CNPJ
-                      </p>
-                      <p style={{ fontFamily: "monospace" }}>
-                        {formatDoc(selected.document)}
-                      </p>
-                    </div>
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--color-muted)",
-                          marginBottom: "0.25rem",
-                        }}
-                      >
-                        E-mail
-                      </p>
-                      <p>{selected.email || "—"}</p>
-                    </div>
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "0.75rem",
-                          color: "var(--color-muted)",
-                          marginBottom: "0.25rem",
-                        }}
-                      >
-                        Telefone
-                      </p>
-                      <p>{selected.phone || "—"}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bank account */}
-                {selected.bank_account && (
-                  <div>
-                    <p
-                      style={{
-                        fontSize: "0.75rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: "var(--color-muted)",
-                        marginBottom: "0.75rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      Dados bancários
-                    </p>
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr 1fr",
-                        gap: "1rem",
-                        padding: "1rem",
-                        background:
-                          "var(--color-surface-alt, var(--color-surface))",
-                        borderRadius: "var(--radius)",
-                        border: "1px solid var(--color-border)",
-                      }}
-                    >
-                      <div>
-                        <p
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "var(--color-muted)",
-                            marginBottom: "0.25rem",
-                          }}
-                        >
-                          Banco
-                        </p>
-                        <p style={{ fontWeight: 500 }}>
-                          {selected.bank_account.bank_name}
-                        </p>
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "var(--color-muted)",
-                            marginBottom: "0.25rem",
-                          }}
-                        >
-                          Agência
-                        </p>
-                        <p style={{ fontFamily: "monospace" }}>
-                          {selected.bank_account.agency}
-                        </p>
-                      </div>
-                      <div>
-                        <p
-                          style={{
-                            fontSize: "0.75rem",
-                            color: "var(--color-muted)",
-                            marginBottom: "0.25rem",
-                          }}
-                        >
-                          Conta ({selected.bank_account.account_type})
-                        </p>
-                        <p style={{ fontFamily: "monospace" }}>
-                          {selected.bank_account.account}
-                        </p>
-                      </div>
-                      {selected.bank_account.pix_key && (
-                        <div style={{ gridColumn: "1 / -1" }}>
-                          <p
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "var(--color-muted)",
-                              marginBottom: "0.25rem",
-                            }}
-                          >
-                            Chave PIX
-                          </p>
-                          <p style={{ fontFamily: "monospace" }}>
-                            {selected.bank_account.pix_key}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                <InfoField label="Nome completo" value={selected.name} />
+                <InfoField label="CPF / CNPJ" value={formatDoc(selected.document)} mono />
+                <InfoField label="Celular" value={selected.phone || "—"} />
+                <InfoField label="E-mail" value={selected.email || "—"} />
+                {selected.bank_account ? (
+                  <>
+                    <InfoField label="Banco (código)" value={selected.bank_account.bank_code || selected.bank_account.bank_name || "—"} mono />
+                    <InfoField label="Agência" value={selected.bank_account.agency || "—"} mono />
+                    <InfoField label={`Conta (${selected.bank_account.account_type})`} value={selected.bank_account.account || "—"} mono />
+                    <InfoField label="Chave PIX" value={selected.bank_account.pix_key || "—"} mono />
+                  </>
+                ) : (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <p style={{ color: "var(--color-muted)", fontSize: "0.85rem" }}>Dados bancários não cadastrados</p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Tab: Imóveis */}
-            {activeTab === "properties" && (
+            {/* Tab: Contratos (imóveis + status do contrato) */}
+            {activeTab === "contracts" && (
               <div>
-                {!selected.properties?.length ? (
+                {!selected.contracts?.length && !selected.properties?.length ? (
                   <p
                     style={{
                       color: "var(--color-muted)",
@@ -654,7 +490,7 @@ export default function OwnersPage() {
                       padding: "2rem",
                     }}
                   >
-                    Nenhum imóvel vinculado
+                    Nenhum contrato vinculado
                   </p>
                 ) : (
                   <div
@@ -664,53 +500,37 @@ export default function OwnersPage() {
                       gap: "0.75rem",
                     }}
                   >
-                    {selected.properties.map((p) => (
+                    {(selected.contracts ?? []).map((c) => (
                       <div
-                        key={p.id}
+                        key={c.id}
                         style={{
                           padding: "1rem",
                           border: "1px solid var(--color-border)",
                           borderRadius: "var(--radius)",
                           display: "flex",
                           justifyContent: "space-between",
-                          alignItems: "center",
+                          alignItems: "flex-start",
                         }}
                       >
                         <div>
-                          <p
-                            style={{ fontWeight: 500, marginBottom: "0.25rem" }}
-                          >
-                            {p.address}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: "0.8rem",
-                              color: "var(--color-muted)",
-                            }}
-                          >
-                            {p.city}, {p.state}
-                          </p>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          {p.monthly_rent && (
-                            <p
-                              style={{
-                                fontWeight: 600,
-                                color: "var(--color-primary)",
-                                marginBottom: "0.25rem",
-                              }}
-                            >
-                              {fmtBRL(p.monthly_rent)}/mês
-                            </p>
-                          )}
-                          {p.active_contract_status && (
-                            <Badge
-                              variant={statusVariant(p.active_contract_status)}
-                            >
-                              {p.active_contract_status}
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: "0.25rem" }}>
+                            <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "0.82rem", color: "var(--accent, var(--color-primary))" }}>
+                              {c.code ?? c.id.slice(0, 8)}
+                            </span>
+                            <Badge variant={statusVariant(c.status)}>
+                              {c.status.toUpperCase()}
                             </Badge>
-                          )}
+                          </div>
+                          <p style={{ fontWeight: 500, marginBottom: "0.25rem" }}>
+                            {c.property_address}
+                          </p>
+                          <p style={{ fontSize: "0.8rem", color: "var(--color-muted)" }}>
+                            {fmtDate(c.start_date)} → {fmtDate(c.end_date)}
+                          </p>
                         </div>
+                        <p style={{ fontWeight: 600, color: "var(--color-primary)", whiteSpace: "nowrap" }}>
+                          {fmtBRL(c.monthly_rent)}/mês
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -777,139 +597,6 @@ export default function OwnersPage() {
               </div>
             )}
 
-            {/* Tab: Documentos */}
-            {activeTab === "documents" && (
-              <div>
-                {/* Upload form */}
-                <div
-                  style={{
-                    padding: "1rem",
-                    border: "1px dashed var(--color-border)",
-                    borderRadius: "var(--radius)",
-                    marginBottom: "1.5rem",
-                    display: "flex",
-                    gap: "0.75rem",
-                    alignItems: "flex-end",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 120 }}>
-                    <Select
-                      label="Tipo"
-                      value={uploadType}
-                      onChange={(e) => setUploadType(e.target.value)}
-                      options={[
-                        { value: "RG", label: "RG" },
-                        { value: "CPF", label: "CPF" },
-                        { value: "CNPJ", label: "Cartão CNPJ" },
-                        {
-                          value: "COMPROVANTE_RESIDENCIA",
-                          label: "Comprovante de residência",
-                        },
-                        {
-                          value: "ESCRITURA",
-                          label: "Escritura / Matrícula",
-                        },
-                        { value: "PROCURACAO", label: "Procuração" },
-                        { value: "OUTRO", label: "Outro" },
-                      ]}
-                    />
-                  </div>
-                  <div style={{ flex: 2, minWidth: 200 }}>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "0.875rem",
-                        marginBottom: "0.25rem",
-                        color: "var(--color-muted)",
-                      }}
-                    >
-                      Arquivo (PDF / Imagem)
-                    </label>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      onChange={(e) =>
-                        setUploadFile(e.target.files?.[0] ?? null)
-                      }
-                      style={{ fontSize: "0.875rem" }}
-                    />
-                  </div>
-                  <Button
-                    onClick={() => void handleUpload()}
-                    disabled={!uploadFile || uploading}
-                    size="sm"
-                  >
-                    {uploading ? <Spinner size="sm" /> : "Enviar"}
-                  </Button>
-                </div>
-
-                {/* Document list */}
-                {!selected.documents?.length ? (
-                  <p
-                    style={{
-                      color: "var(--color-muted)",
-                      textAlign: "center",
-                      padding: "1rem",
-                    }}
-                  >
-                    Nenhum documento enviado
-                  </p>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    {selected.documents.map((doc) => (
-                      <div
-                        key={doc.id}
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          padding: "0.75rem",
-                          border: "1px solid var(--color-border)",
-                          borderRadius: "var(--radius)",
-                        }}
-                      >
-                        <div>
-                          <p
-                            style={{
-                              fontWeight: 500,
-                              marginBottom: "0.125rem",
-                            }}
-                          >
-                            {doc.name}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: "0.75rem",
-                              color: "var(--color-muted)",
-                            }}
-                          >
-                            {doc.type} · {fmtDate(doc.uploaded_at)}
-                          </p>
-                        </div>
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            color: "var(--color-primary)",
-                            fontSize: "0.875rem",
-                          }}
-                        >
-                          Abrir
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </>
         )}
       </Modal>
@@ -1139,5 +826,14 @@ export default function OwnersPage() {
         </form>
       </Modal>
     </section>
+  );
+}
+
+function InfoField({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <p style={{ fontSize: "0.75rem", color: "var(--color-muted)", marginBottom: "0.25rem" }}>{label}</p>
+      <p style={{ fontWeight: 500, ...(mono ? { fontFamily: "monospace" } : {}) }}>{value}</p>
+    </div>
   );
 }

@@ -284,32 +284,6 @@ export default function DashboardPage() {
         </p>
       )}
 
-      {/* Quick actions */}
-      <div
-        style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 24 }}
-      >
-        <Link href="/contracts/new">
-          <Button size="sm" variant="primary">
-            + Novo Contrato
-          </Button>
-        </Link>
-        <Link href="/billing">
-          <Button size="sm" variant="ghost">
-            Cobranças
-          </Button>
-        </Link>
-        <Link href="/payments">
-          <Button size="sm" variant="ghost">
-            Pagamentos
-          </Button>
-        </Link>
-        <Link href="/reports">
-          <Button size="sm" variant="ghost">
-            Relatórios
-          </Button>
-        </Link>
-      </div>
-
       {/* KPI cards */}
       {loading && !kpis ? (
         <div style={{ textAlign: "center", padding: 40 }}>

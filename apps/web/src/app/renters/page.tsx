@@ -29,6 +29,7 @@ interface RenterDetail extends Renter {
 
 interface ContractSummary {
   id: string;
+  code?: string;
   property_address: string;
   monthly_rent: string;
   start_date: string;
@@ -286,11 +287,17 @@ export default function RentersPage() {
       header: "Contratos",
       render: (r) => {
         const contracts = r.contracts as ContractSummary[] | undefined;
-        const count = contracts?.length ?? 0;
+        if (!contracts || contracts.length === 0) {
+          return <Badge variant="default">Sem contrato</Badge>;
+        }
         return (
-          <Badge variant={count > 0 ? "info" : "default"}>
-            {count} contrato{count !== 1 ? "s" : ""}
-          </Badge>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            {contracts.map((c) => (
+              <Badge key={c.id} variant={statusVariant(c.status)}>
+                {c.code ?? c.id.slice(0, 8)}
+              </Badge>
+            ))}
+          </div>
         );
       },
     },
