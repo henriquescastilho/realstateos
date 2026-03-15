@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { NotificationBell } from "./NotificationBell";
+import { BalanceWidget } from "./BalanceWidget";
 import { Icon } from "@/components/ui/Icon";
 
 const navigation = [
@@ -108,7 +109,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Icon name={sidebarOpen ? "close" : "menu"} size={20} />
           </button>
-          <NotificationBell />
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <BalanceWidget />
+            <NotificationBell />
+          </div>
         </header>
         <main className="page-frame">{children}</main>
       </div>

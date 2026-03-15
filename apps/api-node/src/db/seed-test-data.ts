@@ -183,25 +183,10 @@ const GUARANTEES = [
   { type: "fiador", details: "Fiador com renda 3x o aluguel" },
 ];
 
-// Tickets de manutenção
-const MAINTENANCE_TICKETS = [
-  { description: "Vazamento no teto do banheiro, mancha de umidade crescente", category: "plumbing", priority: "high" as const },
-  { description: "Ar condicionado nao liga, fusivel queimado", category: "electrical", priority: "medium" as const },
-  { description: "Fechadura da porta principal emperrada", category: "general", priority: "high" as const },
-  { description: "Infiltracao na parede da sala, proximo a janela", category: "plumbing", priority: "high" as const },
-  { description: "Piso laminado soltando no quarto 2", category: "general", priority: "low" as const },
-  { description: "Torneira da cozinha pingando constantemente", category: "plumbing", priority: "medium" as const },
-  { description: "Portao da garagem nao abre com controle remoto", category: "electrical", priority: "medium" as const },
-  { description: "Vidro da janela da sala trincado", category: "general", priority: "low" as const },
-  { description: "Descarga do vaso sanitario nao para de correr", category: "plumbing", priority: "high" as const },
-  { description: "Tomada do quarto soltando faisca", category: "electrical", priority: "high" as const },
-];
-
 // ─── Funções ───
 
 async function cleanAll() {
   console.log("Limpando TODOS os dados do banco...");
-  await db.delete(schema.maintenanceTickets);
   await db.delete(schema.messageRecords);
   await db.delete(schema.documents);
   await db.delete(schema.agentTasks);
@@ -546,22 +531,6 @@ async function seed() {
     console.log(`  ${paymentRows.length} pagamentos registrados`);
   }
 
-  // 9. Tickets de manutenção
-  console.log("\nCriando tickets de manutencao...");
-  const ticketValues = MAINTENANCE_TICKETS.map((t, i) => ({
-    orgId: org.id,
-    propertyId: propertyRows[i % 20].id,
-    leaseContractId: contractRows[i % 20].id,
-    openedBy: tenantRows[i % 20].fullName,
-    category: t.category,
-    priority: t.priority,
-    status: ["open", "in_progress", "resolved", "open", "open"][i % 5],
-    description: t.description,
-    resolutionSummary: i % 5 === 2 ? "Problema resolvido pelo tecnico no local." : null,
-  }));
-  const ticketRows = await db.insert(schema.maintenanceTickets).values(ticketValues).returning();
-  console.log(`  ${ticketRows.length} tickets criados`);
-
   // ─── Resumo ───
   console.log("\n" + "=".repeat(60));
   console.log(" BANCO DE TESTES — L CASTILHO IMOVEIS");
@@ -575,7 +544,6 @@ async function seed() {
   console.log(`  Schedules:      ${scheduleRows.length}`);
   console.log(`  Cobrancas:      ${chargeRows.length} (${paid.length} pagas, ${overdue.length} atrasadas, ${open.length} abertas)`);
   console.log(`  Pagamentos:     ${paid.length}`);
-  console.log(`  Tickets:        ${ticketRows.length}`);
   console.log(`\n  Org ID: ${org.id}`);
   console.log(`  Login (admin): ${ADMIN_USER.loginEmail} / ${ADMIN_USER.loginPassword}`);
   console.log(`  Email demo:    ${ADMIN_USER.email} (recebe boleto/extrato)`);

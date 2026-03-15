@@ -3,92 +3,55 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ProtectedPage } from "@/components/layout/protected-page";
-import { Card } from "@/components/page-sections";
-import { apiGet, apiPost } from "@/lib/api";
-import type { TaskRecord } from "@/lib/types";
+import { Modal } from "@/components/ui/Modal";
+import { Icon, type IconName } from "@/components/ui/Icon";
+import { apiGet } from "@/lib/api";
+import type { AgentRegistryEntry, OrchestratorEvent, TaskRecord } from "@/lib/types";
+import { PagadorBillsSection } from "./PagadorBillsSection";
 
-const POLL_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 15_000;
 
-type AgentMetrics = {
-  overall: {
-    total_tasks: number;
-    automation_rate_pct: number;
-    escalation_rate_pct: number;
-  };
-  by_task_type: Record<
-    string,
-    {
-      total: number;
-      done: number;
-      escalated: number;
-      failed: number;
-      automation_rate_pct: number;
-      escalation_rate_pct: number;
-    }
-  >;
+/** Orchestrator event → agent mapping (mirrors backend EVENT_HANDLERS) */
+const EVENT_AGENT_MAP: Record<string, string> = {
+  "expense.captured": "Maestro",
+  "charges.composed": "Cobrador",
+  "payment.received": "Sentinela",
+  "payout.completed": "Contador",
+  "payout.bills_paid": "(fim do fluxo)",
+  "statement.ready": "(fim do fluxo)",
 };
 
-type StatusFilter =
-  | "ALL"
-  | "PENDING"
-  | "RUNNING"
-  | "DONE"
-  | "FAILED"
-  | "ESCALATED";
-
-const FILTERS: { value: StatusFilter; label: string; color: string }[] = [
-  { value: "ALL", label: "Todos", color: "" },
-  { value: "RUNNING", label: "Em execução", color: "blue" },
-  { value: "PENDING", label: "Pendente", color: "yellow" },
-  { value: "DONE", label: "Concluído", color: "green" },
-  { value: "ESCALATED", label: "Escalados", color: "orange" },
-  { value: "FAILED", label: "Falhou", color: "red" },
-];
-
-function StatusPill({ status }: { status: string }) {
-  return (
-    <span className={`status-pill status-${status.toLowerCase()}`}>
-      {status}
-    </span>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  unit = "",
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-}) {
-  return (
-    <div className="metric-card">
-      <p className="muted-text">{label}</p>
-      <strong>
-        {value}
-        {unit}
-      </strong>
-    </div>
-  );
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return "Nunca";
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "Agora";
+  if (mins < 60) return `${mins}min atrás`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h atrás`;
+  const days = Math.floor(hours / 24);
+  return `${days}d atrás`;
 }
 
 export default function AgentsPage() {
+  const [agents, setAgents] = useState<AgentRegistryEntry[]>([]);
+  const [events, setEvents] = useState<OrchestratorEvent[]>([]);
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
-  const [metrics, setMetrics] = useState<AgentMetrics | null>(null);
-  const [filter, setFilter] = useState<StatusFilter>("ALL");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<AgentRegistryEntry | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       setError(null);
-      const [tasksData, metricsData] = await Promise.all([
-        apiGet<TaskRecord[]>("/agent-tasks?limit=100"),
-        apiGet<AgentMetrics>("/analytics/agents").catch(() => null),
+      const [agentsData, eventsData, tasksData] = await Promise.all([
+        apiGet<AgentRegistryEntry[]>("/agents/registry"),
+        apiGet<OrchestratorEvent[]>("/agents/orchestrator/events"),
+        apiGet<TaskRecord[]>("/agent-tasks?limit=50"),
       ]);
+      setAgents(agentsData);
+      setEvents(eventsData);
       setTasks(tasksData);
-      setMetrics(metricsData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao carregar dados.");
     } finally {
@@ -96,116 +59,151 @@ export default function AgentsPage() {
     }
   }, []);
 
-  // Initial load + polling every 10s
   useEffect(() => {
     void refresh();
     const interval = setInterval(() => void refresh(), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [refresh]);
 
-  const filtered = tasks.filter(
-    (t) => filter === "ALL" || t.status.toUpperCase() === filter,
-  );
-
-  const counts: Record<string, number> = {};
-  for (const t of tasks) {
-    counts[t.status.toUpperCase()] = (counts[t.status.toUpperCase()] ?? 0) + 1;
-  }
+  const agentTasks = selectedAgent
+    ? tasks.filter((t) => t.type === selectedAgent.taskType).slice(0, 10)
+    : [];
 
   return (
     <ProtectedPage
-      title="Atividade dos Agentes"
-      description="Monitoramento em tempo real das tarefas executadas pelos agentes de IA. Atualizado a cada 10 segundos."
+      title="Agentes de IA"
+      description="Painel de monitoramento dos agentes autônomos. Clique em um agente para ver detalhes."
     >
-      {error ? <p className="error-banner">{error}</p> : null}
+      {error && <p className="error-banner">{error}</p>}
 
-      {/* Metrics summary */}
-      {metrics && (
-        <Card
-          title="Performance dos Agentes"
-          subtitle="Métricas do período atual"
-        >
-          <div className="metrics-grid">
-            <MetricCard
-              label="Total de tarefas"
-              value={metrics.overall.total_tasks}
-            />
-            <MetricCard
-              label="Taxa de automação"
-              value={metrics.overall.automation_rate_pct}
-              unit="%"
-            />
-            <MetricCard
-              label="Taxa de escalação"
-              value={metrics.overall.escalation_rate_pct}
-              unit="%"
-            />
-            <MetricCard label="Em execução" value={counts["RUNNING"] ?? 0} />
-            <MetricCard label="Escalados" value={counts["ESCALATED"] ?? 0} />
-            <MetricCard label="Com falha" value={counts["FAILED"] ?? 0} />
-          </div>
-        </Card>
+      {loading ? (
+        <p className="empty-state">Carregando agentes...</p>
+      ) : (
+        <div className="agents-grid">
+          {agents.map((agent) => (
+            <article
+              key={agent.id}
+              className="card agent-card"
+              onClick={() => setSelectedAgent(agent)}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <Icon name={agent.icon as IconName} size={28} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <strong>{agent.name}</strong>
+                    <span className={agent.currentStatus === "active" ? "alive-dot" : "idle-dot"} />
+                  </div>
+                  <p className="muted-text" style={{ margin: 0 }}>
+                    {agent.schedule ?? "Sob demanda (evento)"}
+                  </p>
+                </div>
+              </div>
+              <p style={{ margin: "0 0 12px", color: "var(--text-secondary)", fontSize: "0.88rem" }}>
+                {agent.description}
+              </p>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                <span className="muted-text">
+                  {agent.totalTasks} tarefa{agent.totalTasks !== 1 ? "s" : ""}
+                </span>
+                <span className="muted-text">{formatRelativeTime(agent.lastExecutedAt)}</span>
+              </div>
+            </article>
+          ))}
+        </div>
       )}
 
-      {/* Task list */}
-      <Card title="Tarefas dos Agentes" subtitle="Histórico de execução">
-        <div className="section-actions">
-          <div className="filter-group">
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                type="button"
-                className={
-                  filter === f.value ? "filter-button active" : "filter-button"
-                }
-                onClick={() => setFilter(f.value)}
+      {/* Agent detail modal */}
+      <Modal
+        open={!!selectedAgent}
+        onClose={() => setSelectedAgent(null)}
+        title={selectedAgent?.name}
+        description={selectedAgent?.description}
+        maxWidth={680}
+      >
+        {selectedAgent && (
+          <div>
+            {/* Status + schedule */}
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+              <span
+                className={`status-pill ${selectedAgent.currentStatus === "active" ? "status-running" : "status-done"}`}
               >
-                {f.label}
-                {f.value !== "ALL" && (
-                  <span className="filter-count">{counts[f.value] ?? 0}</span>
-                )}
-              </button>
-            ))}
-          </div>
-          <button
-            className="ghost-button"
-            type="button"
-            onClick={() => void refresh()}
-          >
-            Atualizar
-          </button>
-        </div>
+                {selectedAgent.currentStatus === "active" ? "Ativo" : "Idle"}
+              </span>
+              <span className="muted-text" style={{ alignSelf: "center" }}>
+                {selectedAgent.schedule
+                  ? `Schedule: ${selectedAgent.schedule}`
+                  : "Sob demanda (evento)"}
+              </span>
+            </div>
 
-        {loading ? (
-          <p className="empty-state">Carregando tarefas...</p>
-        ) : filtered.length === 0 ? (
-          <p className="empty-state">Nenhuma tarefa para este filtro.</p>
-        ) : (
-          <div className="list">
-            {filtered.map((task) => (
-              <article key={task.id} className="task-card">
-                <div className="task-header">
-                  <div>
-                    <strong>{task.type}</strong>
-                    <p className="muted-text">{task.id}</p>
+            {/* Orchestrator-specific: event mapping */}
+            {selectedAgent.id === "orquestrador" && (
+              <div style={{ marginBottom: 24 }}>
+                <h4 style={{ margin: "0 0 12px", fontSize: "0.95rem" }}>Mapeamento de Eventos</h4>
+                <table className="event-table">
+                  <thead>
+                    <tr>
+                      <th>Evento</th>
+                      <th>Dispara</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(EVENT_AGENT_MAP).map(([event, target]) => (
+                      <tr key={event}>
+                        <td>
+                          <code style={{ fontSize: "0.82rem" }}>{event}</code>
+                        </td>
+                        <td>{target}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <h4 style={{ margin: "20px 0 12px", fontSize: "0.95rem" }}>Eventos Recentes</h4>
+                {events.length === 0 ? (
+                  <p className="empty-state">Nenhum evento registrado.</p>
+                ) : (
+                  <div className="list">
+                    {events.slice(0, 10).map((evt) => (
+                      <div key={evt.id} className="list-row" style={{ fontSize: "0.88rem" }}>
+                        <div>
+                          <code style={{ fontSize: "0.82rem" }}>{evt.eventType}</code>
+                          <p className="muted-text">{new Date(evt.createdAt).toLocaleString("pt-BR")}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <StatusPill status={task.status} />
-                </div>
-                <p className="task-message">
-                  {typeof task.payload.message === "string"
-                    ? task.payload.message
-                    : "Sem mensagem"}
-                </p>
-                {task.payload.error ? (
-                  <p className="error-text">
-                    Erro: {String(task.payload.error)}
-                  </p>
-                ) : null}
-              </article>
-            ))}
+                )}
+              </div>
+            )}
+
+            {/* Pagador-specific: bill payment section */}
+            {selectedAgent.id === "pagador" && <PagadorBillsSection />}
+
+            {/* Recent tasks for this agent */}
+            <h4 style={{ margin: "20px 0 12px", fontSize: "0.95rem" }}>Histórico Recente</h4>
+            {agentTasks.length === 0 ? (
+              <p className="empty-state">Nenhuma tarefa registrada para este agente.</p>
+            ) : (
+              <div className="list">
+                {agentTasks.map((task) => (
+                  <div key={task.id} className="task-card" style={{ padding: "12px 0" }}>
+                    <div className="task-header">
+                      <div>
+                        <strong style={{ fontSize: "0.88rem" }}>{task.type}</strong>
+                        <p className="muted-text">{task.id.slice(0, 8)}...</p>
+                      </div>
+                      <span className={`status-pill status-${task.status.toLowerCase()}`}>
+                        {task.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
-      </Card>
+      </Modal>
     </ProtectedPage>
   );
 }

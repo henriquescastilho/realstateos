@@ -14,7 +14,10 @@ import {
   rejectTask,
   updateAgentConfig,
   listAgentConfigs,
+  getAgentRegistryWithStats,
+  getRecentOrchestratorEvents,
 } from "./service";
+import { extractBoletoData } from "./handlers/radar-capture";
 
 export const agentsRouter = Router();
 
@@ -107,6 +110,54 @@ agentsRouter.get(
       const { orgId } = listAgentConfigsQuerySchema.parse({ ...req.query, orgId: req.user?.org_id });
       const data = await listAgentConfigs(orgId);
       ok(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /agents/registry — agent cards with live stats
+agentsRouter.get(
+  "/agents/registry",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user?.org_id as string;
+      const data = await getAgentRegistryWithStats(orgId);
+      ok(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// GET /agents/orchestrator/events — recent domain events
+agentsRouter.get(
+  "/agents/orchestrator/events",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = req.user?.org_id as string;
+      const data = await getRecentOrchestratorEvents(orgId);
+      ok(res, data);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// POST /agents/pagador/extract-bills — extract boleto data from base64 PDF/image
+agentsRouter.post(
+  "/agents/pagador/extract-bills",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { files } = req.body as { files: Array<{ base64: string; name?: string }> };
+
+      const results = [];
+      for (const file of files ?? []) {
+        const { data, confidence } = await extractBoletoData(file.base64);
+        results.push({ ...data, confidence, fileName: file.name ?? null });
+      }
+
+      ok(res, { bills: results });
     } catch (err) {
       next(err);
     }

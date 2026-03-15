@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { ok } from "../../lib/response";
 import { db } from "../../db";
-import { properties, leaseContracts, charges, maintenanceTickets } from "../../db/schema";
+import { properties, leaseContracts, charges } from "../../db/schema";
 import { eq, and, sql, gte } from "drizzle-orm";
 
 export const reportsRouter = Router();
@@ -149,35 +149,6 @@ reportsRouter.get(
   },
 );
 
-// GET /reports/maintenance — monthly maintenance cost/ticket summary
-reportsRouter.get(
-  "/reports/maintenance",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const orgId = req.user!.org_id;
-
-      const rows = await db
-        .select({
-          month: sql<string>`to_char(${maintenanceTickets.createdAt}, 'YYYY-MM')`,
-          tickets: sql<number>`count(*)::int`,
-        })
-        .from(maintenanceTickets)
-        .where(eq(maintenanceTickets.orgId, orgId))
-        .groupBy(sql`to_char(${maintenanceTickets.createdAt}, 'YYYY-MM')`)
-        .orderBy(sql`to_char(${maintenanceTickets.createdAt}, 'YYYY-MM')`);
-
-      const result = rows.map((r) => ({
-        month: r.month,
-        cost: 0,
-        tickets: r.tickets,
-      }));
-
-      ok(res, result);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
 
 reportsRouter.post("/reports/export", (_req: Request, res: Response) => {
   ok(res, { url: null, message: "Export not yet implemented" });

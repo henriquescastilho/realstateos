@@ -144,31 +144,6 @@ const templates: Record<string, TemplateFn> = {
     return { subject, body, html };
   },
 
-  // ─── Manutenção ───
-  maintenance_opened: (data) => ({
-    subject: `Chamado de manutenção aberto — #${data.ticketId ?? ""}`,
-    body: [
-      `Olá ${data.tenantName ?? "Inquilino"},`,
-      ``,
-      `Seu chamado de manutenção foi registrado com sucesso.`,
-      `Número: #${data.ticketId ?? ""}`,
-      `Descrição: ${data.ticketDescription ?? ""}`,
-      `Imóvel: ${data.propertyAddress ?? ""}`,
-      ``,
-      `Nossa equipe entrará em contato em breve.`,
-    ].join("\n"),
-  }),
-
-  maintenance_resolved: (data) => ({
-    subject: `Chamado resolvido — #${data.ticketId ?? ""}`,
-    body: [
-      `Olá ${data.tenantName ?? "Inquilino"},`,
-      ``,
-      `Seu chamado #${data.ticketId ?? ""} foi resolvido.`,
-      ``,
-      `Caso o problema persista, abra um novo chamado.`,
-    ].join("\n"),
-  }),
 };
 
 /**

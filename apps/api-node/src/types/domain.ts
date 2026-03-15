@@ -9,7 +9,6 @@ import type {
   charges,
   payments,
   statements,
-  maintenanceTickets,
   messageRecords,
   agentTasks,
   integrationConnectors,
@@ -24,6 +23,7 @@ import type {
   chatConversations,
   chatMessages,
   agentConfigs,
+  propertyExpenses,
 } from "../db/schema";
 
 // ─── Select types (read from DB) ───
@@ -36,7 +36,6 @@ export type BillingSchedule = InferSelectModel<typeof billingSchedules>;
 export type Charge = InferSelectModel<typeof charges>;
 export type Payment = InferSelectModel<typeof payments>;
 export type Statement = InferSelectModel<typeof statements>;
-export type MaintenanceTicket = InferSelectModel<typeof maintenanceTickets>;
 export type MessageRecord = InferSelectModel<typeof messageRecords>;
 export type AgentTask = InferSelectModel<typeof agentTasks>;
 export type IntegrationConnector = InferSelectModel<typeof integrationConnectors>;
@@ -51,6 +50,7 @@ export type DocumentEmbedding = InferSelectModel<typeof documentEmbeddings>;
 export type ChatConversation = InferSelectModel<typeof chatConversations>;
 export type ChatMessage = InferSelectModel<typeof chatMessages>;
 export type AgentConfig = InferSelectModel<typeof agentConfigs>;
+export type PropertyExpense = InferSelectModel<typeof propertyExpenses>;
 
 // ─── Insert types (write to DB) ───
 export type NewOrganization = InferInsertModel<typeof organizations>;
@@ -62,7 +62,6 @@ export type NewBillingSchedule = InferInsertModel<typeof billingSchedules>;
 export type NewCharge = InferInsertModel<typeof charges>;
 export type NewPayment = InferInsertModel<typeof payments>;
 export type NewStatement = InferInsertModel<typeof statements>;
-export type NewMaintenanceTicket = InferInsertModel<typeof maintenanceTickets>;
 export type NewMessageRecord = InferInsertModel<typeof messageRecords>;
 export type NewAgentTask = InferInsertModel<typeof agentTasks>;
 export type NewIntegrationConnector = InferInsertModel<typeof integrationConnectors>;
@@ -77,6 +76,7 @@ export type NewDocumentEmbedding = InferInsertModel<typeof documentEmbeddings>;
 export type NewChatConversation = InferInsertModel<typeof chatConversations>;
 export type NewChatMessage = InferInsertModel<typeof chatMessages>;
 export type NewAgentConfig = InferInsertModel<typeof agentConfigs>;
+export type NewPropertyExpense = InferInsertModel<typeof propertyExpenses>;
 
 // ─── Enums (canonical states) ───
 export const LeaseContractStatus = {
@@ -99,15 +99,6 @@ export const ChargePaymentStatus = {
   PAID: "paid",
   OVERDUE: "overdue",
   WRITTEN_OFF: "written_off",
-} as const;
-
-export const MaintenanceStatus = {
-  OPEN: "open",
-  TRIAGED: "triaged",
-  IN_PROGRESS: "in_progress",
-  WAITING_EXTERNAL: "waiting_external",
-  RESOLVED: "resolved",
-  CLOSED: "closed",
 } as const;
 
 export const AgentTaskStatus = {
@@ -138,6 +129,19 @@ export const InboxThreadStatus = {
   CLOSED: "closed",
 } as const;
 
+export const PropertyExpenseStatus = {
+  CAPTURED: "captured",
+  APPROVED: "approved",
+  PAID: "paid",
+  REJECTED: "rejected",
+} as const;
+
+export const ExpenseType = {
+  CONDO: "condo",
+  IPTU: "iptu",
+  TAXA: "taxa",
+} as const;
+
 export const DomainEventTypes = {
   CHARGE_CREATED: "charge.created",
   CHARGE_ISSUED: "charge.issued",
@@ -149,4 +153,9 @@ export const DomainEventTypes = {
   MESSAGE_SENT: "message.sent",
   MESSAGE_FAILED: "message.failed",
   MESSAGE_INBOUND: "message.inbound",
+  EXPENSE_CAPTURED: "expense.captured",
+  EXPENSE_APPROVED: "expense.approved",
+  CHARGES_COMPOSED: "charges.composed",
+  PAYOUT_BILLS_PAID: "payout.bills_paid",
+  PAYOUT_COMPLETED: "payout.completed",
 } as const;

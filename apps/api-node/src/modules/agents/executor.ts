@@ -4,6 +4,12 @@ import { classifyTicketWithLLM } from "./handlers/ticket-classifier";
 import { parseDocumentWithLLM } from "./handlers/document-parser";
 import { reviewChargeWithLLM } from "./handlers/charge-reviewer";
 import { draftCommunicationWithLLM } from "./handlers/communication-drafter";
+import { handleRadarCapture } from "./handlers/radar-capture";
+import { handleMaestroCompose } from "./handlers/maestro-compose";
+import { handleCobradorCollect } from "./handlers/cobrador-collect";
+import { handleSentinelaWatch } from "./handlers/sentinela-watch";
+import { handlePagadorPayout } from "./handlers/pagador-payout";
+import { handleContadorStatement } from "./handlers/contador-statement";
 
 export interface TaskExecutionResult {
   status: "completed" | "escalated" | "failed";
@@ -19,7 +25,12 @@ const handlers: Record<string, TaskHandler> = {
   document_parser: handleDocumentParser,
   charge_reviewer: handleChargeReviewer,
   communication_drafter: handleCommunicationDrafter,
-  maintenance_classification_review: handleTicketClassifier,
+  radar_capture: handleRadarCapture,
+  maestro_compose: handleMaestroCompose,
+  cobrador_collect: handleCobradorCollect,
+  sentinela_watch: handleSentinelaWatch,
+  pagador_payout: handlePagadorPayout,
+  contador_statement: handleContadorStatement,
 };
 
 /**

@@ -21,8 +21,15 @@ export interface ChargeForStatement {
   }>;
 }
 
+export interface ExpenseDeduction {
+  type: string; // "condo" | "iptu" | "taxa"
+  description: string;
+  amount: string; // positive value — will be shown as negative in the statement
+}
+
 export interface StatementConfig {
   adminFeePercentage?: string;  // e.g. "10.00" = 10% management fee
+  expenses?: ExpenseDeduction[]; // property expenses to deduct from payout
 }
 
 /**
@@ -58,6 +65,20 @@ export function buildStatementEntries(
         amount: charge.penaltyAmount,
       });
       // Penalty is already included in netAmount, so don't double-count
+    }
+  }
+
+  // Property expense deductions (condo, IPTU, taxas)
+  if (config.expenses && config.expenses.length > 0) {
+    for (const expense of config.expenses) {
+      const expCents = Math.round(parseFloat(expense.amount) * 100);
+      totalDeductionsCents += expCents;
+
+      entries.push({
+        type: "expense",
+        description: expense.description,
+        amount: `-${(expCents / 100).toFixed(2)}`,
+      });
     }
   }
 

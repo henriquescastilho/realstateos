@@ -474,3 +474,28 @@ export const agentConfigs = pgTable("agent_configs", {
 }, (t) => [
   uniqueIndex("agent_configs_org_task_type_idx").on(t.orgId, t.taskType),
 ]);
+
+// ─── Property Expenses (boletos de condomínio/IPTU/taxas) ───
+export const propertyExpenses = pgTable("property_expenses", {
+  id: id(),
+  orgId: orgId(),
+  propertyId: uuid("property_id").notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // "condo" | "iptu" | "taxa"
+  issuer: varchar("issuer", { length: 255 }),
+  value: numeric("value", { precision: 12, scale: 2 }).notNull(),
+  dueDate: date("due_date").notNull(),
+  barcode: varchar("barcode", { length: 60 }),
+  digitableLine: varchar("digitable_line", { length: 60 }),
+  referenceMonth: varchar("reference_month", { length: 7 }).notNull(), // "2026-04"
+  sourceType: varchar("source_type", { length: 20 }).notNull(), // "email" | "whatsapp" | "manual"
+  sourceReference: varchar("source_reference", { length: 500 }),
+  captureConfidence: numeric("capture_confidence", { precision: 5, scale: 4 }),
+  status: varchar("status", { length: 20 }).default("captured").notNull(), // "captured" | "approved" | "paid" | "rejected"
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  agentTaskId: uuid("agent_task_id"),
+  ...timestamps(),
+}, (t) => [
+  index("property_expenses_org_id_idx").on(t.orgId),
+  index("property_expenses_property_idx").on(t.propertyId),
+  uniqueIndex("property_expenses_idempotency_idx").on(t.propertyId, t.type, t.referenceMonth),
+]);
