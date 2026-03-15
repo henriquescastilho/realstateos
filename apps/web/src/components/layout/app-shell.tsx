@@ -19,6 +19,7 @@ const navigation = [
   { href: "/owners", label: "Proprietários" },
   { href: "/billing", label: "Faturas" },
   { href: "/repasses", label: "Repasses" },
+  { href: "/conciliacao", label: "Conciliação Bancária" },
   { href: "/reports", label: "Relatórios" },
   { href: "/maintenance", label: "Manutenção" },
   { href: "/settings", label: "Configurações" },
