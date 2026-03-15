@@ -120,23 +120,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Icon name={sidebarOpen ? "close" : "menu"} size={20} />
           </button>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginLeft: "auto" }}>
             <BalanceWidget />
             <NotificationBell />
             <button
               onClick={handleLogout}
+              title="Sair"
               style={{
                 background: "none",
-                border: "1px solid var(--line)",
-                borderRadius: 10,
-                padding: "6px 14px",
+                border: "none",
                 cursor: "pointer",
-                fontSize: "0.82rem",
-                color: "var(--text-secondary)",
-                whiteSpace: "nowrap",
+                padding: 6,
+                display: "flex",
+                alignItems: "center",
+                color: "var(--text-muted)",
               }}
             >
-              Sair
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
             </button>
           </div>
         </header>
