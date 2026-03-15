@@ -43,6 +43,7 @@ import { agentsRouter } from "./modules/agents/router";
 import { analyticsRouter } from "./modules/analytics/router";
 import { propertiesRouter } from "./modules/properties/router";
 import { reportsRouter } from "./modules/reports/router";
+import { stubsRouter } from "./modules/stubs/router";
 
 app.use("/api/v1", requireAuth, requireOrgMatch, onboardingRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, contractsRouter);
@@ -59,6 +60,7 @@ app.use("/api/v1", requireAuth, requireOrgMatch, agentsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, analyticsRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, propertiesRouter);
 app.use("/api/v1", requireAuth, requireOrgMatch, reportsRouter);
+app.use("/api/v1", requireAuth, requireOrgMatch, stubsRouter);
 
 // ─── Global error handler (must be last) ───
 app.use(errorHandler);
