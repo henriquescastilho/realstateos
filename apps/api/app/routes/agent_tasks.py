@@ -16,7 +16,6 @@ from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.errors import AgentTaskNotFoundError, TaskStateConflictError
 from app.middleware.tenant import OrgContext, get_current_org

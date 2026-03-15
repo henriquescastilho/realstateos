@@ -177,7 +177,11 @@ describeWithDB("Smoke E2E: Full business flow against PostgreSQL", () => {
     expect(res.body.ok).toBe(true);
     expect(res.body.data.issueStatus).toBe("issued");
 
-    console.log("[smoke] Charge issued");
+    // Boleto fields should be present (status depends on bank creds availability)
+    expect(res.body.data.boletoStatus).toBeTruthy();
+    expect(["pending", "generated", "failed"]).toContain(res.body.data.boletoStatus);
+
+    console.log("[smoke] Charge issued, boletoStatus:", res.body.data.boletoStatus);
   });
 
   // ─── Step 7: Simulate payment webhook ───

@@ -75,19 +75,19 @@ class BillingAgentWorker:
 
             logger.info("dispatch_billing_task", extra={"task_type": task_type, "tenant_id": self.tools.tenant_id})
             return handler(payload)
-        except Exception as exc:
+        except Exception:
+            logger.exception("billing_task_failed", extra={"task_type": task_type, "tenant_id": self.tools.tenant_id})
             self.tools.register_task_message(
                 task_type=task_type,
-                message="Falha ao emitir boleto; usar mock",
-                payload={**payload, "error": str(exc)},
+                message="Falha ao processar tarefa de billing",
+                payload={"task_type": task_type},
                 property_id=payload.get("property_id"),
                 contract_id=payload.get("contract_id"),
                 status_value="FAILED",
             )
-            logger.exception("billing_task_failed", extra={"task_type": task_type, "tenant_id": self.tools.tenant_id})
             return {
                 "ok": False,
                 "operation": task_type.lower(),
-                "message": "Falha ao emitir boleto; usar mock",
-                "error": str(exc),
+                "message": "Falha ao processar tarefa de billing",
+                "error": "internal_error",
             }

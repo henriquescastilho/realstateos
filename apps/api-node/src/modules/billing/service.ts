@@ -4,10 +4,13 @@ import {
   billingSchedules,
   charges,
   leaseContracts,
+  tenants,
 } from "../../db/schema";
 import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors";
-import { ChargeIssueStatus, LeaseContractStatus } from "../../types/domain";
+import { ChargeIssueStatus, LeaseContractStatus, BoletoStatus } from "../../types/domain";
 import { calculateCharge } from "./calculator";
+import { generateBoleto, getOrgBankCredentials } from "../integrations/connectors/bank";
+import { emitDomainEvent } from "../../lib/events";
 import type { CreateBillingScheduleInput, GenerateChargesInput } from "./validators";
 
 /**
@@ -109,6 +112,13 @@ export async function generateCharge(input: GenerateChargesInput) {
       })
       .returning();
 
+    await emitDomainEvent(input.orgId, "charge.created", {
+      chargeId: charge.id,
+      leaseContractId: input.leaseContractId,
+      billingPeriod: input.billingPeriod,
+      netAmount: calculation.netAmount,
+    }).catch((e) => console.error("[billing] Event emit error:", e));
+
     return charge;
   } catch (err: unknown) {
     if (
@@ -173,6 +183,8 @@ export async function listCharges(params: {
 
 /**
  * Issue a charge (transition from draft → issued).
+ * Automatically generates a Santander boleto if the org has bank credentials configured.
+ * If boleto generation fails, the charge is still issued but flagged as boleto_status=failed.
  */
 export async function issueCharge(chargeId: string) {
   const [existing] = await db
@@ -191,14 +203,124 @@ export async function issueCharge(chargeId: string) {
     );
   }
 
+  // ─── Attempt boleto generation ───
+  const boletoResult = await attemptBoletoGeneration(existing);
+
   const [updated] = await db
     .update(charges)
     .set({
       issueStatus: ChargeIssueStatus.ISSUED,
       issuedAt: new Date(),
+      boletoId: boletoResult.boletoId ?? null,
+      barcode: boletoResult.barcode ?? null,
+      digitableLine: boletoResult.digitableLine ?? null,
+      boletoStatus: boletoResult.status,
+      boletoError: boletoResult.error ?? null,
     })
     .where(eq(charges.id, chargeId))
     .returning();
 
+  await emitDomainEvent(existing.orgId, "charge.issued", {
+    chargeId: updated.id,
+    leaseContractId: updated.leaseContractId,
+    netAmount: updated.netAmount,
+    dueDate: updated.dueDate,
+    boletoStatus: boletoResult.status,
+  }).catch((e) => console.error("[billing] Event emit error:", e));
+
   return updated;
+}
+
+/**
+ * Try to generate a boleto via Santander for a charge.
+ * Returns boleto data on success, or a failed status with error on failure.
+ * Never throws — the caller always gets a result.
+ */
+async function attemptBoletoGeneration(charge: {
+  orgId: string;
+  leaseContractId: string;
+  netAmount: string;
+  dueDate: string;
+  billingPeriod: string;
+}): Promise<{
+  status: string;
+  boletoId?: string;
+  barcode?: string;
+  digitableLine?: string;
+  error?: string;
+}> {
+  try {
+    // Check if org has bank credentials configured
+    const creds = await getOrgBankCredentials(charge.orgId);
+    if (!creds) {
+      return {
+        status: BoletoStatus.PENDING,
+        error: "No bank credentials configured for this org",
+      };
+    }
+
+    // Load tenant data from the lease contract
+    const [contract] = await db
+      .select()
+      .from(leaseContracts)
+      .where(eq(leaseContracts.id, charge.leaseContractId))
+      .limit(1);
+
+    if (!contract) {
+      return {
+        status: BoletoStatus.FAILED,
+        error: `Lease contract ${charge.leaseContractId} not found`,
+      };
+    }
+
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, contract.tenantId))
+      .limit(1);
+
+    if (!tenant) {
+      return {
+        status: BoletoStatus.FAILED,
+        error: `Tenant ${contract.tenantId} not found`,
+      };
+    }
+
+    // Call Santander API
+    const result = await generateBoleto({
+      orgId: charge.orgId,
+      amount: charge.netAmount,
+      dueDate: charge.dueDate,
+      payerName: tenant.fullName,
+      payerDocument: tenant.documentNumber,
+      description: `Aluguel ${charge.billingPeriod}`,
+    });
+
+    if (result.success) {
+      console.log(
+        `[billing] Charge boleto generated: boletoId=${result.boletoId}`,
+      );
+      return {
+        status: BoletoStatus.GENERATED,
+        boletoId: result.boletoId,
+        barcode: result.barcode,
+        digitableLine: result.digitableLine,
+      };
+    }
+
+    console.warn(
+      `[billing] Boleto generation failed for charge, issuing without boleto: ${result.error}`,
+    );
+    return {
+      status: BoletoStatus.FAILED,
+      error: result.error,
+    };
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[billing] Boleto generation error: ${errorMsg}`);
+    return {
+      status: BoletoStatus.FAILED,
+      error: errorMsg,
+    };
+  }
 }

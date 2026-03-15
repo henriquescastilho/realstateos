@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_db
 from app.middleware.tenant import OrgContext, get_demo_or_authed_org
 from app.openapi import AUTH_RESPONSES, RESPONSES_422

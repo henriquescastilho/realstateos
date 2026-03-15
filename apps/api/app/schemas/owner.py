@@ -1,10 +1,11 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 from app.schemas.common import ORMModel
 from app.schemas.validators import BRDocument, BRPhone, SafeStr
 
 
 class OwnerCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     name: SafeStr
     document: BRDocument
     email: EmailStr
