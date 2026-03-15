@@ -650,7 +650,7 @@ export default function DashboardPage() {
                         {d.period}
                       </td>
                       <td style={{ padding: "8px 10px", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
-                        {fmt(d.amount, true)}
+                        {fmt(Number(d.amount) || 0, true)}
                       </td>
                       <td style={{ padding: "8px 10px", whiteSpace: "nowrap" }}>
                         {d.due_date

@@ -173,7 +173,7 @@ analyticsRouter.get(
           tenant_name: tenants.fullName,
           tenant_email: tenants.email,
           property_address: properties.address,
-          billing_period: charges.billingPeriod,
+          period: charges.billingPeriod,
           amount: charges.grossAmount,
           due_date: charges.dueDate,
           days_overdue: sql<number>`(current_date - ${charges.dueDate}::date)::int`,
