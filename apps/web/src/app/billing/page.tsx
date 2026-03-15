@@ -155,14 +155,6 @@ export default function BillingPage() {
   const [selected, setSelected] = useState<ChargeDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Bulk generate modal
-  const [showBulk, setShowBulk] = useState(false);
-  const [bulkMonth, setBulkMonth] = useState(
-    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`,
-  );
-  const [bulkGenerating, setBulkGenerating] = useState(false);
-  const [bulkResult, setBulkResult] = useState<string | null>(null);
-  const [bulkError, setBulkError] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // Load
@@ -249,32 +241,6 @@ export default function BillingPage() {
   );
 
   // ---------------------------------------------------------------------------
-  // Bulk generate
-  // ---------------------------------------------------------------------------
-
-  const handleBulkGenerate = useCallback(async () => {
-    setBulkGenerating(true);
-    setBulkResult(null);
-    setBulkError(null);
-    try {
-      const res = await apiPost<{ job_id: string; processed: number }>(
-        "/v1/charges/bulk-generate",
-        {
-          reference_month: bulkMonth,
-        },
-      );
-      setBulkResult(
-        `Geração iniciada: ${res.processed ?? "?"} cobranças criadas (job ${res.job_id ?? "—"})`,
-      );
-      await load();
-    } catch (e) {
-      setBulkError(e instanceof Error ? e.message : "Erro ao gerar cobranças");
-    } finally {
-      setBulkGenerating(false);
-    }
-  }, [bulkMonth, load]);
-
-  // ---------------------------------------------------------------------------
   // Columns
   // ---------------------------------------------------------------------------
 
@@ -339,9 +305,6 @@ export default function BillingPage() {
           <p>Gestão de cobranças e faturas do portfólio</p>
         </div>
         <div style={{ display: "flex", gap: "0.75rem" }}>
-          <Button variant="ghost" onClick={() => setShowBulk(true)}>
-            Gerar cobranças
-          </Button>
           <Button
             variant={view === "list" ? "primary" : "ghost"}
             onClick={() => setView("list")}
@@ -872,78 +835,6 @@ export default function BillingPage() {
         )}
       </Modal>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Bulk Generate Modal                                                  */}
-      {/* ------------------------------------------------------------------ */}
-      <Modal
-        open={showBulk}
-        onClose={() => {
-          setShowBulk(false);
-          setBulkResult(null);
-          setBulkError(null);
-        }}
-        title="Gerar cobranças em lote"
-      >
-        <div
-          style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
-        >
-          <p style={{ color: "var(--color-muted)", fontSize: "0.875rem" }}>
-            Gera cobranças de aluguel para todos os contratos ativos do mês de
-            referência. Contratos já com cobrança gerada para o mês são
-            ignorados.
-          </p>
-
-          <Input
-            label="Mês de referência"
-            type="month"
-            value={bulkMonth}
-            onChange={(e) => setBulkMonth(e.target.value)}
-          />
-
-          {bulkResult && (
-            <p
-              style={{
-                color: "var(--color-success)",
-                fontSize: "0.875rem",
-                padding: "0.75rem",
-                background: "var(--color-surface)",
-                borderRadius: "var(--radius)",
-                border: "1px solid var(--color-success)",
-              }}
-            >
-              {bulkResult}
-            </p>
-          )}
-
-          {bulkError && (
-            <p style={{ color: "var(--color-danger)", fontSize: "0.875rem" }}>
-              {bulkError}
-            </p>
-          )}
-
-          <div
-            style={{
-              display: "flex",
-              gap: "0.75rem",
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              variant="ghost"
-              onClick={() => setShowBulk(false)}
-              disabled={bulkGenerating}
-            >
-              Fechar
-            </Button>
-            <Button
-              onClick={() => void handleBulkGenerate()}
-              disabled={bulkGenerating || !bulkMonth}
-            >
-              {bulkGenerating ? <Spinner size="sm" /> : "Gerar cobranças"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </section>
   );
 }
