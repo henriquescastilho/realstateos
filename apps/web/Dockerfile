@@ -20,9 +20,11 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy source
 COPY . .
 
-# Build argument for API URL (injected at build time)
+# Build arguments for API URLs (injected at build time)
 ARG NEXT_PUBLIC_API_URL=http://localhost:8000/api
+ARG NEXT_PUBLIC_NODE_API_URL=http://localhost:3001/api/v1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_NODE_API_URL=${NEXT_PUBLIC_NODE_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js with standalone output
