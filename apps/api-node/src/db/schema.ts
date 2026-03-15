@@ -179,6 +179,9 @@ export const charges = pgTable("charges", {
   digitableLine: varchar("digitavel_line", { length: 60 }),
   boletoStatus: varchar("boleto_status", { length: 20 }).default("pending"), // pending | generated | failed
   boletoError: text("boleto_error"),
+  // ─── PIX fields (populated on issue) ───
+  pixEmv: text("pix_emv"),
+  pixTxId: varchar("pix_tx_id", { length: 100 }),
   ...timestamps(),
 }, (t) => [
   index("charges_org_id_idx").on(t.orgId),

@@ -13,6 +13,7 @@ import { NotFoundError, ValidationError, ConflictError } from "../../lib/errors"
 import { ChargeIssueStatus, LeaseContractStatus, BoletoStatus } from "../../types/domain";
 import { calculateCharge } from "./calculator";
 import { generateBoleto, getOrgBankCredentials } from "../integrations/connectors/bank";
+import { generatePixEmv, generateTxId } from "../../lib/pix-emv";
 import { emitDomainEvent } from "../../lib/events";
 import { sendMessage } from "../communications/service";
 import type { CreateBillingScheduleInput, GenerateChargesInput } from "./validators";
@@ -328,6 +329,9 @@ export async function issueCharge(chargeId: string) {
   // ─── Attempt boleto generation ───
   const boletoResult = await attemptBoletoGeneration(existing);
 
+  // ─── Generate PIX Copia e Cola ───
+  const pixResult = await attemptPixGeneration(existing);
+
   const [updated] = await db
     .update(charges)
     .set({
@@ -338,6 +342,8 @@ export async function issueCharge(chargeId: string) {
       digitableLine: boletoResult.digitableLine ?? null,
       boletoStatus: boletoResult.status,
       boletoError: boletoResult.error ?? null,
+      pixEmv: pixResult.emv ?? null,
+      pixTxId: pixResult.txId ?? null,
     })
     .where(eq(charges.id, chargeId))
     .returning();
@@ -453,6 +459,63 @@ async function attemptBoletoGeneration(charge: {
 }
 
 /**
+ * Generate PIX Copia e Cola (EMV/BRCode) for a charge.
+ * Uses the owner's PIX key from the lease contract.
+ * Works locally without Santander API — ideal for sandbox.
+ */
+async function attemptPixGeneration(charge: {
+  orgId: string;
+  leaseContractId: string;
+  netAmount: string;
+  billingPeriod: string;
+}): Promise<{ emv?: string; txId?: string }> {
+  try {
+    const [contract] = await db
+      .select()
+      .from(leaseContracts)
+      .where(eq(leaseContracts.id, charge.leaseContractId))
+      .limit(1);
+    if (!contract) return {};
+
+    const [owner] = await db
+      .select()
+      .from(owners)
+      .where(eq(owners.id, contract.ownerId))
+      .limit(1);
+    if (!owner) return {};
+
+    const prefs = owner.payoutPreferences as Record<string, unknown> | null;
+    const pixKey = prefs?.pixKey as string | undefined;
+    if (!pixKey) {
+      console.log(`[billing] No PIX key for owner ${contract.ownerId}, skipping PIX generation`);
+      return {};
+    }
+
+    const [org] = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, charge.orgId))
+      .limit(1);
+
+    const txId = generateTxId();
+    const emv = generatePixEmv({
+      pixKey,
+      merchantName: org?.name ?? owner.fullName,
+      merchantCity: "SAO PAULO",
+      amount: charge.netAmount,
+      txId,
+      description: `Aluguel ${charge.billingPeriod}`,
+    });
+
+    console.log(`[billing] PIX EMV generated: txId=${txId}, length=${emv.length}`);
+    return { emv, txId };
+  } catch (err) {
+    console.error("[billing] PIX generation error:", err);
+    return {};
+  }
+}
+
+/**
  * Envia email HTML do boleto ao inquilino após emissão da cobrança.
  * Inclui dados reais do Santander: código de barras, linha digitável, chave PIX.
  */
@@ -469,6 +532,7 @@ async function sendChargeIssuedEmail(charge: {
   netAmount: string;
   barcode: string | null;
   digitableLine: string | null;
+  pixEmv: string | null;
 }): Promise<void> {
   // Buscar contrato, inquilino, imóvel e organização
   const [contract] = await db
@@ -539,6 +603,7 @@ async function sendChargeIssuedEmail(charge: {
       barcode: charge.barcode ?? "",
       digitableLine: charge.digitableLine ?? "",
       pixKey: pixKey ?? "",
+      pixEmv: charge.pixEmv ?? "",
     },
   });
 
