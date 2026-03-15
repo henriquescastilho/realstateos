@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { clearAuth } from "@/lib/auth";
 import { OrgSwitcher } from "./OrgSwitcher";
 import { NotificationBell } from "./NotificationBell";
 import { BalanceWidget } from "./BalanceWidget";
@@ -32,7 +33,14 @@ const EXACT_PUBLIC = ["/"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  function handleLogout() {
+    clearAuth();
+    document.cookie = "ro_auth=; path=/; max-age=0";
+    router.replace("/");
+  }
 
   const isPublicRoute =
     EXACT_PUBLIC.includes(pathname) ||
@@ -115,6 +123,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <BalanceWidget />
             <NotificationBell />
+            <button
+              onClick={handleLogout}
+              style={{
+                background: "none",
+                border: "1px solid var(--line)",
+                borderRadius: 10,
+                padding: "6px 14px",
+                cursor: "pointer",
+                fontSize: "0.82rem",
+                color: "var(--text-secondary)",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Sair
+            </button>
           </div>
         </header>
         <main className="page-frame">{children}</main>
