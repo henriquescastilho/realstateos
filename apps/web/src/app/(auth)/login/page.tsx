@@ -125,10 +125,10 @@ export default function LoginPage() {
           color: "var(--text-muted)",
         }}
       >
-        Não tem conta?{" "}
-        <Link href="/register" className="inline-link">
-          Criar conta
-        </Link>
+        Quer saber mais?{" "}
+        <a href="mailto:henrique009.hsc@gmail.com?subject=Real Estate OS — Contato" className="inline-link">
+          Entre em contato
+        </a>
       </p>
     </div>
   );
