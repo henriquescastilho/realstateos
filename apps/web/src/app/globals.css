@@ -68,7 +68,17 @@ a {
   flex-direction: column;
   gap: 24px;
   background: #f5f1e8;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.nav {
+  display: grid;
+  gap: 10px;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar-top {
@@ -91,11 +101,6 @@ a {
 
 .sidebar-copy {
   color: var(--text-secondary);
-}
-
-.nav {
-  display: grid;
-  gap: 10px;
 }
 
 .nav-link {

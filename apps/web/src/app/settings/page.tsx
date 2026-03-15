@@ -321,8 +321,6 @@ export default function SettingsPage() {
     { id: "org", label: "Perfil da organização" },
     { id: "team", label: "Equipe" },
     { id: "notifications", label: "Notificações" },
-    { id: "webhooks", label: "Webhooks" },
-    { id: "api_keys", label: "Chaves de API" },
     { id: "plan", label: "Plano" },
   ];
 

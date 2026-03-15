@@ -78,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div style={{ marginTop: "auto" }}>
+        <div style={{ marginTop: "auto", borderTop: "1px solid var(--line)", paddingTop: 16 }}>
           <OrgSwitcher />
         </div>
       </aside>
