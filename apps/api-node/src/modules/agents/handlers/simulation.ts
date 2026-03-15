@@ -250,7 +250,7 @@ Inclua no relatório:
   try {
     report = await callGemini(reportPrompt);
     steps.push({
-      agent: "Gemini AI",
+      agent: "REOS AI",
       status: "completed",
       confidence: 0.95,
       summary: "Relatório executivo gerado com sucesso",
@@ -259,7 +259,7 @@ Inclua no relatório:
     });
   } catch (err) {
     report = "Falha ao gerar relatório com IA.";
-    steps.push({ agent: "Gemini AI", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
+    steps.push({ agent: "REOS AI", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
   }
 
   // ── Step 7: Send email report ──

@@ -280,7 +280,7 @@ export default function AgentsPage() {
             {simResult.report && (
               <details style={{ marginTop: 16 }}>
                 <summary style={{ cursor: "pointer", fontSize: "0.92rem", fontWeight: 600 }}>
-                  Ver Relatório Completo (Gemini)
+                  Ver Relatório Completo (REOS AI)
                 </summary>
                 <div
                   style={{
