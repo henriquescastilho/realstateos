@@ -93,7 +93,7 @@ function BarChart({
   labels: string[];
   height?: number;
 }) {
-  const allValues = series.flatMap((s) => s.values);
+  const allValues = series.flatMap((s) => s.values.map((v) => Number(v) || 0));
   const maxVal = Math.max(...allValues, 1);
   const cols = labels.length;
   const barWidth = 14;
@@ -141,7 +141,7 @@ function BarChart({
         return (
           <g key={label}>
             {series.map((s, si) => {
-              const barH = (s.values[ci] / maxVal) * chartH;
+              const barH = ((Number(s.values[ci]) || 0) / maxVal) * chartH;
               const x = groupX + si * (barWidth + gap);
               const y = chartH - barH;
               return (
@@ -189,17 +189,18 @@ function LineChart({
   height?: number;
   formatY?: (v: number) => string;
 }) {
-  const maxVal = Math.max(...values, 0.01);
-  const minVal = Math.min(...values, 0);
+  const safeValues = values.map((v) => Number(v) || 0);
+  const maxVal = Math.max(...safeValues, 0.01);
+  const minVal = Math.min(...safeValues, 0);
   const range = maxVal - minVal || 1;
   const padLeft = 48;
   const padBottom = 24;
   const chartH = height - padBottom;
   const w = 600;
   const step =
-    values.length > 1 ? (w - padLeft) / (values.length - 1) : w - padLeft;
+    safeValues.length > 1 ? (w - padLeft) / (safeValues.length - 1) : w - padLeft;
 
-  const pts = values
+  const pts = safeValues
     .map((v, i) => {
       const x = padLeft + i * step;
       const y = chartH - ((v - minVal) / range) * chartH;
@@ -241,7 +242,7 @@ function LineChart({
         strokeWidth={2}
         strokeLinejoin="round"
       />
-      {values.map((v, i) => {
+      {safeValues.map((v, i) => {
         const x = padLeft + i * step;
         const y = chartH - ((v - minVal) / range) * chartH;
         return (
@@ -613,7 +614,7 @@ export default function ReportsPage() {
               >
                 <div style={{ marginTop: "1rem" }}>
                   <LineChart
-                    values={defaultTrend.map((d) => d.rate * 100)}
+                    values={defaultTrend.map((d) => (Number(d.rate) || 0) * 100)}
                     labels={defaultLabels}
                     color="var(--color-danger)"
                     height={160}
@@ -669,7 +670,7 @@ export default function ReportsPage() {
                       Total de chamados
                     </p>
                     <p style={{ fontWeight: 700 }}>
-                      {maintenance.reduce((s, m) => s + m.tickets, 0)}
+                      {maintenance.reduce((s, m) => s + (Number(m.tickets) || 0), 0)}
                     </p>
                   </div>
                 </div>

@@ -93,8 +93,9 @@ reportsRouter.get(
       const rows = await db
         .select({
           month: charges.billingPeriod,
-          charged: sql<number>`coalesce(sum(${charges.grossAmount}::numeric), 0)::float`,
+          expected: sql<number>`coalesce(sum(${charges.grossAmount}::numeric), 0)::float`,
           received: sql<number>`coalesce(sum(case when ${charges.paymentStatus} = 'paid' then ${charges.grossAmount}::numeric else 0 end), 0)::float`,
+          overdue: sql<number>`coalesce(sum(case when ${charges.paymentStatus} = 'overdue' then ${charges.grossAmount}::numeric else 0 end), 0)::float`,
         })
         .from(charges)
         .where(eq(charges.orgId, orgId))
@@ -128,10 +129,9 @@ reportsRouter.get(
 
       const trend = rows.map((r) => ({
         month: r.month,
-        total_charges: r.total,
-        overdue_charges: r.overdue,
-        default_rate_pct:
-          r.total > 0 ? Math.round((r.overdue / r.total) * 1000) / 10 : 0,
+        rate:
+          r.total > 0 ? Math.round((r.overdue / r.total) * 1000) / 10 / 100 : 0,
+        overdue_count: r.overdue,
       }));
 
       ok(res, trend);
