@@ -383,6 +383,7 @@ export default function ReportsPage() {
   });
 
   const maintLabels = maintenance.map((m) => {
+    if (!m.month) return "—";
     const [, mo] = m.month.split("-");
     return MONTH_ABBR[parseInt(mo, 10) - 1] ?? m.month;
   });

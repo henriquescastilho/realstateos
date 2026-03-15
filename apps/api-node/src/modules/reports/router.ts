@@ -141,7 +141,7 @@ reportsRouter.get(
   },
 );
 
-// GET /reports/maintenance — maintenance ticket summary
+// GET /reports/maintenance — monthly maintenance cost/ticket summary
 reportsRouter.get(
   "/reports/maintenance",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -150,14 +150,21 @@ reportsRouter.get(
 
       const rows = await db
         .select({
-          status: maintenanceTickets.status,
-          count: sql<number>`count(*)::int`,
+          month: sql<string>`to_char(${maintenanceTickets.createdAt}, 'YYYY-MM')`,
+          tickets: sql<number>`count(*)::int`,
         })
         .from(maintenanceTickets)
         .where(eq(maintenanceTickets.orgId, orgId))
-        .groupBy(maintenanceTickets.status);
+        .groupBy(sql`to_char(${maintenanceTickets.createdAt}, 'YYYY-MM')`)
+        .orderBy(sql`to_char(${maintenanceTickets.createdAt}, 'YYYY-MM')`);
 
-      ok(res, rows);
+      const result = rows.map((r) => ({
+        month: r.month,
+        cost: 0,
+        tickets: r.tickets,
+      }));
+
+      ok(res, result);
     } catch (err) {
       next(err);
     }
