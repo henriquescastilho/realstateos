@@ -24,7 +24,7 @@ export type Property = {
   state: string;
   zip: string;
   owner_id: string;
-  iptu_registration_number?: string | null;
+  municipal_registration?: string | null;
 };
 
 export type Contract = {
@@ -89,4 +89,24 @@ export type PaymentResult = {
   boleto_url: string;
   barcode: string;
   pix_qrcode: string;
+};
+
+export type AgentRegistryEntry = {
+  id: string;
+  name: string;
+  description: string;
+  taskType: string;
+  schedule: string | null;
+  icon: string;
+  totalTasks: number;
+  lastExecutedAt: string | null;
+  currentStatus: "active" | "idle" | "error";
+};
+
+export type OrchestratorEvent = {
+  id: string;
+  orgId: string;
+  eventType: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
 };
