@@ -71,7 +71,7 @@ async function callGemini(prompt: string): Promise<string> {
   if (!GEMINI_API_KEY) return "Gemini API key not configured.";
 
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -90,8 +90,17 @@ Inclua: resumo executivo, detalhamento por etapa, métricas, previsões e recome
     },
   );
 
+  if (!resp.ok) {
+    console.error(`[callGemini] HTTP ${resp.status}: ${await resp.text()}`);
+    return "Análise indisponível no momento.";
+  }
   const json = await resp.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-  return json.candidates?.[0]?.content?.parts?.[0]?.text ?? "Falha ao gerar relatório.";
+  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    console.error("[callGemini] Empty response:", JSON.stringify(json).slice(0, 500));
+    return "Análise indisponível no momento.";
+  }
+  return text;
 }
 
 export async function runSimulation(
@@ -324,43 +333,59 @@ Inclua no relatório:
   start = Date.now();
 
   const adminFeePercent = parseFloat(String(contract.adminFeePercent ?? "10"));
-  const rentAmountNum = parseFloat(String(contract.rentAmount));
-  const adminFeeAmount = (rentAmountNum * adminFeePercent / 100).toFixed(2);
-  const netPayout = (rentAmountNum - parseFloat(adminFeeAmount)).toFixed(2);
 
-  // Buscar chave PIX do proprietário para incluir no boleto
-  const ownerPrefs = owner?.payoutPreferences as Record<string, unknown> | null;
-  const ownerPixKey = ownerPrefs?.pixKey as string | undefined;
+  // Usar os lineItems reais da cobrança para calcular valores corretos
+  const chargeLineItems = (chargeAfterIssue?.lineItems ?? [{ type: "rent", description: "Aluguel", amount: String(contract.rentAmount), source: "contract" }]) as Array<{ type: string; description: string; amount: string; source?: string }>;
+  const grossAmountNum = parseFloat(chargeAfterIssue?.grossAmount ?? String(contract.rentAmount));
+  const adminFeeAmount = (grossAmountNum * adminFeePercent / 100).toFixed(2);
+  const netPayout = (grossAmountNum - parseFloat(adminFeeAmount)).toFixed(2);
 
-  // PDF 1: Boleto do inquilino (com PIX Copia e Cola)
+  // Gerar barcode mock se a charge não tem (ex: Santander indisponível)
+  const chargeDueDate = chargeAfterIssue?.dueDate ?? new Date(nextMonth.getFullYear(), nextMonth.getMonth(), contract.dueDateDay ?? 10).toISOString().split("T")[0];
+  const chargeNetAmount = chargeAfterIssue?.netAmount ?? String(contract.rentAmount);
+  let barcodeValue = chargeAfterIssue?.barcode ?? undefined;
+  let digitableLineValue = chargeAfterIssue?.digitableLine ?? undefined;
+  if (!barcodeValue) {
+    const amtCents = Math.round(parseFloat(chargeNetAmount) * 100).toString().padStart(10, "0");
+    const dueFactor = Math.floor((new Date(chargeDueDate).getTime() - new Date("1997-10-07").getTime()) / 86400000).toString().padStart(4, "0");
+    barcodeValue = `23793${dueFactor}${amtCents}381286000000043380000000012`;
+    digitableLineValue = `23793.38128 60000.000433 80000.000125 ${barcodeValue[4]} ${dueFactor}${amtCents}`;
+  }
+
+  // PDF 1: Boleto do inquilino (sem PIX — apenas código de barras)
   const boletoHtml = renderBoletoHtml({
     orgName,
     tenantName,
     propertyAddress,
     billingPeriod,
-    dueDate: chargeAfterIssue?.dueDate ?? new Date(nextMonth.getFullYear(), nextMonth.getMonth(), contract.dueDateDay ?? 10).toISOString().split("T")[0],
-    lineItems: (chargeAfterIssue?.lineItems ?? [{ type: "rent", description: "Aluguel", amount: String(contract.rentAmount), source: "contract" }]).map((li) => ({
+    dueDate: chargeDueDate,
+    lineItems: chargeLineItems.map((li) => ({
       description: li.description,
       amount: li.amount,
     })),
     grossAmount: chargeAfterIssue?.grossAmount ?? String(contract.rentAmount),
     penaltyAmount: chargeAfterIssue?.penaltyAmount ?? "0.00",
     discountAmount: chargeAfterIssue?.discountAmount ?? "0.00",
-    netAmount: chargeAfterIssue?.netAmount ?? String(contract.rentAmount),
-    barcode: chargeAfterIssue?.barcode ?? undefined,
-    digitableLine: chargeAfterIssue?.digitableLine ?? undefined,
-    pixEmv: chargeAfterIssue?.pixEmv ?? undefined,
-    pixKey: ownerPixKey,
+    netAmount: chargeNetAmount,
+    barcode: barcodeValue,
+    digitableLine: digitableLineValue,
   });
 
   // PDF 2: Extrato de repasse do proprietário
+  // Incluir todos os itens da cobrança como receita (aluguel, condomínio, etc.)
+  const incomeEntries = chargeLineItems.map((li) => ({
+    type: "income" as const,
+    description: `${li.description} — ${tenantName}`,
+    amount: li.amount,
+  }));
+
   const statementHtml = renderStatementHtml({
     orgName,
     ownerName,
     propertyAddress,
     statementPeriod: billingPeriod,
     entries: [
-      { type: "income", description: `Aluguel recebido — ${tenantName}`, amount: String(contract.rentAmount) },
+      ...incomeEntries,
       { type: "admin_fee", description: `Taxa de administração (${adminFeePercent}%)`, amount: `-${adminFeeAmount}` },
     ],
     totalPayout: netPayout,

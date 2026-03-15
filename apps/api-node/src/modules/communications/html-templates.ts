@@ -185,39 +185,8 @@ export function renderBoletoHtml(data: BoletoTemplateData): string {
       </table>`
     : "";
 
-  // Seção PIX — prioriza PIX Copia e Cola (EMV) quando disponível
-  const pixContent = data.pixEmv || data.pixKey;
-  const pixLabel = data.pixEmv ? "PIX Copia e Cola" : "Chave PIX";
-  const pixInstructions = data.pixEmv
-    ? "Copie o código abaixo e cole na opção <strong>PIX Copia e Cola</strong> do app do seu banco:"
-    : "Copie a chave abaixo e cole no app do seu banco:";
-  const pixHtml = pixContent
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px;">
-        <tr>
-          <td style="padding:16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;">
-            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-              <tr>
-                <td>
-                  <p style="margin:0 0 4px;font-size:11px;color:${COLORS.success};text-transform:uppercase;letter-spacing:1px;font-weight:600;">Pague com PIX</p>
-                  <p style="margin:0 0 4px;font-size:10px;color:${COLORS.textSecondary};text-transform:uppercase;letter-spacing:0.5px;">${pixLabel}</p>
-                  <p style="margin:0 0 8px;font-size:13px;color:${COLORS.textSecondary};">${pixInstructions}</p>
-                  <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
-                    <tr>
-                      <td style="background:${COLORS.white};border:1px solid #a7f3d0;border-radius:6px;padding:12px 16px;">
-                        <p style="margin:0;font-size:${data.pixEmv ? "12px" : "15px"};font-weight:600;color:${COLORS.text};font-family:'Courier New',monospace;word-break:break-all;line-height:1.4;">
-                          ${pixContent}
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                  <p style="margin:8px 0 0;font-size:12px;color:${COLORS.textSecondary};">Valor: <strong>${formatBRL(data.netAmount)}</strong> &bull; O valor já está embutido no código PIX.</p>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>`
-    : "";
+  // PIX removido — chave incorreta; manter apenas código de barras
+  const pixHtml = "";
 
   const content = `
     <!-- Saudação -->
