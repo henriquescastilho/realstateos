@@ -156,9 +156,6 @@ export default function AgentsPage() {
                     <strong>{agent.name}</strong>
                     <span className="alive-dot" />
                   </div>
-                  <p className="muted-text" style={{ margin: 0 }}>
-                    {agent.schedule ?? "Automático"}
-                  </p>
                 </div>
               </div>
               <p style={{ margin: "0 0 12px", color: "var(--text-secondary)", fontSize: "0.88rem" }}>
