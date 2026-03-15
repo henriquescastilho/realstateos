@@ -28,19 +28,27 @@ reportsRouter.get(
           ),
         );
 
-      const vacancyRate =
+      // Occupancy rate as decimal (0-1)
+      const occupancyRate =
         propCount.count > 0
-          ? Math.round(((propCount.count - activeContracts.count) / propCount.count) * 1000) / 10
+          ? activeContracts.count / propCount.count
           : 0;
 
-      const [revenue] = await db
+      // Monthly revenue (average per month from paid charges)
+      const [revenueData] = await db
         .select({
           total: sql<number>`coalesce(sum(case when ${charges.paymentStatus} = 'paid' then ${charges.grossAmount}::numeric else 0 end), 0)::float`,
+          months: sql<number>`greatest(count(distinct ${charges.billingPeriod}), 1)::int`,
+          paid_count: sql<number>`count(*) filter (where ${charges.paymentStatus} = 'paid')::int`,
+          paid_sum: sql<number>`coalesce(sum(case when ${charges.paymentStatus} = 'paid' then ${charges.grossAmount}::numeric else 0 end), 0)::float`,
         })
         .from(charges)
         .where(eq(charges.orgId, orgId));
 
-      // Default rate: overdue / (overdue + paid + open) for last 3 months
+      const monthlyRevenue = revenueData.total / revenueData.months;
+      const avgTicket = revenueData.paid_count > 0 ? revenueData.paid_sum / revenueData.paid_count : 0;
+
+      // Default rate as decimal (0-1): overdue / total for last 3 months
       const threeMonthsAgo = new Date();
       threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
       const threeMonthsAgoStr = threeMonthsAgo.toISOString().slice(0, 10);
@@ -63,19 +71,19 @@ reportsRouter.get(
           ),
         );
 
+      // Return as decimal 0-1 (frontend multiplies by 100)
       const defaultRate =
         totalCharges.count > 0
-          ? Math.round((overdueCharges.count / totalCharges.count) * 1000) / 10
+          ? overdueCharges.count / totalCharges.count
           : 0;
 
       ok(res, {
         total_properties: propCount.count,
-        occupied: activeContracts.count,
-        vacancy_rate: vacancyRate,
-        total_revenue: revenue.total,
-        total_expenses: 0, // expenses module not yet implemented
-        net_income: revenue.total,
+        active_contracts: activeContracts.count,
+        monthly_revenue: monthlyRevenue.toFixed(2),
+        occupancy_rate: occupancyRate,
         default_rate: defaultRate,
+        avg_ticket: avgTicket.toFixed(2),
       });
     } catch (err) {
       next(err);
