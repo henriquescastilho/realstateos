@@ -1,7 +1,10 @@
+import logging
 from datetime import date
 from typing import Any
 
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger("realestateos.billing_tools")
 
 from app.services.consolidation import consolidate_pending_charges
 from app.services.monthly_billing import create_monthly_rent_charge
@@ -90,13 +93,14 @@ class BillingAgentTools:
                 "message": message,
                 "task_id": task.id,
             }
-        except Exception as exc:
+        except Exception:
+            logger.exception("Payment generation failed for charge_id=%s", charge_id)
             task = create_agent_message(
                 self.db,
                 tenant_id=self.tenant_id,
                 task_type="GENERATE_PAYMENT",
                 message="Falha ao emitir boleto; usar mock",
-                payload={"charge_id": charge_id, "error": str(exc)},
+                payload={"charge_id": charge_id},
                 status_value="FAILED",
             )
             return {
@@ -104,7 +108,7 @@ class BillingAgentTools:
                 "operation": "generate_payment",
                 "charge_id": charge_id,
                 "message": "Falha ao emitir boleto; usar mock",
-                "error": str(exc),
+                "error": "internal_error",
                 "task_id": task.id,
             }
 

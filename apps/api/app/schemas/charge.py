@@ -1,12 +1,13 @@
 from datetime import date
 from decimal import Decimal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.schemas.common import ORMModel
 
 
 class GenerateMonthlyChargeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     contract_id: str
     reference_month: date
 

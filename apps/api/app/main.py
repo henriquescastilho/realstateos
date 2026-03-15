@@ -147,7 +147,7 @@ app = FastAPI(
 )
 
 # NOTE: Middleware is applied in reverse registration order (last registered = outermost).
-# Order here: CorrelationId → SecurityHeaders → RateLimiter → CORS → Routes
+# Order here: CorrelationId → SecurityHeaders → AuditLog → RateLimiter → CORS → Routes
 
 app.add_middleware(
     CORSMiddleware,
@@ -159,6 +159,7 @@ app.add_middleware(
 )
 
 app.add_middleware(RateLimitMiddleware, redis_url=settings.redis_url)
+app.add_middleware(AuditLogMiddleware)
 app.add_middleware(SecurityHeadersMiddleware, debug=False)
 app.add_middleware(CorrelationIdMiddleware)
 # Version negotiation: Accept: application/vnd.realstateos.v1+json → /v1/…

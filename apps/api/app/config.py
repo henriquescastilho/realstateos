@@ -70,8 +70,6 @@ class Settings(BaseSettings):
 
     # ── MinIO / S3 ────────────────────────────────────────────────────────
     s3_endpoint_url: str = "http://minio:9000"
-    s3_access_key_id: str = "minioadmin"
-    s3_secret_access_key: str = "minioadmin"
     s3_bucket_name: str = "realestateos"
     s3_region: str = "us-east-1"
     upload_max_size_bytes: int = 52_428_800  # 50 MB
@@ -96,8 +94,6 @@ class Settings(BaseSettings):
     # ── Santander Bank integration ────────────────────────────────────────
     santander_sandbox_enabled: bool = True
     santander_base_url: str = "https://sandbox.santander.example"
-    santander_client_id: str = "sandbox-client-id"
-    santander_client_secret: str = "sandbox-client-secret"
     payment_mock_fallback_enabled: bool = True
 
     # ── Observability ─────────────────────────────────────────────────────
@@ -164,6 +160,20 @@ class Settings(BaseSettings):
         return self
 
     # ── Computed properties ───────────────────────────────────────────────
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def jwt_secret_must_be_strong(cls, v: str) -> str:
+        if v in ("change-me", "secret", ""):
+            raise ValueError(
+                "JWT_SECRET must be set to a strong, unique value. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
+            )
+        return v
+
+    @property
+    def is_production(self) -> bool:
+        return self.environment.lower() == "production"
 
     @property
     def cors_allowed_origins_list(self) -> list[str]:
