@@ -157,6 +157,7 @@ export default function BillingPage() {
   const [selected, setSelected] = useState<ChargeDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
+
   // ---------------------------------------------------------------------------
   // Load
   // ---------------------------------------------------------------------------
@@ -203,8 +204,7 @@ export default function BillingPage() {
     return charges.filter((c) => {
       const st = c.status?.toLowerCase();
       if (filterStatus === "open") {
-        if (st !== "pending" && st !== "overdue" && st !== "partial")
-          return false;
+        if (st !== "pending" && st !== "overdue" && st !== "partial") return false;
       } else if (filterStatus && st !== filterStatus) {
         return false;
       }
@@ -420,7 +420,11 @@ export default function BillingPage() {
           />
         </div>
         {filterMonth && (
-          <Button variant="ghost" size="sm" onClick={() => setFilterMonth("")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setFilterMonth("")}
+          >
             Limpar mês
           </Button>
         )}
@@ -607,7 +611,7 @@ export default function BillingPage() {
           >
             {detailLoading && (
               <div style={{ display: "flex", justifyContent: "center" }}>
-                <Spinner size="sm" />
+                <Spinner size={16} />
               </div>
             )}
 
@@ -857,6 +861,7 @@ export default function BillingPage() {
           </div>
         )}
       </Modal>
+
     </section>
   );
 }
