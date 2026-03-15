@@ -269,16 +269,7 @@ export default function LandingPage() {
   );
 }
 
-/* ── Agent Flow Diagram ── */
-
-const AGENTS = [
-  { name: "Radar", icon: "R" },
-  { name: "Maestro", icon: "M" },
-  { name: "Cobrador", icon: "C" },
-  { name: "Sentinela", icon: "S" },
-  { name: "Pagador", icon: "P" },
-  { name: "Contador", icon: "C" },
-];
+/* ── Agent Flow Diagram — real pipeline layout ── */
 
 function AgentFlowDiagram() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -290,141 +281,217 @@ function AgentFlowDiagram() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const W = 400;
-    const H = 400;
+    const W = 520;
+    const H = 420;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
     ctx.scale(dpr, dpr);
 
-    const cx = W / 2;
-    const cy = H / 2;
-    const radius = 140;
-    const nodeR = 30;
+    const font = "system-ui, -apple-system, sans-serif";
+    const accent = "#d98a53";
+    const accentDim = "rgba(217,138,83,0.35)";
+    const nodeBg = "rgba(25,22,18,0.9)";
+    const nodeBorder = "rgba(100,80,50,0.3)";
+    const textDim = "rgba(255,255,255,0.4)";
+    const textBright = "rgba(255,255,255,0.85)";
+    const nR = 28;
 
-    // Node positions in a circle
-    const nodes = AGENTS.map((a, i) => {
-      const angle = (i / AGENTS.length) * Math.PI * 2 - Math.PI / 2;
-      return { ...a, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
-    });
+    // Layout: top row (4 agents), bottom row (2 agents + output)
+    // Radar → Maestro → Cobrador → Sentinela
+    //                                  ↓          ↓
+    //                          Contador  ←  Pagador
+    //                              ↓
+    //                        Extrato + NF
+    const topY = 70;
+    const botY = 300;
+    const gap = 120;
+    const startX = 50;
+
+    interface Node { name: string; icon: string; x: number; y: number; }
+
+    const nodes: Node[] = [
+      { name: "Radar",     icon: "R", x: startX,            y: topY },
+      { name: "Maestro",   icon: "M", x: startX + gap,      y: topY },
+      { name: "Cobrador",  icon: "C", x: startX + gap * 2,  y: topY },
+      { name: "Sentinela", icon: "S", x: startX + gap * 3,  y: topY },
+      { name: "Pagador",   icon: "P", x: startX + gap * 3,  y: botY },
+      { name: "Contador",  icon: "C", x: startX + gap * 2,  y: botY },
+    ];
+
+    // Edges: [fromIdx, toIdx, eventLabel]
+    const edges: [number, number, string][] = [
+      [0, 1, "expense.captured"],
+      [1, 2, "charges.composed"],
+      [2, 3, "payment.received"],
+      [3, 4, "reconciliado"],
+      [4, 5, "bills_paid"],
+    ];
+
+    // Descriptions above top-row nodes
+    const topLabels = [
+      "Boleto chega",
+      "Cobranças\ncompostas",
+      "Boleto enviado\nao locatário",
+      "Pagamento\nrecebido",
+    ];
 
     let t = 0;
     let animId: number;
 
+    function drawArrow(x1: number, y1: number, x2: number, y2: number, color: string, width: number) {
+      const headLen = 8;
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const angle = Math.atan2(dy, dx);
+      ctx!.beginPath();
+      ctx!.moveTo(x1, y1);
+      ctx!.lineTo(x2, y2);
+      ctx!.strokeStyle = color;
+      ctx!.lineWidth = width;
+      ctx!.stroke();
+      // Arrowhead
+      ctx!.beginPath();
+      ctx!.moveTo(x2, y2);
+      ctx!.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
+      ctx!.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
+      ctx!.closePath();
+      ctx!.fillStyle = color;
+      ctx!.fill();
+    }
+
+    function drawNode(n: Node, active: boolean) {
+      ctx!.beginPath();
+      ctx!.roundRect(n.x - nR, n.y - nR, nR * 2, nR * 2, 12);
+      ctx!.fillStyle = active ? "rgba(35,28,22,0.98)" : nodeBg;
+      ctx!.fill();
+      ctx!.strokeStyle = active ? accent : nodeBorder;
+      ctx!.lineWidth = active ? 1.5 : 1;
+      ctx!.stroke();
+
+      if (active) {
+        const g = ctx!.createRadialGradient(n.x, n.y, 0, n.x, n.y, nR + 12);
+        g.addColorStop(0, "rgba(217,138,83,0.12)");
+        g.addColorStop(1, "rgba(217,138,83,0)");
+        ctx!.beginPath();
+        ctx!.arc(n.x, n.y, nR + 12, 0, Math.PI * 2);
+        ctx!.fillStyle = g;
+        ctx!.fill();
+      }
+
+      ctx!.fillStyle = active ? accent : accentDim;
+      ctx!.font = `bold 15px ${font}`;
+      ctx!.textAlign = "center";
+      ctx!.textBaseline = "middle";
+      ctx!.fillText(n.icon, n.x, n.y - 4);
+
+      ctx!.fillStyle = active ? textBright : textDim;
+      ctx!.font = `500 9px ${font}`;
+      ctx!.fillText(n.name, n.x, n.y + 13);
+    }
+
     function draw() {
       ctx!.clearRect(0, 0, W, H);
 
-      // Draw connection lines (edges between consecutive nodes through center)
-      for (let i = 0; i < nodes.length; i++) {
-        const from = nodes[i];
-        const next = nodes[(i + 1) % nodes.length];
-
-        ctx!.beginPath();
-        ctx!.moveTo(from.x, from.y);
-        ctx!.lineTo(next.x, next.y);
-        ctx!.strokeStyle = "rgba(180, 120, 60, 0.15)";
-        ctx!.lineWidth = 1;
-        ctx!.stroke();
-      }
-
-      // Draw lines from each node to center
-      for (const node of nodes) {
-        ctx!.beginPath();
-        ctx!.moveTo(node.x, node.y);
-        ctx!.lineTo(cx, cy);
-        ctx!.strokeStyle = "rgba(180, 120, 60, 0.08)";
-        ctx!.lineWidth = 1;
-        ctx!.stroke();
-      }
-
-      // Animated pulse traveling between nodes
-      const totalSegments = nodes.length;
-      const segProgress = (t % totalSegments);
-      const segIndex = Math.floor(segProgress);
-      const segFrac = segProgress - segIndex;
-
-      const fromNode = nodes[segIndex];
-      const toNode = nodes[(segIndex + 1) % nodes.length];
-      const pulseX = fromNode.x + (toNode.x - fromNode.x) * segFrac;
-      const pulseY = fromNode.y + (toNode.y - fromNode.y) * segFrac;
-
-      // Glowing pulse
-      const pulseGrad = ctx!.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, 18);
-      pulseGrad.addColorStop(0, "rgba(217, 138, 83, 0.7)");
-      pulseGrad.addColorStop(1, "rgba(217, 138, 83, 0)");
-      ctx!.beginPath();
-      ctx!.arc(pulseX, pulseY, 18, 0, Math.PI * 2);
-      ctx!.fillStyle = pulseGrad;
-      ctx!.fill();
-
-      // Trail highlight on active edge
-      ctx!.beginPath();
-      ctx!.moveTo(fromNode.x, fromNode.y);
-      ctx!.lineTo(pulseX, pulseY);
-      ctx!.strokeStyle = "rgba(217, 138, 83, 0.5)";
-      ctx!.lineWidth = 2;
-      ctx!.stroke();
-
-      // Draw outer nodes
-      for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
-        const isActive = i === segIndex || i === (segIndex + 1) % nodes.length;
-
-        // Node background
-        ctx!.beginPath();
-        ctx!.roundRect(node.x - nodeR, node.y - nodeR, nodeR * 2, nodeR * 2, 14);
-        ctx!.fillStyle = isActive ? "rgba(30, 25, 20, 0.95)" : "rgba(25, 22, 18, 0.85)";
-        ctx!.fill();
-        ctx!.strokeStyle = isActive ? "rgba(217, 138, 83, 0.6)" : "rgba(100, 80, 50, 0.25)";
-        ctx!.lineWidth = 1;
-        ctx!.stroke();
-
-        // Letter
-        ctx!.fillStyle = isActive ? "#d98a53" : "rgba(217, 138, 83, 0.6)";
-        ctx!.font = "bold 16px system-ui, -apple-system, sans-serif";
+      // Top-row description labels
+      for (let i = 0; i < topLabels.length; i++) {
+        const n = nodes[i];
+        ctx!.fillStyle = "rgba(255,255,255,0.3)";
+        ctx!.font = `400 9px ${font}`;
         ctx!.textAlign = "center";
-        ctx!.textBaseline = "middle";
-        ctx!.fillText(node.icon, node.x, node.y - 5);
-
-        // Label
-        ctx!.fillStyle = isActive ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)";
-        ctx!.font = "500 8px system-ui, -apple-system, sans-serif";
-        ctx!.fillText(node.name, node.x, node.y + 12);
+        const lines = topLabels[i].split("\n");
+        lines.forEach((line, li) => {
+          ctx!.fillText(line, n.x, n.y - nR - 16 + li * 12);
+        });
+        // Small down arrow
+        drawArrow(n.x, n.y - nR - 4, n.x, n.y - nR + 2, "rgba(255,255,255,0.15)", 1);
       }
 
-      // Draw center (Orquestrador)
-      const centerR = 38;
-      const centerGrad = ctx!.createLinearGradient(cx - centerR, cy - centerR, cx + centerR, cy + centerR);
-      centerGrad.addColorStop(0, "#c87f4a");
-      centerGrad.addColorStop(1, "#d98a53");
-      ctx!.beginPath();
-      ctx!.roundRect(cx - centerR, cy - centerR, centerR * 2, centerR * 2, 18);
-      ctx!.fillStyle = centerGrad;
-      ctx!.fill();
+      // Draw edges with event labels
+      for (const [fi, ti, label] of edges) {
+        const f = nodes[fi];
+        const to = nodes[ti];
+        const fx = f.x + nR;
+        const fy = f.y;
+        let tx = to.x - nR;
+        let ty = to.y;
 
-      // Center glow
-      const glowGrad = ctx!.createRadialGradient(cx, cy + centerR, 0, cx, cy + centerR, 50);
-      glowGrad.addColorStop(0, "rgba(217, 138, 83, 0.25)");
-      glowGrad.addColorStop(1, "rgba(217, 138, 83, 0)");
-      ctx!.beginPath();
-      ctx!.arc(cx, cy + centerR, 50, 0, Math.PI * 2);
-      ctx!.fillStyle = glowGrad;
-      ctx!.fill();
+        // Vertical edges
+        if (fi === 3 && ti === 4) {
+          drawArrow(f.x, f.y + nR, to.x, to.y - nR, accentDim, 1);
+          ctx!.fillStyle = "rgba(255,255,255,0.25)";
+          ctx!.font = `400 8px ${font}`;
+          ctx!.textAlign = "left";
+          ctx!.fillText(label, f.x + 6, (f.y + to.y) / 2);
+          continue;
+        }
+        if (fi === 4 && ti === 5) {
+          drawArrow(to.x + nR, to.y, f.x - nR, f.y, accentDim, 1);
+          ctx!.fillStyle = "rgba(255,255,255,0.25)";
+          ctx!.font = `400 8px ${font}`;
+          ctx!.textAlign = "center";
+          ctx!.fillText(label, (f.x + to.x) / 2, to.y - nR - 6);
+          continue;
+        }
 
-      // Center letter
-      ctx!.fillStyle = "#fff";
-      ctx!.font = "bold 22px system-ui, -apple-system, sans-serif";
+        drawArrow(fx, fy, tx, ty, accentDim, 1);
+
+        // Event label centered on edge
+        ctx!.fillStyle = "rgba(255,255,255,0.25)";
+        ctx!.font = `400 8px ${font}`;
+        ctx!.textAlign = "center";
+        ctx!.fillText(label, (f.x + to.x) / 2, fy - nR - 6);
+      }
+
+      // Output label below Contador
+      const contNode = nodes[5];
+      drawArrow(contNode.x, contNode.y + nR, contNode.x, contNode.y + nR + 28, accentDim, 1);
+      ctx!.fillStyle = "rgba(255,255,255,0.35)";
+      ctx!.font = `500 10px ${font}`;
       ctx!.textAlign = "center";
-      ctx!.textBaseline = "middle";
-      ctx!.fillText("O", cx, cy - 5);
+      ctx!.fillText("Extrato + NF", contNode.x, contNode.y + nR + 44);
+      ctx!.fillText("enviados ao proprietário", contNode.x, contNode.y + nR + 58);
 
-      // Center label
-      ctx!.fillStyle = "rgba(255,255,255,0.8)";
-      ctx!.font = "500 9px system-ui, -apple-system, sans-serif";
-      ctx!.fillText("Orquestrador", cx, cy + 14);
+      // Animated pulse traveling along the path
+      // Path: 0→1→2→3→4→5 (6 nodes, 5 edges)
+      const totalSegs = 5;
+      const progress = t % totalSegs;
+      const segIdx = Math.floor(progress);
+      const segFrac = progress - segIdx;
 
-      t += 0.012;
+      const pathOrder = [[0,1],[1,2],[2,3],[3,4],[4,5]];
+      const [si, ei] = pathOrder[segIdx];
+      const sn = nodes[si];
+      const en = nodes[ei];
+      const px = sn.x + (en.x - sn.x) * segFrac;
+      const py = sn.y + (en.y - sn.y) * segFrac;
+
+      const pg = ctx!.createRadialGradient(px, py, 0, px, py, 16);
+      pg.addColorStop(0, "rgba(217,138,83,0.65)");
+      pg.addColorStop(1, "rgba(217,138,83,0)");
+      ctx!.beginPath();
+      ctx!.arc(px, py, 16, 0, Math.PI * 2);
+      ctx!.fillStyle = pg;
+      ctx!.fill();
+
+      // Draw nodes (after edges so they're on top)
+      for (let i = 0; i < nodes.length; i++) {
+        const isActive = i === si || i === ei;
+        drawNode(nodes[i], isActive);
+      }
+
+      // Orquestrador badge at bottom center
+      ctx!.fillStyle = "rgba(217,138,83,0.1)";
+      ctx!.beginPath();
+      ctx!.roundRect(W / 2 - 120, H - 30, 240, 24, 8);
+      ctx!.fill();
+      ctx!.fillStyle = "rgba(255,255,255,0.4)";
+      ctx!.font = `500 9px ${font}`;
+      ctx!.textAlign = "center";
+      ctx!.fillText("Orquestrador — escuta eventos e dispara o próximo agente", W / 2, H - 14);
+
+      t += 0.008;
       animId = requestAnimationFrame(draw);
     }
 
@@ -436,7 +503,7 @@ function AgentFlowDiagram() {
     <canvas
       ref={canvasRef}
       className="lp-flow-canvas"
-      style={{ width: 400, height: 400 }}
+      style={{ width: 520, height: 420 }}
     />
   );
 }
