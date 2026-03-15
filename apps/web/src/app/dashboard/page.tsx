@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
-import { authFetch } from "@/lib/auth";
 import type { TaskRecord } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -38,10 +37,22 @@ interface BillingAnalytics {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+const NODE_API =
+  process.env.NEXT_PUBLIC_NODE_API_URL ?? "http://localhost:3001/api/v1";
 
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await authFetch(path.startsWith("/") ? path : `/${path}`);
+  const url = `${NODE_API}${path.startsWith("/") ? path : `/${path}`}`;
+  const token =
+    typeof window !== "undefined"
+      ? JSON.parse(
+          localStorage.getItem("realstateos_auth") ??
+            sessionStorage.getItem("realstateos_auth") ??
+            "{}",
+        )?.accessToken
+      : null;
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(url, { headers, cache: "no-store" });
   if (!res.ok) throw new Error(`${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -236,20 +247,13 @@ export default function DashboardPage() {
         const [kpisData, billingData, tasksData] = await Promise.allSettled([
           apiFetch<PortfolioKPIs>("/analytics/portfolio"),
           apiFetch<BillingAnalytics>("/analytics/billing"),
-          apiFetch<{ items: TaskRecord[] } | TaskRecord[]>(
-            "/tasks?per_page=10",
-          ),
+          apiFetch<TaskRecord[]>("/analytics/tasks?per_page=10"),
         ]);
         if (kpisData.status === "fulfilled") setKpis(kpisData.value);
         if (billingData.status === "fulfilled")
           setBilling(billingData.value.months ?? []);
         if (tasksData.status === "fulfilled") {
-          const raw = tasksData.value;
-          setTasks(
-            Array.isArray(raw)
-              ? raw.slice(0, 8)
-              : (raw.items ?? []).slice(0, 8),
-          );
+          setTasks((tasksData.value ?? []).slice(0, 8));
         }
       } catch (e) {
         setError(
@@ -308,9 +312,11 @@ export default function DashboardPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: 14,
             marginBottom: 28,
+            minWidth: 0,
+            width: "100%",
           }}
         >
           <KpiCard

@@ -61,7 +61,7 @@ async function processRemindersJob(data: RemindersJobData): Promise<{ reminders:
   const upcoming = await db
     .select({
       chargeId: charges.id,
-      contractId: charges.contractId,
+      contractId: charges.leaseContractId,
       grossAmount: charges.grossAmount,
       dueDate: charges.dueDate,
     })

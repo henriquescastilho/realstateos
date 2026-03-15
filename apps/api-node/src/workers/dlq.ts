@@ -84,7 +84,6 @@ async function processDlqJob(data: DlqJobData): Promise<{ escalated: boolean }> 
       escalatedAt: new Date().toISOString(),
     },
     output: null,
-    agentName: "dlq_worker",
     attemptCount: 0,
     failureReason: null,
   });

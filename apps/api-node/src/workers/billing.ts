@@ -104,7 +104,7 @@ async function processBillingJob(
       .from(charges)
       .where(
         and(
-          eq(charges.contractId, contract.id),
+          eq(charges.leaseContractId, contract.id),
           eq(charges.billingPeriod, billingPeriod),
           eq(charges.orgId, orgId),
         ),
@@ -117,17 +117,17 @@ async function processBillingJob(
     }
 
     const rentAmount = String(contract.rentAmount ?? "0");
-    const dueDate = `${billingPeriod}-${String(contract.paymentDueDay ?? 5).padStart(2, "0")}`;
+    const dueDate = `${billingPeriod}-05`; // default due day 5th
 
     await db.insert(charges).values({
       orgId,
-      contractId: contract.id,
+      leaseContractId: contract.id,
       billingPeriod,
       dueDate,
       grossAmount: rentAmount,
       netAmount: rentAmount,
       paymentStatus: "open",
-      chargeComposition: { rent: rentAmount, fees: "0.00", adjustments: "0.00" },
+      lineItems: [{ type: "rent", description: "Aluguel", amount: rentAmount, source: "contract" }],
     });
 
     generated++;
