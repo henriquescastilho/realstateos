@@ -2,7 +2,7 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-COPY apps/web/package.json /app/package.json
+COPY package.json /app/package.json
 RUN npm install
 
 FROM node:22-alpine AS builder
@@ -10,7 +10,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules /app/node_modules
-COPY apps/web/ /app/
+COPY . /app/
 
 RUN npm run build
 
