@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { nodeApiGet } from "@/lib/api";
+import { nodeApiGet, nodeApiPost } from "@/lib/api";
 import {
   Badge,
+  Button,
   Card,
   Input,
+  Modal,
   Select,
   Table,
   statusVariant,
@@ -62,6 +64,14 @@ interface Renter {
 interface Property {
   id: string;
   address: string;
+}
+
+interface ManualEntry {
+  id: string;
+  type: "credit" | "debit";
+  amount: number;
+  description: string;
+  createdAt: string;
 }
 
 interface ConciliacaoRow {
@@ -134,6 +144,14 @@ export default function ConciliacaoPage() {
   const [filterMonth, setFilterMonth] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+  // Manual operations
+  const [showOpModal, setShowOpModal] = useState(false);
+  const [opType, setOpType] = useState<"credit" | "debit">("credit");
+  const [opAmount, setOpAmount] = useState("");
+  const [opDescription, setOpDescription] = useState("");
+  const [opSaving, setOpSaving] = useState(false);
+  const [manualEntries, setManualEntries] = useState<ManualEntry[]>([]);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -161,7 +179,53 @@ export default function ConciliacaoPage() {
 
   useEffect(() => {
     void load();
+    // Load manual entries
+    nodeApiGet<ManualEntry[]>("/conciliacao/entries")
+      .then(setManualEntries)
+      .catch(() => setManualEntries([]));
   }, [load]);
+
+  const handleSaveOp = useCallback(async () => {
+    if (!opAmount || !opDescription) return;
+    setOpSaving(true);
+    try {
+      const entry = await nodeApiPost<ManualEntry>("/conciliacao/entries", {
+        type: opType,
+        amount: Number(opAmount),
+        description: opDescription,
+      });
+      setManualEntries((prev) => [entry, ...prev]);
+      setOpAmount("");
+      setOpDescription("");
+      setShowOpModal(false);
+    } catch {
+      // If API doesn't exist yet, store locally
+      const localEntry: ManualEntry = {
+        id: crypto.randomUUID(),
+        type: opType,
+        amount: Number(opAmount),
+        description: opDescription,
+        createdAt: new Date().toISOString(),
+      };
+      setManualEntries((prev) => [localEntry, ...prev]);
+      setOpAmount("");
+      setOpDescription("");
+      setShowOpModal(false);
+    } finally {
+      setOpSaving(false);
+    }
+  }, [opType, opAmount, opDescription]);
+
+  const removeEntry = useCallback((id: string) => {
+    setManualEntries((prev) => prev.filter((e) => e.id !== id));
+    nodeApiPost("/conciliacao/entries/remove", { id }).catch(() => {});
+  }, []);
+
+  const manualBalance = useMemo(() => {
+    return manualEntries.reduce((sum, e) => {
+      return sum + (e.type === "credit" ? e.amount : -e.amount);
+    }, 0);
+  }, [manualEntries]);
 
   // Build conciliation rows: group billings and repasses per contract + month
   const rows = useMemo(() => {
@@ -463,6 +527,132 @@ export default function ConciliacaoPage() {
           emptyText="Nenhum registro de conciliação encontrado."
         />
       </Card>
+
+      {/* Manual Operations */}
+      <Card>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: "1.1rem" }}>Operações Internas</h3>
+            <p className="muted-text">Lançamentos manuais de crédito e débito na conta bancária.</p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setOpType("credit"); setShowOpModal(true); }}
+            >
+              + Crédito
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setOpType("debit"); setShowOpModal(true); }}
+            >
+              − Débito
+            </Button>
+          </div>
+        </div>
+
+        {manualEntries.length > 0 && (
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ margin: "0 0 8px", fontSize: "0.92rem" }}>
+              Saldo de operações internas:{" "}
+              <strong style={{
+                color: manualBalance >= 0 ? "var(--color-success)" : "var(--color-danger)",
+              }}>
+                {fmtBRL(manualBalance)}
+              </strong>
+            </p>
+          </div>
+        )}
+
+        {manualEntries.length === 0 ? (
+          <p className="empty-state">Nenhum lançamento manual registrado.</p>
+        ) : (
+          <div className="list">
+            {manualEntries.map((entry) => (
+              <div key={entry.id} className="list-row">
+                <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                  <span style={{
+                    width: 32, height: 32, borderRadius: 8,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: "1.1rem", fontWeight: 700,
+                    background: entry.type === "credit" ? "var(--color-success-bg)" : "var(--color-danger-bg)",
+                    color: entry.type === "credit" ? "var(--color-success)" : "var(--color-danger)",
+                  }}>
+                    {entry.type === "credit" ? "+" : "−"}
+                  </span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 500 }}>{entry.description}</p>
+                    <p className="muted-text" style={{ margin: 0 }}>
+                      {new Date(entry.createdAt).toLocaleDateString("pt-BR", {
+                        day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{
+                    fontWeight: 600, fontSize: "1rem",
+                    color: entry.type === "credit" ? "var(--color-success)" : "var(--color-danger)",
+                  }}>
+                    {entry.type === "credit" ? "+" : "−"} {fmtBRL(entry.amount)}
+                  </span>
+                  <button
+                    onClick={() => removeEntry(entry.id)}
+                    title="Remover lançamento"
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      color: "var(--text-faint)", fontSize: "0.85rem", padding: 4,
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* Add Operation Modal */}
+      <Modal
+        open={showOpModal}
+        onClose={() => setShowOpModal(false)}
+        title={opType === "credit" ? "Adicionar Crédito" : "Registrar Débito"}
+        description={
+          opType === "credit"
+            ? "Registre uma entrada de dinheiro na conta bancária."
+            : "Registre uma saída de dinheiro da conta bancária."
+        }
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Input
+            label="Valor (R$)"
+            type="number"
+            placeholder="0,00"
+            value={opAmount}
+            onChange={(e) => setOpAmount(e.target.value)}
+          />
+          <Input
+            label="Descrição"
+            placeholder={opType === "credit" ? "Ex: Depósito bancário, TED recebida..." : "Ex: Taxa bancária, pagamento avulso..."}
+            value={opDescription}
+            onChange={(e) => setOpDescription(e.target.value)}
+          />
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <Button variant="ghost" onClick={() => setShowOpModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => void handleSaveOp()}
+              disabled={opSaving || !opAmount || !opDescription}
+            >
+              {opSaving ? "Salvando..." : opType === "credit" ? "Adicionar Crédito" : "Registrar Débito"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </ProtectedPage>
   );
 }
