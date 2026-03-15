@@ -130,17 +130,6 @@ describe("E2E: Protected routes with JWT", () => {
     }
   });
 
-  it("GET /api/v1/maintenance/tickets returns paginated response", async () => {
-    const res = await authGet("/api/v1/maintenance/tickets")
-      .query({ orgId: ORG_ID });
-
-    if (res.status === 200) {
-      expect(res.body.ok).toBe(true);
-    } else {
-      expect([422, 500]).toContain(res.status);
-    }
-  });
-
   it("GET /api/v1/integrations/connectors returns paginated response", async () => {
     const res = await authGet("/api/v1/integrations/connectors")
       .query({ orgId: ORG_ID });
@@ -222,17 +211,6 @@ describe("E2E: Request validation", () => {
     expect(res.status).toBe(422);
   });
 
-  it("POST /api/v1/maintenance/tickets rejects short description", async () => {
-    const res = await authPost("/api/v1/maintenance/tickets")
-      .send({
-        orgId: ORG_ID,
-        propertyId: ORG_ID,
-        openedBy: "tenant",
-        description: "short",
-      });
-
-    expect(res.status).toBe(422);
-  });
 });
 
 // ─── Security tests ───

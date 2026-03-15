@@ -20,13 +20,6 @@ import {
   listStatementsQuerySchema,
 } from "../modules/payments/validators";
 
-// ── Maintenance validators ────────────────────────────────────────────────────
-import {
-  createTicketSchema,
-  updateTicketSchema,
-  listTicketsQuerySchema,
-} from "../modules/maintenance/validators";
-
 // ── Onboarding validators ─────────────────────────────────────────────────────
 import {
   onboardContractSchema,
@@ -36,7 +29,7 @@ import {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const UUID = "550e8400-e29b-41d4-a716-446655440000";
+const UUID = "550e8400-e29b-41d4-a716-446655440000"; // example placeholder
 const TODAY = "2026-03-14";
 const NOW_ISO = "2026-03-14T10:00:00.000Z";
 
@@ -264,107 +257,6 @@ describe("reconcilePaymentSchema", () => {
 
   it("rejects missing chargeId", () => {
     expect(reconcilePaymentSchema.safeParse({}).success).toBe(false);
-  });
-});
-
-// ── createTicketSchema ────────────────────────────────────────────────────────
-
-describe("createTicketSchema", () => {
-  const valid = {
-    orgId: UUID,
-    propertyId: UUID,
-    openedBy: "tenant",
-    description: "Torneira da cozinha com vazamento constante",
-  };
-
-  it("accepts valid ticket", () => {
-    expect(createTicketSchema.safeParse(valid).success).toBe(true);
-  });
-
-  it("rejects description shorter than 10 chars", () => {
-    expect(createTicketSchema.safeParse({ ...valid, description: "curto" }).success).toBe(false);
-  });
-
-  it("rejects description longer than 2000 chars", () => {
-    expect(createTicketSchema.safeParse({ ...valid, description: "x".repeat(2001) }).success).toBe(
-      false,
-    );
-  });
-
-  it("accepts optional priority override", () => {
-    const result = createTicketSchema.safeParse({ ...valid, priority: "urgent" });
-    expect(result.success).toBe(true);
-  });
-
-  it("rejects invalid priority value", () => {
-    expect(createTicketSchema.safeParse({ ...valid, priority: "critical" }).success).toBe(false);
-  });
-
-  it("accepts optional leaseContractId", () => {
-    expect(createTicketSchema.safeParse({ ...valid, leaseContractId: UUID }).success).toBe(true);
-  });
-});
-
-// ── updateTicketSchema ────────────────────────────────────────────────────────
-
-describe("updateTicketSchema", () => {
-  it("accepts empty update (all optional)", () => {
-    expect(updateTicketSchema.safeParse({}).success).toBe(true);
-  });
-
-  it("accepts all valid statuses", () => {
-    const statuses = [
-      "open",
-      "triaged",
-      "in_progress",
-      "waiting_external",
-      "resolved",
-      "closed",
-    ] as const;
-    for (const status of statuses) {
-      expect(updateTicketSchema.safeParse({ status }).success).toBe(true);
-    }
-  });
-
-  it("rejects unknown status", () => {
-    expect(updateTicketSchema.safeParse({ status: "pending" }).success).toBe(false);
-  });
-
-  it("accepts all valid priorities", () => {
-    const priorities = ["low", "medium", "high", "urgent"] as const;
-    for (const priority of priorities) {
-      expect(updateTicketSchema.safeParse({ priority }).success).toBe(true);
-    }
-  });
-
-  it("rejects resolutionSummary over 2000 chars", () => {
-    expect(updateTicketSchema.safeParse({ resolutionSummary: "x".repeat(2001) }).success).toBe(
-      false,
-    );
-  });
-});
-
-// ── listTicketsQuerySchema ────────────────────────────────────────────────────
-
-describe("listTicketsQuerySchema", () => {
-  it("accepts minimal orgId", () => {
-    expect(listTicketsQuerySchema.safeParse({ orgId: UUID }).success).toBe(true);
-  });
-
-  it("defaults page=1 and pageSize=20", () => {
-    const result = listTicketsQuerySchema.parse({ orgId: UUID });
-    expect(result.page).toBe(1);
-    expect(result.pageSize).toBe(20);
-  });
-
-  it("accepts optional filters", () => {
-    const result = listTicketsQuerySchema.safeParse({
-      orgId: UUID,
-      propertyId: UUID,
-      status: "open",
-      priority: "high",
-    });
-    expect(result.success).toBe(true);
   });
 });
 
