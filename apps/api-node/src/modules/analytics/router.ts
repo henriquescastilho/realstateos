@@ -81,10 +81,24 @@ analyticsRouter.get(
           ),
         );
 
+      // Admin fee revenue: sum of (rentAmount * adminFeePercent / 100) for active contracts
+      const [adminFeeRow] = await db
+        .select({
+          total: sql<number>`coalesce(sum(${leaseContracts.rentAmount}::numeric * coalesce(${leaseContracts.adminFeePercent}::numeric, 10) / 100), 0)::float`,
+        })
+        .from(leaseContracts)
+        .where(
+          and(
+            eq(leaseContracts.orgId, orgId),
+            eq(leaseContracts.operationalStatus, "active"),
+          ),
+        );
+
       ok(res, {
         active_contracts: contractRows.count,
         total_properties: propertyRows.count,
         monthly_revenue: revenueRow.total,
+        admin_fee_revenue: adminFeeRow.total,
         default_rate_3m_pct: Math.round(defaultRate * 10) / 10,
         open_escalations: escalations.count,
       });

@@ -1,56 +1,56 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
-import { getBalanceSnapshot, subscribeBalance, formatBRL, fetchBalanceFromAPI, getBalanceError, isBalanceLoading } from "@/lib/balance";
+import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
+import { apiGet } from "@/lib/api";
 
-function useBalanceStore<T>(selector: () => T): T {
-  return useSyncExternalStore(subscribeBalance, selector, selector);
+interface RevenueData {
+  monthly_revenue: number;
+  admin_fee_revenue: number;
+}
+
+function fmtBRL(n: number): string {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
 }
 
 export function BalanceWidget() {
-  const balance = useBalanceStore(getBalanceSnapshot);
-  const error = useBalanceStore(getBalanceError);
-  const loading = useBalanceStore(isBalanceLoading);
+  const [data, setData] = useState<RevenueData | null>(null);
 
-  const hasError = !loading && error;
+  useEffect(() => {
+    apiGet<{ monthly_revenue?: number; admin_fee_revenue?: number }>("/v1/analytics/portfolio")
+      .then((r) => setData({
+        monthly_revenue: Number(r.monthly_revenue) || 0,
+        admin_fee_revenue: Number(r.admin_fee_revenue) || 0,
+      }))
+      .catch(() => {});
+  }, []);
+
+  if (!data) return null;
 
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "0.5rem",
+        gap: "1rem",
         padding: "0.375rem 0.75rem",
         borderRadius: "999px",
-        background: hasError ? "var(--color-warning-bg, rgba(234,179,8,0.1))" : "var(--color-success-bg)",
-        color: hasError ? "var(--color-warning, #eab308)" : "var(--color-success)",
-        fontSize: "0.85rem",
+        background: "var(--color-success-bg)",
+        color: "var(--color-success)",
+        fontSize: "0.8rem",
         fontWeight: 600,
         whiteSpace: "nowrap",
       }}
-      title={hasError ? error : undefined}
     >
-      <Icon name="account_balance" size={16} />
-      <span>
-        {loading ? "Carregando…" : hasError ? "Saldo indisponível" : `Saldo: ${formatBRL(balance)}`}
+      <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+        <Icon name="receipt" size={14} />
+        Bruta: {fmtBRL(data.monthly_revenue)}
       </span>
-      <button
-        onClick={() => void fetchBalanceFromAPI()}
-        title="Atualizar saldo"
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "inherit",
-          padding: 0,
-          display: "flex",
-          alignItems: "center",
-          fontSize: "0.75rem",
-        }}
-      >
-        ↻
-      </button>
+      <span style={{ opacity: 0.4 }}>|</span>
+      <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+        <Icon name="wallet" size={14} />
+        Líquida: {fmtBRL(data.admin_fee_revenue)}
+      </span>
     </div>
   );
 }
