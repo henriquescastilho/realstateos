@@ -61,6 +61,12 @@ export function setBalance(cents: number) {
   notify();
 }
 
+export function deductBalance(cents: number) {
+  _balance -= cents;
+  persist();
+  notify();
+}
+
 export function formatBRL(cents: number): string {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",

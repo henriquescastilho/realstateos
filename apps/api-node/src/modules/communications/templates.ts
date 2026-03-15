@@ -6,8 +6,10 @@
 import {
   renderBoletoHtml,
   renderStatementHtml,
+  renderSimulationReportHtml,
   type BoletoTemplateData,
   type StatementTemplateData,
+  type SimulationReportTemplateData,
 } from "./html-templates";
 
 export interface TemplateData {
@@ -142,6 +144,13 @@ const templates: Record<string, TemplateFn> = {
     }
 
     return { subject, body, html };
+  },
+
+  // ─── Relatório de simulação ───
+  simulation_report: (data) => {
+    const subject = `Relatório de Simulação — ${data.billingPeriod ?? ""}`;
+    const body = `Relatório de simulação do pipeline de agentes IA para o período ${data.billingPeriod ?? ""}.`;
+    return { subject, body };
   },
 
 };

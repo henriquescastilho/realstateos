@@ -13,6 +13,12 @@ import { eq } from "drizzle-orm";
 import { db } from "../../../db";
 import { organizations } from "../../../db/schema";
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
+
 export interface EmailPayload {
   to: string;
   subject: string;
@@ -20,6 +26,7 @@ export interface EmailPayload {
   html?: string;
   replyTo?: string;
   orgId: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface EmailResult {
@@ -57,7 +64,21 @@ function getTransporter(smtp: SmtpSettings): nodemailer.Transporter {
   return transporterCache.get(cacheKey)!;
 }
 
-// ─── Load SMTP config from DB ───
+// ─── Load SMTP config from DB, with env var fallback ───
+
+function getEnvSmtpSettings(): SmtpSettings | null {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return {
+    host,
+    port: parseInt(process.env.SMTP_PORT ?? "587", 10),
+    user,
+    pass,
+    from: process.env.SMTP_FROM ?? user,
+  };
+}
 
 async function getOrgSmtpSettings(orgId: string): Promise<SmtpSettings | null> {
   const [org] = await db
@@ -66,18 +87,21 @@ async function getOrgSmtpSettings(orgId: string): Promise<SmtpSettings | null> {
     .where(eq(organizations.id, orgId))
     .limit(1);
 
-  if (!org?.smtpSettings) return null;
+  if (org?.smtpSettings) {
+    const s = org.smtpSettings as Record<string, unknown>;
+    if (s.host && s.user && s.pass) {
+      return {
+        host: s.host as string,
+        port: (s.port as number) ?? 587,
+        user: s.user as string,
+        pass: s.pass as string,
+        from: (s.from as string) ?? (s.user as string),
+      };
+    }
+  }
 
-  const s = org.smtpSettings as Record<string, unknown>;
-  if (!s.host || !s.user || !s.pass) return null;
-
-  return {
-    host: s.host as string,
-    port: (s.port as number) ?? 587,
-    user: s.user as string,
-    pass: s.pass as string,
-    from: (s.from as string) ?? (s.user as string),
-  };
+  // Fallback to env vars
+  return getEnvSmtpSettings();
 }
 
 // ─── SMTP send ───
@@ -90,6 +114,11 @@ async function sendViaSMTP(smtp: SmtpSettings, payload: EmailPayload): Promise<E
     text: payload.body,
     html: payload.html,
     replyTo: payload.replyTo,
+    attachments: payload.attachments?.map((a) => ({
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType ?? "application/pdf",
+    })),
   });
 
   return { success: true, provider: "smtp", messageId: info.messageId };

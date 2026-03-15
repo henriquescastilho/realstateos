@@ -1,8 +1,13 @@
 /**
- * SIMULATION — Runs the full agent pipeline for a single contract
- * and generates a Gemini-powered report sent to the admin email.
+ * SIMULATION — Runs the full agent pipeline for a single contract,
+ * simulates payment (baixa), generates 3 PDFs, and sends them by email.
  *
- * Flow: Maestro → Cobrador → Sentinela → Pagador → Contador → Gemini Report → Email
+ * Flow: Maestro → Cobrador → [Baixa] → Sentinela → Pagador → Contador → Gemini Report → PDF → Email
+ *
+ * PDFs:
+ *   1. Boleto do inquilino
+ *   2. Extrato de repasse do proprietário
+ *   3. Relatório da imobiliária (pipeline + análise IA)
  */
 
 import { eq, and } from "drizzle-orm";
@@ -21,7 +26,13 @@ import { handleCobradorCollect } from "./cobrador-collect";
 import { handleSentinelaWatch } from "./sentinela-watch";
 import { handlePagadorPayout } from "./pagador-payout";
 import { handleContadorStatement } from "./contador-statement";
-import { sendMessage } from "../../communications/service";
+import { sendEmail } from "../../communications/channels/email";
+import {
+  renderBoletoHtml,
+  renderStatementHtml,
+  renderSimulationReportHtml,
+} from "../../communications/html-templates";
+import { htmlToPdf } from "../../../lib/pdf";
 import type { AgentTask } from "../../../types/domain";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -79,7 +90,7 @@ Inclua: resumo executivo, detalhamento por etapa, métricas, previsões e recome
     },
   );
 
-  const json = await resp.json();
+  const json = await resp.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   return json.candidates?.[0]?.content?.parts?.[0]?.text ?? "Falha ao gerar relatório.";
 }
 
@@ -99,6 +110,11 @@ export async function runSimulation(
   const [tenant] = await db.select().from(tenants).where(eq(tenants.id, contract.tenantId)).limit(1);
   const [property] = await db.select().from(properties).where(eq(properties.id, contract.propertyId)).limit(1);
   const [org] = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1);
+
+  const orgName = org?.name ?? "Imobiliária";
+  const ownerName = owner?.fullName ?? "Proprietário";
+  const tenantName = tenant?.fullName ?? "Inquilino";
+  const propertyAddress = property ? `${property.address}, ${property.city}/${property.state}` : "Endereço não informado";
 
   // Use next month as billing period
   const now = new Date();
@@ -123,7 +139,7 @@ export async function runSimulation(
     steps.push({ agent: "Maestro", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
   }
 
-  // Get created charge IDs for this specific contract
+  // Get created charge for this specific contract
   const contractCharges = await db
     .select()
     .from(charges)
@@ -135,6 +151,7 @@ export async function runSimulation(
     );
 
   const chargeIds = contractCharges.map((c) => c.id);
+  const charge = contractCharges[0]; // main charge for this contract
 
   // ── Step 2: Cobrador — Issue boletos + notify ──
   start = Date.now();
@@ -156,6 +173,47 @@ export async function runSimulation(
     }
   } else {
     steps.push({ agent: "Cobrador", status: "skipped", summary: "Nenhuma cobrança para emitir", output: {}, durationMs: 0 });
+  }
+
+  // ── Step 2.5: Simulate payment (baixa) ──
+  // Re-read charge to get boleto data populated by Cobrador
+  let chargeAfterIssue = charge;
+  if (charge) {
+    const [refreshed] = await db.select().from(charges).where(eq(charges.id, charge.id)).limit(1);
+    if (refreshed) chargeAfterIssue = refreshed;
+  }
+
+  start = Date.now();
+  if (chargeAfterIssue) {
+    try {
+      // Insert simulated payment
+      await db.insert(payments).values({
+        orgId,
+        chargeId: chargeAfterIssue.id,
+        receivedAmount: chargeAfterIssue.netAmount,
+        receivedAt: new Date(),
+        paymentMethod: "boleto",
+        bankReference: `SIM-${Date.now()}`,
+        reconciliationStatus: "matched",
+      });
+
+      // Mark charge as paid
+      await db
+        .update(charges)
+        .set({ paymentStatus: "paid" })
+        .where(eq(charges.id, chargeAfterIssue.id));
+
+      steps.push({
+        agent: "Baixa (Simulada)",
+        status: "completed",
+        confidence: 1,
+        summary: `Pagamento simulado de R$ ${chargeAfterIssue.netAmount} registrado e reconciliado`,
+        output: { chargeId: chargeAfterIssue.id, amount: chargeAfterIssue.netAmount },
+        durationMs: Date.now() - start,
+      });
+    } catch (err) {
+      steps.push({ agent: "Baixa (Simulada)", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
+    }
   }
 
   // ── Step 3: Sentinela — Check overdue + reconcile ──
@@ -217,12 +275,12 @@ export async function runSimulation(
   const reportPrompt = `Gere um relatório executivo completo sobre a simulação do pipeline de gestão imobiliária.
 
 DADOS DA SIMULAÇÃO:
-- Imobiliária: ${org?.name ?? "N/A"}
+- Imobiliária: ${orgName}
 - Período: ${billingPeriod}
 - Contrato: ${contract.id}
-- Proprietário: ${owner?.fullName ?? "N/A"} (${owner?.email ?? "N/A"})
-- Inquilino: ${tenant?.fullName ?? "N/A"} (${tenant?.email ?? "N/A"})
-- Imóvel: ${property?.address ?? "N/A"}, ${property?.city ?? "N/A"}/${property?.state ?? "N/A"}
+- Proprietário: ${ownerName} (${owner?.email ?? "N/A"})
+- Inquilino: ${tenantName} (${tenant?.email ?? "N/A"})
+- Imóvel: ${propertyAddress}
 - Aluguel: R$ ${contract.rentAmount}
 
 RESULTADO DE CADA AGENTE:
@@ -262,40 +320,147 @@ Inclua no relatório:
     steps.push({ agent: "REOS AI", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
   }
 
-  // ── Step 7: Send email report ──
+  // ── Step 7: Generate 3 PDFs ──
+  start = Date.now();
+
+  const adminFeePercent = parseFloat(String(contract.adminFeePercent ?? "10"));
+  const rentAmountNum = parseFloat(String(contract.rentAmount));
+  const adminFeeAmount = (rentAmountNum * adminFeePercent / 100).toFixed(2);
+  const netPayout = (rentAmountNum - parseFloat(adminFeeAmount)).toFixed(2);
+
+  // PDF 1: Boleto do inquilino
+  const boletoHtml = renderBoletoHtml({
+    orgName,
+    tenantName,
+    propertyAddress,
+    billingPeriod,
+    dueDate: chargeAfterIssue?.dueDate ?? new Date(nextMonth.getFullYear(), nextMonth.getMonth(), contract.dueDateDay ?? 10).toISOString().split("T")[0],
+    lineItems: (chargeAfterIssue?.lineItems ?? [{ type: "rent", description: "Aluguel", amount: String(contract.rentAmount), source: "contract" }]).map((li) => ({
+      description: li.description,
+      amount: li.amount,
+    })),
+    grossAmount: chargeAfterIssue?.grossAmount ?? String(contract.rentAmount),
+    penaltyAmount: chargeAfterIssue?.penaltyAmount ?? "0.00",
+    discountAmount: chargeAfterIssue?.discountAmount ?? "0.00",
+    netAmount: chargeAfterIssue?.netAmount ?? String(contract.rentAmount),
+    barcode: chargeAfterIssue?.barcode ?? undefined,
+    digitableLine: chargeAfterIssue?.digitableLine ?? undefined,
+  });
+
+  // PDF 2: Extrato de repasse do proprietário
+  const statementHtml = renderStatementHtml({
+    orgName,
+    ownerName,
+    propertyAddress,
+    statementPeriod: billingPeriod,
+    entries: [
+      { type: "income", description: `Aluguel recebido — ${tenantName}`, amount: String(contract.rentAmount) },
+      { type: "admin_fee", description: `Taxa de administração (${adminFeePercent}%)`, amount: `-${adminFeeAmount}` },
+    ],
+    totalPayout: netPayout,
+    payoutDate: new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 15).toISOString().split("T")[0],
+  });
+
+  // PDF 3: Relatório da imobiliária
+  const reportHtml = renderSimulationReportHtml({
+    orgName,
+    billingPeriod,
+    contractId: contract.id,
+    ownerName,
+    tenantName,
+    propertyAddress,
+    rentAmount: String(contract.rentAmount),
+    steps: steps.map((s) => ({
+      agent: s.agent,
+      status: s.status,
+      confidence: s.confidence,
+      summary: s.summary,
+      durationMs: s.durationMs,
+    })),
+    totalDurationMs: Date.now() - totalStart,
+    geminiReport: report,
+  });
+
+  // Convert all 3 HTMLs to PDF in parallel
+  let pdfBuffers: { boleto: Buffer; statement: Buffer; report: Buffer };
+  try {
+    const [boletoPdf, statementPdf, reportPdf] = await Promise.all([
+      htmlToPdf(boletoHtml),
+      htmlToPdf(statementHtml),
+      htmlToPdf(reportHtml),
+    ]);
+    pdfBuffers = { boleto: boletoPdf, statement: statementPdf, report: reportPdf };
+
+    steps.push({
+      agent: "PDF Generator",
+      status: "completed",
+      confidence: 1,
+      summary: `3 PDFs gerados (${(boletoPdf.length / 1024).toFixed(0)}KB + ${(statementPdf.length / 1024).toFixed(0)}KB + ${(reportPdf.length / 1024).toFixed(0)}KB)`,
+      output: { pdfCount: 3 },
+      durationMs: Date.now() - start,
+    });
+  } catch (err) {
+    steps.push({ agent: "PDF Generator", status: "failed", summary: String(err), output: {}, durationMs: Date.now() - start });
+    // Fallback: send email without PDFs
+    pdfBuffers = { boleto: Buffer.alloc(0), statement: Buffer.alloc(0), report: Buffer.alloc(0) };
+  }
+
+  // ── Step 8: Send email with 3 PDF attachments ──
   let emailSent = false;
   start = Date.now();
   try {
-    await sendMessage({
+    const periodLabel = billingPeriod.replace("-", "/");
+    const attachments = [
+      pdfBuffers.boleto.length > 0 && { filename: `boleto-${billingPeriod}.pdf`, content: pdfBuffers.boleto },
+      pdfBuffers.statement.length > 0 && { filename: `extrato-repasse-${billingPeriod}.pdf`, content: pdfBuffers.statement },
+      pdfBuffers.report.length > 0 && { filename: `relatorio-simulacao-${billingPeriod}.pdf`, content: pdfBuffers.report },
+    ].filter(Boolean) as Array<{ filename: string; content: Buffer }>;
+
+    await sendEmail({
+      to: adminEmail,
+      subject: `[REOS] Simulação completa — ${periodLabel} — ${propertyAddress}`,
+      body: [
+        `Simulação do pipeline de agentes IA concluída com sucesso.`,
+        ``,
+        `Período: ${periodLabel}`,
+        `Inquilino: ${tenantName}`,
+        `Proprietário: ${ownerName}`,
+        `Imóvel: ${propertyAddress}`,
+        ``,
+        `Em anexo:`,
+        `  1. Boleto do inquilino`,
+        `  2. Extrato de repasse do proprietário`,
+        `  3. Relatório completo da imobiliária`,
+        ``,
+        `— Real Estate OS`,
+      ].join("\n"),
+      html: `<div style="font-family:sans-serif;color:#333;max-width:600px;margin:0 auto;padding:20px;">
+        <h2 style="color:#1a56db;">Simulação Concluída</h2>
+        <p>O pipeline de agentes IA foi executado com sucesso para o período <strong>${periodLabel}</strong>.</p>
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+          <tr><td style="padding:8px 0;color:#666;">Inquilino:</td><td style="padding:8px 0;font-weight:600;">${tenantName}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;">Proprietário:</td><td style="padding:8px 0;font-weight:600;">${ownerName}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;">Imóvel:</td><td style="padding:8px 0;font-weight:600;">${propertyAddress}</td></tr>
+          <tr><td style="padding:8px 0;color:#666;">Aluguel:</td><td style="padding:8px 0;font-weight:600;">R$ ${contract.rentAmount}</td></tr>
+        </table>
+        <h3 style="margin-top:20px;">Documentos em anexo:</h3>
+        <ol>
+          <li><strong>Boleto do inquilino</strong> — cobrança gerada pelo agente Cobrador</li>
+          <li><strong>Extrato de repasse</strong> — prestação de contas ao proprietário, já descontando a taxa de administração</li>
+          <li><strong>Relatório da imobiliária</strong> — o que cada agente de IA fez + análise executiva</li>
+        </ol>
+        <p style="color:#666;font-size:13px;margin-top:24px;">— Real Estate OS</p>
+      </div>`,
       orgId,
-      entityType: "simulation",
-      entityId: contract.id,
-      channel: "email",
-      templateType: "simulation_report",
-      recipient: adminEmail,
-      templateData: {
-        orgName: org?.name ?? "",
-        ownerName: owner?.fullName ?? "",
-        tenantName: tenant?.fullName ?? "",
-        propertyAddress: property?.address ?? "",
-        billingPeriod,
-        rentAmount: contract.rentAmount,
-        report,
-        steps: steps.map((s) => ({
-          agent: s.agent,
-          status: s.status,
-          confidence: s.confidence,
-          summary: s.summary,
-          durationMs: s.durationMs,
-        })),
-      },
+      attachments,
     });
+
     emailSent = true;
     steps.push({
       agent: "Email",
       status: "completed",
-      summary: `Relatório enviado para ${adminEmail}`,
-      output: { recipient: adminEmail },
+      summary: `Email com 3 PDFs enviado para ${adminEmail}`,
+      output: { recipient: adminEmail, attachmentCount: attachments.length },
       durationMs: Date.now() - start,
     });
   } catch (err) {
