@@ -7,22 +7,59 @@ import { Card } from "@/components/page-sections";
 import { apiGet } from "@/lib/api";
 import type { TaskRecord } from "@/lib/types";
 
-type StatusFilter = "ALL" | "DONE" | "ERROR" | "PENDING";
+// ---------------------------------------------------------------------------
+// Friendly translations
+// ---------------------------------------------------------------------------
 
-const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "ALL", label: "Todos" },
-  { value: "DONE", label: "Done" },
-  { value: "PENDING", label: "Pending" },
-  { value: "ERROR", label: "Error" },
-];
+const TYPE_LABELS: Record<string, string> = {
+  cobrador_collect: "Cobrança automática",
+  cobrador_remind: "Lembrete de pagamento",
+  boleto_generate: "Geração de boleto",
+  report_generate: "Geração de relatório",
+  sync_balance: "Sincronização bancária",
+  email_send: "Envio de e-mail",
+};
 
-function taskMessage(task: TaskRecord) {
-  const message = task.payload.message;
-  return typeof message === "string" ? message : "Sem mensagem registrada.";
+const STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  DONE: { label: "Concluída", className: "status-done" },
+  QUEUED: { label: "Na fila", className: "status-pending" },
+  PENDING: { label: "Aguardando", className: "status-pending" },
+  RUNNING: { label: "Executando", className: "status-running" },
+  ERROR: { label: "Erro", className: "status-failed" },
+  FAILED: { label: "Falhou", className: "status-failed" },
+  ESCALATED: { label: "Requer atenção", className: "status-escalated" },
+};
+
+function friendlyType(type: string) {
+  return TYPE_LABELS[type] || type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function taskResult(task: TaskRecord) {
-  return task.payload.result;
+function friendlyStatus(status: string) {
+  return STATUS_LABELS[status.toUpperCase()] || { label: status, className: "status-default" };
+}
+
+function taskMessage(task: TaskRecord) {
+  const message = task.payload?.message;
+  return typeof message === "string" && message.trim()
+    ? message
+    : null;
+}
+
+type StatusFilter = "ALL" | "DONE" | "ERROR" | "PENDING";
+
+const FILTERS: { value: StatusFilter; label: string }[] = [
+  { value: "ALL", label: "Todas" },
+  { value: "DONE", label: "Concluídas" },
+  { value: "PENDING", label: "Pendentes" },
+  { value: "ERROR", label: "Com erro" },
+];
+
+function matchesFilter(task: TaskRecord, filter: StatusFilter) {
+  if (filter === "ALL") return true;
+  const s = task.status.toUpperCase();
+  if (filter === "PENDING") return s === "PENDING" || s === "QUEUED" || s === "RUNNING";
+  if (filter === "ERROR") return s === "ERROR" || s === "FAILED" || s === "ESCALATED";
+  return s === filter;
 }
 
 export default function TasksPage() {
@@ -38,7 +75,7 @@ export default function TasksPage() {
       const response = await apiGet<TaskRecord[]>("/tasks");
       setTasks(response);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Falha ao carregar tarefas.");
+      setError(loadError instanceof Error ? loadError.message : "Falha ao carregar.");
     } finally {
       setLoading(false);
     }
@@ -50,19 +87,21 @@ export default function TasksPage() {
 
   const filtered = [...tasks]
     .reverse()
-    .filter((task) => filter === "ALL" || task.status.toUpperCase() === filter);
+    .filter((task) => matchesFilter(task, filter));
+
+  const countFor = (f: StatusFilter) => tasks.filter((t) => matchesFilter(t, f)).length;
 
   return (
     <ProtectedPage
-      title="Tarefas"
-      description="As tarefas do BillingAgent aparecem aqui para dar visibilidade ao que a automação executou."
+      title="Atividades"
+      description="Acompanhe o que a automação executou no seu portfólio."
     >
       {error ? <p className="error-banner">{error}</p> : null}
 
-      <Card title="Log do agente" subtitle="Mensagens obrigatórias do fluxo aparecem com destaque.">
+      <Card title="Histórico de atividades" subtitle="Cobranças, envios e processamentos realizados automaticamente.">
         <div className="section-actions">
           <div className="filter-group">
-            {STATUS_FILTERS.map((item) => (
+            {FILTERS.map((item) => (
               <button
                 key={item.value}
                 type="button"
@@ -72,7 +111,7 @@ export default function TasksPage() {
                 {item.label}
                 {item.value !== "ALL" && (
                   <span className="filter-count">
-                    {tasks.filter((t) => t.status.toUpperCase() === item.value).length}
+                    {countFor(item.value)}
                   </span>
                 )}
               </button>
@@ -84,26 +123,26 @@ export default function TasksPage() {
         </div>
 
         {loading ? (
-          <p className="empty-state">Carregando tarefas...</p>
+          <p className="empty-state">Carregando...</p>
         ) : filtered.length === 0 ? (
-          <p className="empty-state">Nenhuma tarefa encontrada para este filtro.</p>
+          <p className="empty-state">Nenhuma atividade encontrada.</p>
         ) : (
           <div className="list">
-            {filtered.map((task) => (
-              <article key={task.id} className="task-card">
-                <div className="task-header">
-                  <div>
-                    <strong>{task.type}</strong>
-                    <p className="muted-text">{task.id}</p>
+            {filtered.map((task) => {
+              const st = friendlyStatus(task.status);
+              const msg = taskMessage(task);
+              return (
+                <article key={task.id} className="task-card">
+                  <div className="task-header">
+                    <div>
+                      <strong>{friendlyType(task.type)}</strong>
+                      {msg && <p className="task-message">{msg}</p>}
+                    </div>
+                    <span className={`status-pill ${st.className}`}>{st.label}</span>
                   </div>
-                  <span className={`status-pill status-${task.status.toLowerCase()}`}>{task.status}</span>
-                </div>
-                <p className="task-message">{taskMessage(task)}</p>
-                {taskResult(task) ? (
-                  <pre className="mini-json">{JSON.stringify(taskResult(task), null, 2)}</pre>
-                ) : null}
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </Card>

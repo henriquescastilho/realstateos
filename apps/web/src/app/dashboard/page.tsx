@@ -328,18 +328,32 @@ function BillingChart({ months }: { months: BillingMonth[] }) {
   );
 }
 
+const TASK_TYPE_LABELS: Record<string, string> = {
+  cobrador_collect: "Cobrança automática",
+  cobrador_remind: "Lembrete de pagamento",
+  boleto_generate: "Geração de boleto",
+  report_generate: "Geração de relatório",
+  sync_balance: "Sincronização bancária",
+  email_send: "Envio de e-mail",
+};
+
+const TASK_STATUS_LABELS: Record<string, { label: string; variant: BadgeVariant }> = {
+  DONE: { label: "Concluída", variant: "done" },
+  QUEUED: { label: "Na fila", variant: "pending" },
+  PENDING: { label: "Aguardando", variant: "pending" },
+  RUNNING: { label: "Executando", variant: "running" },
+  ERROR: { label: "Erro", variant: "failed" },
+  FAILED: { label: "Falhou", variant: "failed" },
+  ESCALATED: { label: "Requer atenção", variant: "escalated" },
+};
+
 function ActivityRow({ task }: { task: TaskRecord }) {
-  const variantMap: Record<string, BadgeVariant> = {
-    DONE: "done",
-    FAILED: "failed",
-    ESCALATED: "escalated",
-    RUNNING: "running",
-    PENDING: "pending",
-  };
+  const st = TASK_STATUS_LABELS[task.status] ?? { label: task.status, variant: "default" as BadgeVariant };
+  const typeName = TASK_TYPE_LABELS[task.type] || task.type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const msg =
-    typeof task.payload?.message === "string"
+    typeof task.payload?.message === "string" && task.payload.message.trim()
       ? task.payload.message
-      : task.type;
+      : typeName;
   return (
     <div
       style={{
@@ -350,8 +364,8 @@ function ActivityRow({ task }: { task: TaskRecord }) {
         borderBottom: "1px solid var(--border-subtle)",
       }}
     >
-      <Badge variant={variantMap[task.status] ?? "default"}>
-        {task.status}
+      <Badge variant={st.variant}>
+        {st.label}
       </Badge>
       <span style={{ fontSize: "0.86rem", color: "var(--text-secondary)", flex: 1 }}>
         {msg}
