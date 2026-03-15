@@ -11,21 +11,15 @@ import { Icon } from "@/components/ui/Icon";
 
 const navigation = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/properties", label: "Imóveis" },
+  { href: "/agents", label: "Agentes" },
   { href: "/contracts", label: "Contratos" },
   { href: "/renters", label: "Locatários" },
   { href: "/owners", label: "Proprietários" },
-  { href: "/charges", label: "Cobranças" },
   { href: "/billing", label: "Faturas" },
-  { href: "/payments", label: "Pagamentos" },
-  { href: "/communications", label: "Comunicações" },
+  { href: "/repasses", label: "Repasses" },
   { href: "/reports", label: "Relatórios" },
-  { href: "/settings", label: "Configurações" },
-  { href: "/documents", label: "Documentos" },
-  { href: "/tasks", label: "Tarefas" },
-  { href: "/agents", label: "Agentes" },
-  { href: "/escalations", label: "Escalações" },
   { href: "/maintenance", label: "Manutenção" },
+  { href: "/settings", label: "Configurações" },
 ];
 
 const PUBLIC_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/onboarding"];
@@ -145,6 +139,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="page-frame">{children}</main>
+        <footer
+          style={{
+            textAlign: "center",
+            padding: "16px 24px",
+            fontSize: "0.78rem",
+            color: "var(--text-faint)",
+            borderTop: "1px solid var(--line)",
+          }}
+        >
+          Desenvolvido por DME Technology
+        </footer>
       </div>
     </div>
   );

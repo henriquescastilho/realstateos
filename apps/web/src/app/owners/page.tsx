@@ -15,6 +15,7 @@ import {
   statusVariant,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { exportCSV } from "@/lib/export-csv";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -343,7 +344,26 @@ export default function OwnersPage() {
           <h2>Proprietários</h2>
           <p>Gerencie os proprietários dos imóveis</p>
         </div>
-        <Button onClick={() => setShowCreate(true)}>+ Novo Proprietário</Button>
+        <div className="actions">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              exportCSV(
+                filtered as (Owner & Record<string, unknown>)[],
+                [
+                  { key: "name", header: "Nome" },
+                  { key: "document", header: "CPF/CNPJ" },
+                  { key: "email", header: "E-mail" },
+                  { key: "phone", header: "Telefone" },
+                ],
+                "proprietarios.csv",
+              );
+            }}
+          >
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setShowCreate(true)}>+ Novo Proprietário</Button>
+        </div>
       </header>
 
       {/* Search */}

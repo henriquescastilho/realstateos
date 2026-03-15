@@ -15,6 +15,7 @@ import {
   statusVariant,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { exportCSV } from "@/lib/export-csv";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -307,7 +308,26 @@ export default function RentersPage() {
           <h2>Locatários</h2>
           <p>Gerencie os locatários dos seus imóveis</p>
         </div>
-        <Button onClick={() => setShowCreate(true)}>+ Novo Locatário</Button>
+        <div className="actions">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              exportCSV(
+                filtered as (Renter & Record<string, unknown>)[],
+                [
+                  { key: "name", header: "Nome" },
+                  { key: "document", header: "CPF/CNPJ" },
+                  { key: "email", header: "E-mail" },
+                  { key: "phone", header: "Telefone" },
+                ],
+                "locatarios.csv",
+              );
+            }}
+          >
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setShowCreate(true)}>+ Novo Locatário</Button>
+        </div>
       </header>
 
       {/* Search */}

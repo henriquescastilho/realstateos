@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { nodeApiGet, nodeApiPost } from "@/lib/api";
 import type { Contract, Owner, Property, Renter } from "@/lib/types";
 import {
@@ -15,6 +16,7 @@ import {
   statusVariant,
 } from "@/components/ui";
 import type { Column } from "@/components/ui";
+import { exportCSV } from "@/lib/export-csv";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,10 +30,37 @@ interface ContractHistory {
   actor?: string;
 }
 
+interface ChargeRow {
+  id: string;
+  description?: string;
+  amount: string | number;
+  due_date: string;
+  status: string;
+}
+
+interface BillingRow {
+  id: string;
+  description?: string;
+  amount: string | number;
+  issued_at?: string;
+  status: string;
+}
+
+interface RepasseRow {
+  id: string;
+  amount: string | number;
+  paid_at?: string;
+  status: string;
+}
+
 interface ContractDetail extends Contract {
+  code?: string;
   status?: string;
   owner_id?: string;
   history?: ContractHistory[];
+  charges?: ChargeRow[];
+  billings?: BillingRow[];
+  repasses?: RepasseRow[];
 }
 
 // ---------------------------------------------------------------------------
@@ -62,6 +91,7 @@ const STATUS_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 export default function ContractsPage() {
+  const router = useRouter();
   const [contracts, setContracts] = useState<ContractDetail[]>([]);
   const [renters, setRenters] = useState<Renter[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -118,10 +148,12 @@ export default function ContractsPage() {
       const renter = renters.find((r) => r.id === c.renter_id);
       const property = properties.find((p) => p.id === c.property_id);
       const q = search.toLowerCase();
+      const code = c.code ?? `reos-${String(contracts.indexOf(c) + 1).padStart(4, "0")}`;
       const matchSearch =
         !q ||
         renter?.name.toLowerCase().includes(q) ||
         property?.address.toLowerCase().includes(q) ||
+        code.toLowerCase().includes(q) ||
         c.id.toLowerCase().includes(q);
       const matchStatus =
         !filterStatus || (c.status ?? "active") === filterStatus;
@@ -194,7 +226,23 @@ export default function ContractsPage() {
     }
   }
 
+  function contractCode(contract: ContractDetail, index: number) {
+    return contract.code ?? `REOS-${String(index + 1).padStart(4, "0")}`;
+  }
+
   const columns: Column<ContractDetail>[] = [
+    {
+      key: "code",
+      header: "Código",
+      render: (row) => {
+        const idx = contracts.indexOf(row);
+        return (
+          <span style={{ fontWeight: 600, fontFamily: "monospace", fontSize: "0.82rem" }}>
+            {contractCode(row, idx)}
+          </span>
+        );
+      },
+    },
     {
       key: "property",
       header: "Imóvel",
@@ -214,11 +262,6 @@ export default function ContractsPage() {
         const r = renters.find((x) => x.id === row.renter_id);
         return r?.name ?? row.renter_id.slice(0, 8);
       },
-    },
-    {
-      key: "period",
-      header: "Período",
-      render: (row) => `${fmtDate(row.start_date)} – ${fmtDate(row.end_date)}`,
     },
     {
       key: "monthly_rent",
@@ -269,9 +312,32 @@ export default function ContractsPage() {
           <h2>Contratos</h2>
           <p>Visualize, filtre e gerencie o ciclo de vida dos contratos.</p>
         </div>
-        <Button variant="primary" onClick={() => setShowCreate(true)}>
-          + Novo Contrato
-        </Button>
+        <div className="actions">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              exportCSV(
+                filtered,
+                [
+                  { key: "code", header: "Código", format: (r) => r.code ?? `REOS-${String(contracts.indexOf(r) + 1).padStart(4, "0")}` },
+                  { key: "property", header: "Imóvel", format: (r) => properties.find((p) => p.id === r.property_id)?.address ?? "" },
+                  { key: "renter", header: "Inquilino", format: (r) => renters.find((x) => x.id === r.renter_id)?.name ?? "" },
+                  { key: "start_date", header: "Início", format: (r) => fmtDate(r.start_date) },
+                  { key: "end_date", header: "Término", format: (r) => fmtDate(r.end_date) },
+                  { key: "monthly_rent", header: "Aluguel", format: (r) => String(r.monthly_rent) },
+                  { key: "due_day", header: "Dia Vcto", format: (r) => String(r.due_day) },
+                  { key: "status", header: "Status", format: (r) => r.status ?? "active" },
+                ],
+                "contratos.csv",
+              );
+            }}
+          >
+            Exportar CSV
+          </Button>
+          <Button variant="primary" onClick={() => setShowCreate(true)}>
+            + Novo Contrato
+          </Button>
+        </div>
       </header>
 
       {error && <p className="error-banner">{error}</p>}
@@ -314,7 +380,7 @@ export default function ContractsPage() {
           rowKey={(row) => (row as unknown as ContractDetail).id}
           loading={loading}
           emptyText="Nenhum contrato encontrado."
-          onRowClick={(row) => openDetail(row as unknown as ContractDetail)}
+          onRowClick={(row) => router.push(`/contracts/${(row as unknown as ContractDetail).id}`)}
         />
       </Card>
 
@@ -323,7 +389,7 @@ export default function ContractsPage() {
         open={!!selected}
         onClose={() => setSelected(null)}
         title="Detalhes do Contrato"
-        maxWidth={640}
+        maxWidth={780}
       >
         {selected && (
           <ContractDetailPanel
@@ -334,6 +400,7 @@ export default function ContractsPage() {
             loading={detailLoading}
             workflowLoading={workflowLoading}
             onWorkflow={(action) => applyWorkflow(selected.id, action)}
+            contractIndex={contracts.indexOf(selected)}
           />
         )}
       </Modal>
@@ -363,6 +430,17 @@ export default function ContractsPage() {
 // Detail panel
 // ---------------------------------------------------------------------------
 
+type DetailTab = "dados" | "cobrancas" | "faturas" | "repasses" | "documentos" | "historico";
+
+const DETAIL_TABS: { key: DetailTab; label: string }[] = [
+  { key: "dados", label: "Dados" },
+  { key: "cobrancas", label: "Cobranças" },
+  { key: "faturas", label: "Faturas" },
+  { key: "repasses", label: "Repasses" },
+  { key: "documentos", label: "Documentos" },
+  { key: "historico", label: "Histórico" },
+];
+
 function ContractDetailPanel({
   contract,
   renter,
@@ -371,6 +449,7 @@ function ContractDetailPanel({
   loading,
   workflowLoading,
   onWorkflow,
+  contractIndex,
 }: {
   contract: ContractDetail;
   renter?: Renter;
@@ -379,108 +458,196 @@ function ContractDetailPanel({
   loading: boolean;
   workflowLoading: string | null;
   onWorkflow: (action: "activate" | "suspend" | "terminate") => void;
+  contractIndex: number;
 }) {
+  const [tab, setTab] = useState<DetailTab>("dados");
   const status = contract.status ?? "active";
+  const code = contract.code ?? `REOS-${String(contractIndex + 1).padStart(4, "0")}`;
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field
-          label="Imóvel"
-          value={property?.address ?? contract.property_id}
-        />
-        <Field label="Inquilino" value={renter?.name ?? contract.renter_id} />
-        <Field label="Proprietário" value={owner?.name ?? "—"} />
-        <Field label="Status">
-          <Badge variant={statusVariant(status)}>{status.toUpperCase()}</Badge>
-        </Field>
-        <Field label="Início" value={fmtDate(contract.start_date)} />
-        <Field label="Término" value={fmtDate(contract.end_date)} />
-        <Field label="Aluguel mensal" value={fmtBRL(contract.monthly_rent)} />
-        <Field label="Dia do vencimento" value={`Dia ${contract.due_day}`} />
+      {/* Contract code header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ fontFamily: "monospace", fontWeight: 700, fontSize: "1.1rem", color: "var(--accent)" }}>
+          {code}
+        </span>
+        <Badge variant={statusVariant(status)}>{status.toUpperCase()}</Badge>
       </div>
 
-      {/* Workflow buttons */}
-      <div>
-        <p
-          className="muted-text"
-          style={{
-            marginBottom: 8,
-            fontSize: "0.8rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          Ações de status
-        </p>
-        <div className="actions">
-          {status !== "active" && (
-            <Button
-              size="sm"
-              variant="primary"
-              loading={workflowLoading === "activate"}
-              disabled={!!workflowLoading}
-              onClick={() => onWorkflow("activate")}
-            >
-              Ativar
-            </Button>
-          )}
-          {status === "active" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              loading={workflowLoading === "suspend"}
-              disabled={!!workflowLoading}
-              onClick={() => onWorkflow("suspend")}
-            >
-              Suspender
-            </Button>
-          )}
-          {status !== "terminated" && (
-            <Button
-              size="sm"
-              variant="danger"
-              loading={workflowLoading === "terminate"}
-              disabled={!!workflowLoading}
-              onClick={() => onWorkflow("terminate")}
-            >
-              Encerrar
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* History timeline */}
-      <div>
-        <p
-          className="muted-text"
-          style={{
-            marginBottom: 10,
-            fontSize: "0.8rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.05em",
-          }}
-        >
-          Histórico
-        </p>
-        {loading ? (
-          <div
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid var(--border)", paddingBottom: 0 }}>
+        {DETAIL_TABS.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
             style={{
-              display: "flex",
-              gap: 10,
-              alignItems: "center",
-              color: "var(--text-muted)",
+              padding: "8px 14px",
+              border: "none",
+              background: tab === t.key ? "var(--accent)" : "transparent",
+              color: tab === t.key ? "#fff" : "var(--text-secondary)",
+              borderRadius: "8px 8px 0 0",
+              cursor: "pointer",
+              fontWeight: tab === t.key ? 600 : 400,
+              fontSize: "0.84rem",
             }}
           >
-            <Spinner size={16} />
-            <span style={{ fontSize: "0.88rem" }}>Carregando histórico…</span>
-          </div>
-        ) : contract.history && contract.history.length > 0 ? (
-          <Timeline entries={contract.history} />
-        ) : (
-          <p className="empty-state">Nenhum registro de histórico.</p>
-        )}
+            {t.label}
+          </button>
+        ))}
       </div>
+
+      {/* Tab content */}
+      {tab === "dados" && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <Field label="Imóvel" value={property?.address ?? contract.property_id} />
+            <Field label="Inquilino" value={renter?.name ?? contract.renter_id} />
+            <Field label="Proprietário" value={owner?.name ?? "—"} />
+            <Field label="Aluguel mensal" value={fmtBRL(contract.monthly_rent)} />
+            <Field label="Início" value={fmtDate(contract.start_date)} />
+            <Field label="Término" value={fmtDate(contract.end_date)} />
+            <Field label="Dia do vencimento" value={`Dia ${contract.due_day}`} />
+          </div>
+          <div>
+            <p className="muted-text" style={{ marginBottom: 8, fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Ações de status
+            </p>
+            <div className="actions">
+              {status !== "active" && (
+                <Button size="sm" variant="primary" loading={workflowLoading === "activate"} disabled={!!workflowLoading} onClick={() => onWorkflow("activate")}>
+                  Ativar
+                </Button>
+              )}
+              {status === "active" && (
+                <Button size="sm" variant="ghost" loading={workflowLoading === "suspend"} disabled={!!workflowLoading} onClick={() => onWorkflow("suspend")}>
+                  Suspender
+                </Button>
+              )}
+              {status !== "terminated" && (
+                <Button size="sm" variant="danger" loading={workflowLoading === "terminate"} disabled={!!workflowLoading} onClick={() => onWorkflow("terminate")}>
+                  Encerrar
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === "cobrancas" && (
+        <div>
+          {contract.charges && contract.charges.length > 0 ? (
+            <table className="event-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th style={{ textAlign: "right" }}>Valor</th>
+                  <th>Vencimento</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contract.charges.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.description ?? "Cobrança"}</td>
+                    <td style={{ textAlign: "right" }}>{fmtBRL(c.amount)}</td>
+                    <td>{fmtDate(c.due_date)}</td>
+                    <td><Badge variant={statusVariant(c.status)}>{c.status.toUpperCase()}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="empty-state">Nenhuma cobrança registrada neste contrato.</p>
+          )}
+        </div>
+      )}
+
+      {tab === "faturas" && (
+        <div>
+          {contract.billings && contract.billings.length > 0 ? (
+            <table className="event-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th style={{ textAlign: "right" }}>Valor</th>
+                  <th>Emissão</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contract.billings.map((b) => (
+                  <tr key={b.id}>
+                    <td>{b.description ?? "Fatura"}</td>
+                    <td style={{ textAlign: "right" }}>{fmtBRL(b.amount)}</td>
+                    <td>{b.issued_at ? fmtDate(b.issued_at) : "—"}</td>
+                    <td><Badge variant={statusVariant(b.status)}>{b.status.toUpperCase()}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="empty-state">Nenhuma fatura registrada neste contrato.</p>
+          )}
+        </div>
+      )}
+
+      {tab === "repasses" && (
+        <div>
+          {contract.repasses && contract.repasses.length > 0 ? (
+            <table className="event-table">
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "right" }}>Valor</th>
+                  <th>Data do pagamento</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contract.repasses.map((r) => (
+                  <tr key={r.id}>
+                    <td style={{ textAlign: "right" }}>{fmtBRL(r.amount)}</td>
+                    <td>{r.paid_at ? fmtDate(r.paid_at) : "—"}</td>
+                    <td><Badge variant={statusVariant(r.status)}>{r.status.toUpperCase()}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="empty-state">Nenhum repasse registrado neste contrato.</p>
+          )}
+        </div>
+      )}
+
+      {tab === "documentos" && (
+        <div style={{ display: "grid", gap: 16 }}>
+          <p className="lp-body" style={{ margin: 0, color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+            Envie documentos do contrato para que o agente possa analisar e tomar decisões automaticamente.
+          </p>
+          <div className="drop-zone">
+            <label style={{ cursor: "pointer", display: "grid", gap: 8, textAlign: "center" }}>
+              <span style={{ fontSize: "0.9rem", fontWeight: 500 }}>Clique para enviar ou arraste o arquivo aqui</span>
+              <span style={{ fontSize: "0.78rem" }}>PDF, imagens ou documentos</span>
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style={{ display: "none" }} multiple />
+            </label>
+          </div>
+          <p className="empty-state">Nenhum documento enviado.</p>
+        </div>
+      )}
+
+      {tab === "historico" && (
+        <div>
+          {loading ? (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", color: "var(--text-muted)" }}>
+              <Spinner size={16} />
+              <span style={{ fontSize: "0.88rem" }}>Carregando histórico…</span>
+            </div>
+          ) : contract.history && contract.history.length > 0 ? (
+            <Timeline entries={contract.history} />
+          ) : (
+            <p className="empty-state">Nenhum registro de histórico.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

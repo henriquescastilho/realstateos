@@ -22,24 +22,23 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section className="lp-hero">
         <div className="lp-hero-content">
-          <p className="lp-eyebrow">Gestão Imobiliária Autônoma</p>
+          <p className="lp-eyebrow">Para administradoras de imóveis</p>
           <h1 className="lp-h1">
-            Sete agentes de IA.<br />
-            Um portfólio inteiro<br />
-            no piloto automático.
+            Chega de digitar boleto.<br />
+            O sistema faz por você.
           </h1>
           <p className="lp-hero-sub">
-            Do boleto que chega por WhatsApp até o extrato na caixa de entrada do
-            proprietário — tudo acontece sem intervenção humana. Captura, cobrança,
-            reconciliação, repasse e prestação de contas em cadeia.
+            Boletos lidos e lançados sozinhos. Cobranças enviadas no prazo.
+            Pagamentos conferidos automaticamente. Extrato pronto e entregue
+            ao proprietário sem você precisar abrir uma planilha.
           </p>
           <div className="lp-hero-actions">
-            <Link href="/login" className="lp-btn-primary">
-              Acessar plataforma
-            </Link>
-            <a href="mailto:henrique009.hsc@gmail.com?subject=Real Estate OS — Contato" className="lp-btn-ghost">
-              Entre em contato
+            <a href="mailto:henrique@paymentsline.com?subject=Quero conhecer o Real Estate OS" className="lp-btn-primary">
+              Quero conhecer
             </a>
+            <Link href="/login" className="lp-btn-ghost">
+              Já tenho conta
+            </Link>
           </div>
         </div>
         <div className="lp-hero-visual" aria-hidden="true">
@@ -52,23 +51,20 @@ export default function LandingPage() {
         <div className="lp-container">
           <div className="lp-split">
             <div className="lp-split-left">
-              <p className="lp-eyebrow">O Problema</p>
+              <p className="lp-eyebrow">O dia a dia</p>
               <h2 className="lp-h2">
-                Administradoras ainda operam no manual.
+                Você ainda faz tudo isso na mão?
               </h2>
             </div>
             <div className="lp-split-right">
               <p className="lp-body">
-                Boletos chegam por e-mail e WhatsApp. Alguém abre, lê, digita,
-                lança. Cobranças são montadas em planilhas. Pagamentos são
-                reconciliados um a um. O repasse exige calcular receita menos
-                despesa menos taxa — tudo à mão. Extratos saem em Word e são
-                enviados individualmente.
+                Abrir e-mail, ler boleto, digitar valor, montar cobrança,
+                conferir quem pagou, calcular repasse, gerar extrato e enviar
+                pro proprietário. Todo mês. Para cada imóvel. Um por um.
               </p>
               <p className="lp-body" style={{ marginTop: 16 }}>
-                O resultado: atrasos, erros financeiros, proprietários
-                insatisfeitos e equipes sobrecarregadas com trabalho que uma
-                máquina faz melhor.
+                Isso gera atrasos, erros e proprietários cobrando explicações.
+                Sua equipe perde horas com trabalho que o sistema pode resolver sozinho.
               </p>
             </div>
           </div>
@@ -79,9 +75,9 @@ export default function LandingPage() {
       <section className="lp-section lp-section-dark">
         <div className="lp-container">
           <div style={{ textAlign: "center", marginBottom: 64 }}>
-            <p className="lp-eyebrow">A Solução</p>
+            <p className="lp-eyebrow">Como funciona</p>
             <h2 className="lp-h2" style={{ maxWidth: 620, margin: "0 auto" }}>
-              Uma cadeia autônoma do boleto ao extrato.
+              Seis etapas. Todas automáticas.
             </h2>
           </div>
           <div className="lp-pipeline">
@@ -89,48 +85,48 @@ export default function LandingPage() {
               number="01"
               agent="Radar"
               title="Captura"
-              desc="Boleto chega por e-mail ou WhatsApp. O Gemini Vision extrai valor, vencimento, código de barras e identifica o imóvel."
+              desc="O boleto chega por e-mail e o sistema lê sozinho: valor, vencimento, código de barras e qual é o imóvel."
             />
             <PipelineArrow />
             <PipelineStep
               number="02"
               agent="Maestro"
               title="Composição"
-              desc="Consolida aluguel + condomínio + IPTU + taxas em uma cobrança única para cada locatário."
+              desc="Junta aluguel, condomínio, IPTU e taxas em uma cobrança só para cada inquilino."
             />
             <PipelineArrow />
             <PipelineStep
               number="03"
               agent="Cobrador"
               title="Cobrança"
-              desc="Gera boleto bancário, envia por e-mail e WhatsApp, e agenda lembretes automáticos."
+              desc="Gera o boleto e envia por e-mail ao inquilino. Se não pagar, manda lembrete sozinho."
             />
             <PipelineArrow />
             <PipelineStep
               number="04"
               agent="Sentinela"
               title="Reconciliação"
-              desc="Compara cada pagamento recebido com a cobrança original. Detecta divergências e parciais."
+              desc="Confere cada pagamento que entra e avisa se o valor está errado ou incompleto."
             />
             <PipelineArrow />
             <PipelineStep
               number="05"
               agent="Pagador"
               title="Repasse"
-              desc="Quita contas do imóvel no dia 5. Calcula e registra o repasse ao proprietário no dia 15."
+              desc="Paga as contas do imóvel e calcula quanto o proprietário tem pra receber."
             />
             <PipelineArrow />
             <PipelineStep
               number="06"
               agent="Contador"
               title="Prestação de contas"
-              desc="Gera extrato detalhado com todas as receitas e deduções, emite NF simulada e envia ao proprietário."
+              desc="Monta o extrato com tudo que entrou e saiu, e envia direto pro proprietário."
             />
           </div>
           <div className="lp-pipeline-orq">
             <div className="lp-orq-line" />
             <div className="lp-orq-badge">
-              Orquestrador — escuta eventos e dispara o próximo agente automaticamente
+              Tudo conectado: uma etapa termina e a próxima começa sozinha
             </div>
           </div>
         </div>
@@ -141,38 +137,38 @@ export default function LandingPage() {
         <div className="lp-container">
           <div className="lp-split">
             <div className="lp-split-left">
-              <p className="lp-eyebrow">Controle</p>
+              <p className="lp-eyebrow">Segurança</p>
               <h2 className="lp-h2">
-                Automação com guardrails.
+                Você continua no controle.
               </h2>
             </div>
             <div className="lp-split-right">
               <p className="lp-body">
-                Cada agente retorna um índice de confiança. O sistema decide
-                sozinho o que fazer:
+                O sistema só age sozinho quando tem certeza. Se tiver dúvida,
+                pede sua aprovação antes de continuar:
               </p>
               <div className="lp-confidence-grid">
                 <ConfidenceCard
                   level="alta"
-                  range="≥ 85%"
-                  label="Execução automática"
-                  desc="A ação é executada sem intervenção. O gestor pode revisar depois."
+                  range="≥ 95%"
+                  label="Faz sozinho"
+                  desc="O sistema tem certeza e resolve sem precisar te incomodar."
                   color="var(--color-success)"
                   bg="var(--color-success-bg)"
                 />
                 <ConfidenceCard
                   level="média"
-                  range="50% — 84%"
-                  label="Execução com revisão"
-                  desc="A ação é executada, mas fica marcada para revisão obrigatória."
+                  range="50% a 94%"
+                  label="Faz e avisa você"
+                  desc="Resolve mas deixa marcado pra você dar uma olhada depois."
                   color="var(--color-warning)"
                   bg="var(--color-warning-bg)"
                 />
                 <ConfidenceCard
                   level="baixa"
                   range="< 50%"
-                  label="Escalação humana"
-                  desc="A tarefa é pausada e enviada para aprovação manual do gestor."
+                  label="Pergunta antes"
+                  desc="Não tem certeza? Para tudo e pede sua aprovação."
                   color="var(--color-danger)"
                   bg="var(--color-danger-bg)"
                 />
@@ -188,43 +184,43 @@ export default function LandingPage() {
           <div className="lp-stats-grid">
             <div className="lp-stat">
               <span className="lp-stat-value">7</span>
-              <span className="lp-stat-label">Agentes especializados</span>
+              <span className="lp-stat-label">Agentes de IA trabalhando por você</span>
             </div>
             <div className="lp-stat">
-              <span className="lp-stat-value">4</span>
-              <span className="lp-stat-label">Eventos de domínio encadeados</span>
+              <span className="lp-stat-value">100%</span>
+              <span className="lp-stat-label">Do fluxo financeiro automatizado</span>
             </div>
             <div className="lp-stat">
               <span className="lp-stat-value">0</span>
-              <span className="lp-stat-label">Intervenções manuais no fluxo padrão</span>
+              <span className="lp-stat-label">Planilhas necessárias</span>
             </div>
             <div className="lp-stat">
               <span className="lp-stat-value">24/7</span>
-              <span className="lp-stat-label">Monitoramento contínuo</span>
+              <span className="lp-stat-label">Operação contínua</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Stack ── */}
+      {/* ── Benefícios ── */}
       <section className="lp-section">
         <div className="lp-container">
           <div style={{ textAlign: "center", marginBottom: 48 }}>
-            <p className="lp-eyebrow">Tecnologia</p>
-            <h2 className="lp-h2">Construído para produção.</h2>
+            <p className="lp-eyebrow">Por que usar</p>
+            <h2 className="lp-h2">O que muda na sua administradora.</h2>
           </div>
           <div className="lp-tech-grid">
             {[
-              { name: "TypeScript", desc: "Backend e frontend type-safe" },
-              { name: "PostgreSQL + pgvector", desc: "Relacional + busca vetorial para IA" },
-              { name: "BullMQ + Redis", desc: "Filas e agendamento de agentes" },
-              { name: "Gemini 2.0 Flash", desc: "Extração de boletos por visão computacional" },
-              { name: "Next.js 16", desc: "Frontend com App Router e React 19" },
-              { name: "Drizzle ORM", desc: "Migrações e queries type-safe" },
-            ].map((tech) => (
-              <div key={tech.name} className="lp-tech-card">
-                <strong>{tech.name}</strong>
-                <p className="muted-text" style={{ margin: "6px 0 0" }}>{tech.desc}</p>
+              { name: "Menos erros", desc: "O sistema não digita errado, não esquece e não atrasa" },
+              { name: "Mais tempo livre", desc: "Sua equipe para de fazer trabalho repetitivo e foca no que importa" },
+              { name: "Proprietário satisfeito", desc: "Extrato entregue no prazo, todo mês, sem você precisar lembrar" },
+              { name: "Tudo registrado", desc: "Cada ação fica salva com data, hora e valor para consulta" },
+              { name: "Funciona 24 horas", desc: "O sistema trabalha de madrugada, feriado e fim de semana" },
+              { name: "Você no controle", desc: "Acompanhe tudo pelo painel e aprove o que precisar" },
+            ].map((item) => (
+              <div key={item.name} className="lp-tech-card">
+                <strong>{item.name}</strong>
+                <p className="muted-text" style={{ margin: "6px 0 0" }}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -235,14 +231,15 @@ export default function LandingPage() {
       <section className="lp-section lp-section-dark" style={{ textAlign: "center" }}>
         <div className="lp-container">
           <h2 className="lp-h2" style={{ maxWidth: 540, margin: "0 auto 24px" }}>
-            Pare de administrar planilhas. Comece a administrar imóveis.
+            Quer ver funcionando na sua administradora?
           </h2>
           <p className="lp-body" style={{ maxWidth: 480, margin: "0 auto 40px" }}>
-            Veja os agentes trabalhando em tempo real no seu portfólio.
+            Mande um e-mail e a gente te mostra como o sistema funciona
+            com os seus imóveis.
           </p>
           <div className="lp-hero-actions" style={{ justifyContent: "center" }}>
-            <a href="mailto:henrique009.hsc@gmail.com?subject=Real Estate OS — Quero começar" className="lp-btn-primary">
-              Entre em contato
+            <a href="mailto:henrique@paymentsline.com?subject=Quero conhecer o Real Estate OS" className="lp-btn-primary">
+              Quero conhecer
             </a>
             <Link href="/login" className="lp-btn-ghost">
               Já tenho conta
@@ -260,7 +257,7 @@ export default function LandingPage() {
               <span>Real Estate OS</span>
             </div>
             <p className="muted-text" style={{ margin: 0 }}>
-              Gestão imobiliária autônoma com agentes de IA.
+              Desenvolvido por DME Technology
             </p>
           </div>
         </div>
@@ -269,7 +266,16 @@ export default function LandingPage() {
   );
 }
 
-/* ── Agent Flow Diagram — real pipeline layout ── */
+/* ── Agent Flow Diagram ── */
+
+const AGENTS = [
+  { name: "Radar", icon: "R" },
+  { name: "Maestro", icon: "M" },
+  { name: "Cobrador", icon: "C" },
+  { name: "Sentinela", icon: "S" },
+  { name: "Pagador", icon: "P" },
+  { name: "Contador", icon: "C" },
+];
 
 function AgentFlowDiagram() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -281,217 +287,144 @@ function AgentFlowDiagram() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const W = 520;
-    const H = 420;
+    const W = 400;
+    const H = 400;
     canvas.width = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width = `${W}px`;
     canvas.style.height = `${H}px`;
     ctx.scale(dpr, dpr);
 
-    const font = "system-ui, -apple-system, sans-serif";
-    const accent = "#d98a53";
-    const accentDim = "rgba(217,138,83,0.35)";
-    const nodeBg = "rgba(25,22,18,0.9)";
-    const nodeBorder = "rgba(100,80,50,0.3)";
-    const textDim = "rgba(255,255,255,0.4)";
-    const textBright = "rgba(255,255,255,0.85)";
-    const nR = 28;
+    const cx = W / 2;
+    const cy = H / 2;
+    const radius = 140;
+    const nodeR = 30;
 
-    // Layout: top row (4 agents), bottom row (2 agents + output)
-    // Radar → Maestro → Cobrador → Sentinela
-    //                                  ↓          ↓
-    //                          Contador  ←  Pagador
-    //                              ↓
-    //                        Extrato + NF
-    const topY = 70;
-    const botY = 300;
-    const gap = 120;
-    const startX = 50;
-
-    interface Node { name: string; icon: string; x: number; y: number; }
-
-    const nodes: Node[] = [
-      { name: "Radar",     icon: "R", x: startX,            y: topY },
-      { name: "Maestro",   icon: "M", x: startX + gap,      y: topY },
-      { name: "Cobrador",  icon: "C", x: startX + gap * 2,  y: topY },
-      { name: "Sentinela", icon: "S", x: startX + gap * 3,  y: topY },
-      { name: "Pagador",   icon: "P", x: startX + gap * 3,  y: botY },
-      { name: "Contador",  icon: "C", x: startX + gap * 2,  y: botY },
-    ];
-
-    // Edges: [fromIdx, toIdx, eventLabel]
-    const edges: [number, number, string][] = [
-      [0, 1, "expense.captured"],
-      [1, 2, "charges.composed"],
-      [2, 3, "payment.received"],
-      [3, 4, "reconciliado"],
-      [4, 5, "bills_paid"],
-    ];
-
-    // Descriptions above top-row nodes
-    const topLabels = [
-      "Boleto chega",
-      "Cobranças\ncompostas",
-      "Boleto enviado\nao locatário",
-      "Pagamento\nrecebido",
-    ];
+    // Node positions in a circle
+    const nodes = AGENTS.map((a, i) => {
+      const angle = (i / AGENTS.length) * Math.PI * 2 - Math.PI / 2;
+      return { ...a, x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+    });
 
     let t = 0;
     let animId: number;
 
-    function drawArrow(x1: number, y1: number, x2: number, y2: number, color: string, width: number) {
-      const headLen = 8;
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const angle = Math.atan2(dy, dx);
-      ctx!.beginPath();
-      ctx!.moveTo(x1, y1);
-      ctx!.lineTo(x2, y2);
-      ctx!.strokeStyle = color;
-      ctx!.lineWidth = width;
-      ctx!.stroke();
-      // Arrowhead
-      ctx!.beginPath();
-      ctx!.moveTo(x2, y2);
-      ctx!.lineTo(x2 - headLen * Math.cos(angle - 0.4), y2 - headLen * Math.sin(angle - 0.4));
-      ctx!.lineTo(x2 - headLen * Math.cos(angle + 0.4), y2 - headLen * Math.sin(angle + 0.4));
-      ctx!.closePath();
-      ctx!.fillStyle = color;
-      ctx!.fill();
-    }
-
-    function drawNode(n: Node, active: boolean) {
-      ctx!.beginPath();
-      ctx!.roundRect(n.x - nR, n.y - nR, nR * 2, nR * 2, 12);
-      ctx!.fillStyle = active ? "rgba(35,28,22,0.98)" : nodeBg;
-      ctx!.fill();
-      ctx!.strokeStyle = active ? accent : nodeBorder;
-      ctx!.lineWidth = active ? 1.5 : 1;
-      ctx!.stroke();
-
-      if (active) {
-        const g = ctx!.createRadialGradient(n.x, n.y, 0, n.x, n.y, nR + 12);
-        g.addColorStop(0, "rgba(217,138,83,0.12)");
-        g.addColorStop(1, "rgba(217,138,83,0)");
-        ctx!.beginPath();
-        ctx!.arc(n.x, n.y, nR + 12, 0, Math.PI * 2);
-        ctx!.fillStyle = g;
-        ctx!.fill();
-      }
-
-      ctx!.fillStyle = active ? accent : accentDim;
-      ctx!.font = `bold 15px ${font}`;
-      ctx!.textAlign = "center";
-      ctx!.textBaseline = "middle";
-      ctx!.fillText(n.icon, n.x, n.y - 4);
-
-      ctx!.fillStyle = active ? textBright : textDim;
-      ctx!.font = `500 9px ${font}`;
-      ctx!.fillText(n.name, n.x, n.y + 13);
-    }
-
     function draw() {
       ctx!.clearRect(0, 0, W, H);
 
-      // Top-row description labels
-      for (let i = 0; i < topLabels.length; i++) {
-        const n = nodes[i];
-        ctx!.fillStyle = "rgba(255,255,255,0.3)";
-        ctx!.font = `400 9px ${font}`;
-        ctx!.textAlign = "center";
-        const lines = topLabels[i].split("\n");
-        lines.forEach((line, li) => {
-          ctx!.fillText(line, n.x, n.y - nR - 16 + li * 12);
-        });
-        // Small down arrow
-        drawArrow(n.x, n.y - nR - 4, n.x, n.y - nR + 2, "rgba(255,255,255,0.15)", 1);
+      // Draw lines from center to each agent
+      for (const node of nodes) {
+        ctx!.beginPath();
+        ctx!.moveTo(cx, cy);
+        ctx!.lineTo(node.x, node.y);
+        ctx!.strokeStyle = "rgba(180, 120, 60, 0.12)";
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
       }
 
-      // Draw edges with event labels
-      for (const [fi, ti, label] of edges) {
-        const f = nodes[fi];
-        const to = nodes[ti];
-        const fx = f.x + nR;
-        const fy = f.y;
-        let tx = to.x - nR;
-        let ty = to.y;
+      // Animation: Orquestrador sends a pulse to one agent at a time
+      // Each cycle: pulse goes OUT from center to agent, then next agent
+      const totalAgents = nodes.length;
+      const cycleLength = 1; // 1 unit per agent
+      const totalCycle = totalAgents * cycleLength;
+      const progress = t % totalCycle;
+      const activeAgent = Math.floor(progress / cycleLength);
+      const pulseFrac = (progress % cycleLength) / cycleLength;
 
-        // Vertical edges
-        if (fi === 3 && ti === 4) {
-          drawArrow(f.x, f.y + nR, to.x, to.y - nR, accentDim, 1);
-          ctx!.fillStyle = "rgba(255,255,255,0.25)";
-          ctx!.font = `400 8px ${font}`;
-          ctx!.textAlign = "left";
-          ctx!.fillText(label, f.x + 6, (f.y + to.y) / 2);
-          continue;
-        }
-        if (fi === 4 && ti === 5) {
-          drawArrow(to.x + nR, to.y, f.x - nR, f.y, accentDim, 1);
-          ctx!.fillStyle = "rgba(255,255,255,0.25)";
-          ctx!.font = `400 8px ${font}`;
-          ctx!.textAlign = "center";
-          ctx!.fillText(label, (f.x + to.x) / 2, to.y - nR - 6);
-          continue;
-        }
+      const targetNode = nodes[activeAgent];
 
-        drawArrow(fx, fy, tx, ty, accentDim, 1);
+      // Pulse position: from center to target agent
+      const pulseX = cx + (targetNode.x - cx) * pulseFrac;
+      const pulseY = cy + (targetNode.y - cy) * pulseFrac;
 
-        // Event label centered on edge
-        ctx!.fillStyle = "rgba(255,255,255,0.25)";
-        ctx!.font = `400 8px ${font}`;
-        ctx!.textAlign = "center";
-        ctx!.fillText(label, (f.x + to.x) / 2, fy - nR - 6);
-      }
-
-      // Output label below Contador
-      const contNode = nodes[5];
-      drawArrow(contNode.x, contNode.y + nR, contNode.x, contNode.y + nR + 28, accentDim, 1);
-      ctx!.fillStyle = "rgba(255,255,255,0.35)";
-      ctx!.font = `500 10px ${font}`;
-      ctx!.textAlign = "center";
-      ctx!.fillText("Extrato + NF", contNode.x, contNode.y + nR + 44);
-      ctx!.fillText("enviados ao proprietário", contNode.x, contNode.y + nR + 58);
-
-      // Animated pulse traveling along the path
-      // Path: 0→1→2→3→4→5 (6 nodes, 5 edges)
-      const totalSegs = 5;
-      const progress = t % totalSegs;
-      const segIdx = Math.floor(progress);
-      const segFrac = progress - segIdx;
-
-      const pathOrder = [[0,1],[1,2],[2,3],[3,4],[4,5]];
-      const [si, ei] = pathOrder[segIdx];
-      const sn = nodes[si];
-      const en = nodes[ei];
-      const px = sn.x + (en.x - sn.x) * segFrac;
-      const py = sn.y + (en.y - sn.y) * segFrac;
-
-      const pg = ctx!.createRadialGradient(px, py, 0, px, py, 16);
-      pg.addColorStop(0, "rgba(217,138,83,0.65)");
-      pg.addColorStop(1, "rgba(217,138,83,0)");
+      // Glowing trail from center to pulse
       ctx!.beginPath();
-      ctx!.arc(px, py, 16, 0, Math.PI * 2);
-      ctx!.fillStyle = pg;
+      ctx!.moveTo(cx, cy);
+      ctx!.lineTo(pulseX, pulseY);
+      ctx!.strokeStyle = "rgba(217, 138, 83, 0.5)";
+      ctx!.lineWidth = 2.5;
+      ctx!.stroke();
+
+      // Glowing pulse ball
+      const pulseGrad = ctx!.createRadialGradient(pulseX, pulseY, 0, pulseX, pulseY, 20);
+      pulseGrad.addColorStop(0, "rgba(217, 138, 83, 0.8)");
+      pulseGrad.addColorStop(1, "rgba(217, 138, 83, 0)");
+      ctx!.beginPath();
+      ctx!.arc(pulseX, pulseY, 20, 0, Math.PI * 2);
+      ctx!.fillStyle = pulseGrad;
       ctx!.fill();
 
-      // Draw nodes (after edges so they're on top)
+      // Impact glow on agent when pulse arrives (last 20% of travel)
+      if (pulseFrac > 0.8) {
+        const impactIntensity = (pulseFrac - 0.8) / 0.2;
+        const impactGrad = ctx!.createRadialGradient(targetNode.x, targetNode.y, 0, targetNode.x, targetNode.y, nodeR + 20);
+        impactGrad.addColorStop(0, `rgba(217, 138, 83, ${0.3 * impactIntensity})`);
+        impactGrad.addColorStop(1, "rgba(217, 138, 83, 0)");
+        ctx!.beginPath();
+        ctx!.arc(targetNode.x, targetNode.y, nodeR + 20, 0, Math.PI * 2);
+        ctx!.fillStyle = impactGrad;
+        ctx!.fill();
+      }
+
+      // Draw agent nodes
       for (let i = 0; i < nodes.length; i++) {
-        const isActive = i === si || i === ei;
-        drawNode(nodes[i], isActive);
+        const node = nodes[i];
+        const isActive = i === activeAgent;
+
+        // Node background
+        ctx!.beginPath();
+        ctx!.roundRect(node.x - nodeR, node.y - nodeR, nodeR * 2, nodeR * 2, 14);
+        ctx!.fillStyle = isActive ? "rgba(30, 25, 20, 0.95)" : "rgba(25, 22, 18, 0.85)";
+        ctx!.fill();
+        ctx!.strokeStyle = isActive ? "rgba(217, 138, 83, 0.7)" : "rgba(100, 80, 50, 0.25)";
+        ctx!.lineWidth = isActive ? 1.5 : 1;
+        ctx!.stroke();
+
+        // Letter
+        ctx!.fillStyle = isActive ? "#d98a53" : "rgba(217, 138, 83, 0.5)";
+        ctx!.font = "bold 16px system-ui, -apple-system, sans-serif";
+        ctx!.textAlign = "center";
+        ctx!.textBaseline = "middle";
+        ctx!.fillText(node.icon, node.x, node.y - 5);
+
+        // Label
+        ctx!.fillStyle = isActive ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.35)";
+        ctx!.font = "500 9px system-ui, -apple-system, sans-serif";
+        ctx!.fillText(node.name, node.x, node.y + 13);
       }
 
-      // Orquestrador badge at bottom center
-      ctx!.fillStyle = "rgba(217,138,83,0.1)";
+      // Draw center (Orquestrador) on top
+      const centerR = 38;
+      const centerGrad = ctx!.createLinearGradient(cx - centerR, cy - centerR, cx + centerR, cy + centerR);
+      centerGrad.addColorStop(0, "#c87f4a");
+      centerGrad.addColorStop(1, "#d98a53");
       ctx!.beginPath();
-      ctx!.roundRect(W / 2 - 120, H - 30, 240, 24, 8);
+      ctx!.roundRect(cx - centerR, cy - centerR, centerR * 2, centerR * 2, 18);
+      ctx!.fillStyle = centerGrad;
       ctx!.fill();
-      ctx!.fillStyle = "rgba(255,255,255,0.4)";
-      ctx!.font = `500 9px ${font}`;
-      ctx!.textAlign = "center";
-      ctx!.fillText("Orquestrador — escuta eventos e dispara o próximo agente", W / 2, H - 14);
 
-      t += 0.008;
+      // Center glow
+      const glowGrad = ctx!.createRadialGradient(cx, cy, centerR * 0.5, cx, cy, centerR + 16);
+      glowGrad.addColorStop(0, "rgba(217, 138, 83, 0.15)");
+      glowGrad.addColorStop(1, "rgba(217, 138, 83, 0)");
+      ctx!.beginPath();
+      ctx!.arc(cx, cy, centerR + 16, 0, Math.PI * 2);
+      ctx!.fillStyle = glowGrad;
+      ctx!.fill();
+
+      // Center letter
+      ctx!.fillStyle = "#fff";
+      ctx!.font = "bold 22px system-ui, -apple-system, sans-serif";
+      ctx!.textAlign = "center";
+      ctx!.textBaseline = "middle";
+      ctx!.fillText("O", cx, cy - 5);
+
+      // Center label
+      ctx!.fillStyle = "rgba(255,255,255,0.8)";
+      ctx!.font = "500 9px system-ui, -apple-system, sans-serif";
+      ctx!.fillText("Orquestrador", cx, cy + 14);
+
+      t += 0.015;
       animId = requestAnimationFrame(draw);
     }
 
@@ -503,7 +436,7 @@ function AgentFlowDiagram() {
     <canvas
       ref={canvasRef}
       className="lp-flow-canvas"
-      style={{ width: 520, height: 420 }}
+      style={{ width: 400, height: 400 }}
     />
   );
 }

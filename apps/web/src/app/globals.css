@@ -892,9 +892,10 @@ a:focus {
 }
 
 .lp-hero-sub {
-  font-size: 1.05rem;
-  line-height: 1.65;
-  color: var(--text-secondary);
+  font-size: 1.08rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+  opacity: 0.78;
   max-width: 480px;
   margin: 0 0 36px;
 }
@@ -960,18 +961,18 @@ a:focus {
 }
 
 .lp-section-dark {
-  background: var(--ink);
-  color: var(--sand);
+  background: #131210;
+  color: #f5f1e8;
 }
 .lp-section-dark .lp-eyebrow {
   color: #d98a53;
 }
 .lp-section-dark .lp-h2 {
-  color: var(--sand);
+  color: #fff;
 }
 .lp-section-dark .muted-text,
 .lp-section-dark .lp-body {
-  color: rgba(245, 241, 232, 0.6);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .lp-section-accent {
@@ -1051,14 +1052,14 @@ a:focus {
   display: block;
   font-size: 1rem;
   margin-bottom: 8px;
-  color: var(--sand);
+  color: #fff;
 }
 
 .lp-pipe-desc {
   margin: 0;
-  font-size: 0.82rem;
-  line-height: 1.55;
-  color: rgba(245, 241, 232, 0.55);
+  font-size: 0.84rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .lp-pipe-arrow {
@@ -1083,8 +1084,8 @@ a:focus {
   margin-top: 16px;
   padding: 10px 24px;
   border-radius: 999px;
-  background: rgba(217, 138, 83, 0.12);
-  color: #d98a53;
+  background: rgba(217, 138, 83, 0.15);
+  color: #f0a96e;
   font-size: 0.82rem;
   font-weight: 500;
   text-align: center;
@@ -1189,7 +1190,11 @@ a:focus {
     background: #0a0908;
   }
   .lp-conf-card {
-    background: var(--surface);
+    background: rgba(30, 28, 22, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  .lp-conf-card .muted-text {
+    color: rgba(255, 255, 255, 0.7);
   }
 }
 

@@ -18,11 +18,24 @@ export default function OnboardingLayout({
         minHeight: "100vh",
         padding: "40px 16px",
         display: "flex",
-        alignItems: "flex-start",
-        justifyContent: "center",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start",
       }}
     >
-      {children}
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", width: "100%" }}>
+        {children}
+      </div>
+      <footer
+        style={{
+          textAlign: "center",
+          padding: "16px 24px",
+          fontSize: "0.78rem",
+          color: "var(--text-faint)",
+        }}
+      >
+        Desenvolvido por DME Technology
+      </footer>
     </div>
   );
 }
