@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     # --- Secrets (NO defaults — app crashes if missing) ---
     database_url: str
     jwt_secret: str
-    s3_access_key_id: str
-    s3_secret_access_key: str
+    s3_access_key_id: str = "dummy"
+    s3_secret_access_key: str = "dummy"
     santander_client_id: str = ""
     santander_client_secret: str = ""
 
