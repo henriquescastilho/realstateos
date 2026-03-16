@@ -3,7 +3,15 @@ import { Pool } from "pg";
 import fs from "fs";
 import path from "path";
 
-const IGNORED = new Set(["42P07", "42710", "42703", "42P01", "42P10", "23505"]);
+const IGNORED = new Set([
+  "42P07",
+  "42710",
+  "42703",
+  "42P01",
+  "42P10",
+  "23505",
+  "42701",
+]);
 
 async function main() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
