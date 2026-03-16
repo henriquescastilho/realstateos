@@ -41,19 +41,24 @@ authRouter.post(
       // Find org
       const [org] = await db.select().from(organizations).limit(1);
       if (!org) {
-        res.status(400).json({ detail: "No organization found. Run seed first." });
+        res
+          .status(400)
+          .json({ detail: "No organization found. Run seed first." });
         return;
       }
 
-      // Resolve display name: check owners table, then fallback to email prefix
-      const [ownerRecord] = await db
-        .select({ fullName: owners.fullName })
-        .from(owners)
-        .where(eq(owners.email, input.email))
-        .limit(1);
-
-      // For org email (e.g. lcastilho@lcastilho.com.br), show org admin name
-      const displayName = ownerRecord?.fullName ?? org.name;
+      // Resolve display name: check owners table, fallback to org name
+      let displayName = org.name;
+      try {
+        const [ownerRecord] = await db
+          .select({ fullName: owners.fullName })
+          .from(owners)
+          .where(eq(owners.email, input.email))
+          .limit(1);
+        if (ownerRecord?.fullName) displayName = ownerRecord.fullName;
+      } catch {
+        // owners table may have different schema — use org name
+      }
 
       const token = generateToken({
         sub: input.email,
@@ -149,27 +154,30 @@ authRouter.post(
  */
 const refreshSchema = z.object({ refresh_token: z.string() });
 
-authRouter.post("/auth/refresh", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { refresh_token } = refreshSchema.parse(req.body);
-    // Decode without strict verify for simplicity — just re-issue
-    const parts = refresh_token.split(".");
-    if (parts.length !== 3) {
-      res.status(401).json({ detail: "Invalid token" });
-      return;
+authRouter.post(
+  "/auth/refresh",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { refresh_token } = refreshSchema.parse(req.body);
+      // Decode without strict verify for simplicity — just re-issue
+      const parts = refresh_token.split(".");
+      if (parts.length !== 3) {
+        res.status(401).json({ detail: "Invalid token" });
+        return;
+      }
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      const token = generateToken({
+        sub: payload.sub,
+        org_id: payload.org_id,
+        email: payload.email,
+        role: payload.role ?? "admin",
+      });
+      res.json({ access_token: token });
+    } catch (err) {
+      next(err);
     }
-    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
-    const token = generateToken({
-      sub: payload.sub,
-      org_id: payload.org_id,
-      email: payload.email,
-      role: payload.role ?? "admin",
-    });
-    res.json({ access_token: token });
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 /**
  * POST /auth/token — Generate a JWT token.
