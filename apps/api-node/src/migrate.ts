@@ -50,8 +50,13 @@ async function main() {
       try {
         await pool.query(stmt);
       } catch (err: any) {
-        if (err.code === "42P07" || err.code === "42710") {
-          // relation/index already exists — skip
+        if (
+          err.code === "42P07" ||
+          err.code === "42710" ||
+          err.code === "42703" ||
+          err.code === "42P01"
+        ) {
+          // relation/index already exists or column not found — skip
         } else {
           throw err;
         }
