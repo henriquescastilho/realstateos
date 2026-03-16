@@ -1,8 +1,9 @@
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, and, count, desc, max, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { agentTasks, agentConfigs } from "../../db/schema";
+import { agentTasks, agentConfigs, eventLog } from "../../db/schema";
 import { NotFoundError, ConflictError } from "../../lib/errors";
 import type { UpdateAgentConfigInput } from "./validators";
+import { AGENT_REGISTRY } from "./registry";
 
 /**
  * List agent tasks with filters.
@@ -159,4 +160,45 @@ export async function listAgentConfigs(orgId: string) {
     .from(agentConfigs)
     .where(eq(agentConfigs.orgId, orgId))
     .orderBy(agentConfigs.taskType);
+}
+
+/**
+ * Get agent registry merged with live stats from agentTasks.
+ */
+export async function getAgentRegistryWithStats(orgId: string) {
+  // Aggregate stats per taskType in one query
+  const stats = await db
+    .select({
+      taskType: agentTasks.taskType,
+      totalTasks: count(),
+      lastExecutedAt: max(agentTasks.updatedAt),
+      runningCount: sql<number>`count(*) filter (where ${agentTasks.status} = 'running')`.as("running_count"),
+    })
+    .from(agentTasks)
+    .where(eq(agentTasks.orgId, orgId))
+    .groupBy(agentTasks.taskType);
+
+  const statsMap = new Map(stats.map((s) => [s.taskType, s]));
+
+  return AGENT_REGISTRY.map((agent) => {
+    const s = statsMap.get(agent.taskType);
+    return {
+      ...agent,
+      totalTasks: s?.totalTasks ?? 0,
+      lastExecutedAt: s?.lastExecutedAt?.toISOString() ?? null,
+      currentStatus: s && s.runningCount > 0 ? "active" as const : "idle" as const,
+    };
+  });
+}
+
+/**
+ * Get recent orchestrator events from the event log.
+ */
+export async function getRecentOrchestratorEvents(orgId: string, limit = 20) {
+  return db
+    .select()
+    .from(eventLog)
+    .where(eq(eventLog.orgId, orgId))
+    .orderBy(desc(eventLog.createdAt))
+    .limit(limit);
 }
