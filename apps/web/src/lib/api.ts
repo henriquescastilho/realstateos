@@ -1,7 +1,8 @@
 import { getSnapshot } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
-const NODE_API_URL = process.env.NEXT_PUBLIC_NODE_API_URL ?? "http://localhost:3001/api/v1";
+const NODE_API_URL =
+  process.env.NEXT_PUBLIC_NODE_API_URL ?? "http://localhost:3001/api/v1";
 
 // In-memory token store (for MVP — replace with cookie/session in production)
 let _accessToken: string | null = null;
@@ -67,9 +68,8 @@ function normalizePath(path: string): string {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  // Route through Node API (Python API is offline)
   const normalizedPath = normalizePath(path);
-  const response = await fetch(`${NODE_API_URL}${normalizedPath}`, {
+  const response = await fetch(`${API_URL}${normalizedPath}`, {
     cache: "no-store",
     ...init,
     headers: {
@@ -113,7 +113,8 @@ export function nodeApiGet<T>(path: string) {
 export function nodeApiPost<T>(path: string, body?: unknown) {
   return nodeRequest<T>(path, {
     method: "POST",
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    headers:
+      body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
@@ -121,7 +122,8 @@ export function nodeApiPost<T>(path: string, body?: unknown) {
 export function nodeApiPatch<T>(path: string, body?: unknown) {
   return nodeRequest<T>(path, {
     method: "PATCH",
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    headers:
+      body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
@@ -133,7 +135,8 @@ export function nodeApiDelete<T>(path: string) {
 export function apiPost<T>(path: string, body?: unknown) {
   return request<T>(path, {
     method: "POST",
-    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
+    headers:
+      body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
