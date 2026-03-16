@@ -67,9 +67,31 @@ function normalizePath(path: string): string {
   return path.replace(/^\/v1/, "");
 }
 
+// Routes that only exist in the Node API
+const NODE_ONLY_PREFIXES = [
+  "/agents",
+  "/integrations",
+  "/billing",
+  "/payments",
+  "/communications",
+  "/maintenance",
+  "/inbox",
+  "/ai-assistant",
+  "/onboarding",
+];
+
+function resolveBaseUrl(path: string): string {
+  const normalized = normalizePath(path);
+  if (NODE_ONLY_PREFIXES.some((prefix) => normalized.startsWith(prefix))) {
+    return NODE_API_URL;
+  }
+  return API_URL;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const normalizedPath = normalizePath(path);
-  const response = await fetch(`${API_URL}${normalizedPath}`, {
+  const baseUrl = resolveBaseUrl(path);
+  const response = await fetch(`${baseUrl}${normalizedPath}`, {
     cache: "no-store",
     ...init,
     headers: {
