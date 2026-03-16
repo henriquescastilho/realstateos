@@ -95,7 +95,7 @@ def get_current_user(
         )
     payload = _decode_token(credentials.credentials)
     user_id: str | None = payload.get("sub")
-    tenant_id: str | None = payload.get("tenant_id")
+    tenant_id: str | None = payload.get("tenant_id") or payload.get("org_id")
     role: str | None = payload.get("role")
     email: str | None = payload.get("email")
     if not all([user_id, tenant_id, role, email]):
@@ -112,7 +112,7 @@ def get_optional_user(
     try:
         payload = _decode_token(credentials.credentials)
         user_id = payload.get("sub")
-        tenant_id = payload.get("tenant_id")
+        tenant_id = payload.get("tenant_id") or payload.get("org_id")
         role = payload.get("role")
         email = payload.get("email")
         if all([user_id, tenant_id, role, email]):
