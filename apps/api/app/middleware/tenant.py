@@ -43,15 +43,21 @@ def get_current_org(
     """
     tenant = db.get(Tenant, current_user.tenant_id)
     if tenant is None:
-        logger.warning(
-            "JWT references non-existent tenant_id=%s user_id=%s",
-            current_user.tenant_id,
-            current_user.user_id,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Tenant not found or access denied",
-        )
+        # Auto-provision tenant from Node API JWT (cross-service compatibility)
+        logger.info("Auto-provisioning tenant_id=%s from JWT", current_user.tenant_id)
+        try:
+            tenant = Tenant(id=current_user.tenant_id, name=current_user.tenant_id[:8])
+            db.add(tenant)
+            db.commit()
+            db.refresh(tenant)
+        except Exception:
+            db.rollback()
+            tenant = db.get(Tenant, current_user.tenant_id)
+        if tenant is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Tenant not found or access denied",
+            )
     return OrgContext(
         tenant_id=tenant.id,
         tenant_name=tenant.name,
