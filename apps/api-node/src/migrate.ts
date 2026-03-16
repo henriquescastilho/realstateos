@@ -9,10 +9,14 @@ async function main() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS __drizzle_migrations (
       id serial PRIMARY KEY,
-      hash text NOT NULL,
+      hash text NOT NULL UNIQUE,
       created_at bigint
     )
   `);
+
+  // Reset migrations that were incorrectly marked as applied
+  // (they may have failed mid-way due to partial execution)
+  await pool.query(`DELETE FROM __drizzle_migrations`);
 
   const migrationsDir = path.join(__dirname, "../drizzle");
   const journal = JSON.parse(
@@ -32,21 +36,30 @@ async function main() {
 
     const sqlFile = path.join(migrationsDir, `${hash}.sql`);
     const sql = fs.readFileSync(sqlFile, "utf8");
-    console.log(`[migrate] applying ${hash}...`);
 
-    try {
-      await pool.query(sql);
-    } catch (err: any) {
-      if (err.code === "42P07") {
-        // relation already exists — mark as applied and continue
-        console.log(`[migrate] ${hash} already exists, marking as applied`);
-      } else {
-        throw err;
+    // Split into individual statements and run each one separately
+    const statements = sql
+      .split(/;(\s*\n|\s*$)/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    console.log(
+      `[migrate] applying ${hash} (${statements.length} statements)...`,
+    );
+    for (const stmt of statements) {
+      try {
+        await pool.query(stmt);
+      } catch (err: any) {
+        if (err.code === "42P07" || err.code === "42710") {
+          // relation/index already exists — skip
+        } else {
+          throw err;
+        }
       }
     }
 
     await pool.query(
-      "INSERT INTO __drizzle_migrations (hash, created_at) VALUES ($1, $2)",
+      "INSERT INTO __drizzle_migrations (hash, created_at) VALUES ($1, $2) ON CONFLICT (hash) DO NOTHING",
       [hash, Date.now()],
     );
     console.log(`[migrate] applied ${hash}`);
