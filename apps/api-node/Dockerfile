@@ -27,6 +27,7 @@ RUN npm install --omit=dev --no-audit --no-fund && \
 COPY --from=builder /app/dist ./dist
 COPY apps/api-node/drizzle/ ./drizzle/
 COPY apps/api-node/drizzle.config.ts ./
+COPY apps/api-node/scripts/ ./scripts/
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
