@@ -1,12 +1,20 @@
 import "dotenv/config";
 import express, { Request, Response } from "express";
 import { errorHandler } from "./middleware/errorHandler";
-import { securityHeaders, corsMiddleware, apiRateLimit, auditLog } from "./middleware/security";
+import {
+  securityHeaders,
+  corsMiddleware,
+  apiRateLimit,
+  auditLog,
+} from "./middleware/security";
 import { requireAuth, requireOrgMatch } from "./middleware/auth";
 import { authRouter } from "./modules/auth/router";
 
 const app = express();
 const PORT = process.env.PORT ?? 8082;
+
+// Trust Railway's proxy
+app.set("trust proxy", 1);
 
 // ─── Security middleware (applied globally) ───
 app.use(securityHeaders);
