@@ -1,112 +1,143 @@
 /**
- * Email channel — AWS SES integration.
- * Sends transactional emails via SES.
- * Falls back to console logging when SES is not configured.
+ * Email channel — SMTP por imobiliária.
+ *
+ * Cada imobiliária parceira configura suas credenciais SMTP na tabela organizations.smtp_settings.
+ * Os agentes usam essas credenciais para enviar boletos, extratos e avisos aos inquilinos/proprietários.
+ *
+ * smtp_settings JSON:
+ *   { host, port, user, pass, from }
  */
+
+import nodemailer from "nodemailer";
+import { eq } from "drizzle-orm";
+import { db } from "../../../db";
+import { organizations } from "../../../db/schema";
+
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType?: string;
+}
 
 export interface EmailPayload {
   to: string;
   subject: string;
   body: string;
+  html?: string;
   replyTo?: string;
+  orgId?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface EmailResult {
   success: boolean;
-  provider: "ses" | "stub";
+  provider: "smtp" | "stub";
   messageId?: string;
   error?: string;
 }
 
-// ─── Config ───
-
-const AWS_REGION = process.env.AWS_SES_REGION ?? process.env.AWS_REGION ?? "us-east-1";
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID;
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY;
-const SES_FROM_EMAIL = process.env.SES_FROM_EMAIL ?? "noreply@realestateos.com.br";
-
-const isSESConfigured = !!(AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && process.env.SES_FROM_EMAIL);
-
-// ─── SES Integration ───
-
-async function sendViaSES(payload: EmailPayload): Promise<EmailResult> {
-  const { createHmac, createHash } = await import("crypto");
-
-  const service = "ses";
-  const host = `email.${AWS_REGION}.amazonaws.com`;
-  const now = new Date();
-  const dateStamp = now.toISOString().replace(/[-:]/g, "").slice(0, 8);
-  const amzDate = now.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-
-  // SES SendEmail via Query API
-  const params = new URLSearchParams({
-    Action: "SendEmail",
-    Version: "2010-12-01",
-    "Source": SES_FROM_EMAIL,
-    "Destination.ToAddresses.member.1": payload.to,
-    "Message.Subject.Data": payload.subject,
-    "Message.Subject.Charset": "UTF-8",
-    "Message.Body.Text.Data": payload.body,
-    "Message.Body.Text.Charset": "UTF-8",
-  });
-
-  if (payload.replyTo) {
-    params.set("ReplyToAddresses.member.1", payload.replyTo);
-  }
-
-  const bodyStr = params.toString();
-  const payloadHash = createHash("sha256").update(bodyStr).digest("hex");
-
-  const canonicalHeaders = `content-type:application/x-www-form-urlencoded\nhost:${host}\nx-amz-date:${amzDate}\n`;
-  const signedHeaders = "content-type;host;x-amz-date";
-  const canonicalRequest = `POST\n/\n\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
-
-  const credentialScope = `${dateStamp}/${AWS_REGION}/${service}/aws4_request`;
-  const stringToSign = `AWS4-HMAC-SHA256\n${amzDate}\n${credentialScope}\n${createHash("sha256").update(canonicalRequest).digest("hex")}`;
-
-  const sign = (key: Buffer | string, msg: string) => createHmac("sha256", key).update(msg).digest();
-  const signingKey = sign(
-    sign(sign(sign(`AWS4${AWS_SECRET_ACCESS_KEY}`, dateStamp), AWS_REGION), service),
-    "aws4_request",
-  );
-  const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
-
-  const authHeader = `AWS4-HMAC-SHA256 Credential=${AWS_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-
-  const res = await fetch(`https://${host}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "X-Amz-Date": amzDate,
-      Authorization: authHeader,
-    },
-    body: bodyStr,
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error(`[email] SES error: ${res.status}`, errText);
-    return { success: false, provider: "ses", error: `SES error: ${res.status}` };
-  }
-
-  const resText = await res.text();
-  const messageIdMatch = resText.match(/<MessageId>(.*?)<\/MessageId>/);
-  const messageId = messageIdMatch?.[1] ?? `ses_${Date.now()}`;
-
-  return { success: true, provider: "ses", messageId };
+interface SmtpSettings {
+  host: string;
+  port: number;
+  user: string;
+  pass: string;
+  from: string;
 }
 
-// ─── Stub ───
+// ─── Transporter cache (per org) ───
 
-function sendStub(payload: EmailPayload): EmailResult {
-  console.log(`[email/stub] Sending to ${payload.to}: ${payload.subject}`);
+const transporterCache = new Map<string, nodemailer.Transporter>();
 
-  if (!payload.to || !payload.to.includes("@")) {
-    return { success: false, provider: "stub", error: "Invalid email address" };
+function getTransporter(smtp: SmtpSettings): nodemailer.Transporter {
+  const cacheKey = `${smtp.host}:${smtp.user}`;
+  if (!transporterCache.has(cacheKey)) {
+    transporterCache.set(
+      cacheKey,
+      nodemailer.createTransport({
+        host: smtp.host,
+        port: smtp.port,
+        secure: smtp.port === 465,
+        auth: { user: smtp.user, pass: smtp.pass },
+      }),
+    );
+  }
+  return transporterCache.get(cacheKey)!;
+}
+
+// ─── Load SMTP config from DB, with env var fallback ───
+
+function getEnvSmtpSettings(): SmtpSettings | null {
+  const host = process.env.SMTP_HOST;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return {
+    host,
+    port: parseInt(process.env.SMTP_PORT ?? "587", 10),
+    user,
+    pass,
+    from: process.env.SMTP_FROM ?? user,
+  };
+}
+
+async function getOrgSmtpSettings(orgId: string): Promise<SmtpSettings | null> {
+  const [org] = await db
+    .select({ smtpSettings: organizations.smtpSettings })
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+
+  if (org?.smtpSettings) {
+    const s = org.smtpSettings as Record<string, unknown>;
+    if (s.host && s.user && s.pass) {
+      return {
+        host: s.host as string,
+        port: (s.port as number) ?? 587,
+        user: s.user as string,
+        pass: s.pass as string,
+        from: (s.from as string) ?? (s.user as string),
+      };
+    }
   }
 
-  const messageId = `email_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  return { success: true, provider: "stub", messageId };
+  // Fallback to env vars
+  return getEnvSmtpSettings();
+}
+
+// ─── SMTP send ───
+
+async function sendViaSMTP(
+  smtp: SmtpSettings,
+  payload: EmailPayload,
+): Promise<EmailResult> {
+  const info = await getTransporter(smtp).sendMail({
+    from: smtp.from,
+    to: payload.to,
+    subject: payload.subject,
+    text: payload.body,
+    html: payload.html,
+    replyTo: payload.replyTo,
+    attachments: payload.attachments?.map((a) => ({
+      filename: a.filename,
+      content: a.content,
+      contentType: a.contentType ?? "application/pdf",
+    })),
+  });
+
+  return { success: true, provider: "smtp", messageId: info.messageId };
+}
+
+// ─── Stub (org sem SMTP configurado) ───
+
+function sendStub(payload: EmailPayload): EmailResult {
+  console.log(
+    `[email/stub] Org ${payload.orgId} sem SMTP. To: ${payload.to} | Subject: ${payload.subject}`,
+  );
+  return {
+    success: true,
+    provider: "stub",
+    messageId: `stub_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  };
 }
 
 // ─── Public API ───
@@ -116,12 +147,16 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailResult> {
     return { success: false, provider: "stub", error: "Invalid email address" };
   }
 
-  if (isSESConfigured) {
+  const smtp = await getOrgSmtpSettings(payload.orgId ?? "");
+
+  if (smtp) {
     try {
-      return await sendViaSES(payload);
+      return await sendViaSMTP(smtp, payload);
     } catch (err) {
-      console.error("[email] SES failed, falling back to stub:", err);
+      console.error(`[email] SMTP failed for org ${payload.orgId}:`, err);
+      return { success: false, provider: "smtp", error: String(err) };
     }
   }
+
   return sendStub(payload);
 }

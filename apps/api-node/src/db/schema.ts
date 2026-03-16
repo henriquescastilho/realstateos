@@ -27,6 +27,7 @@ export const organizations = pgTable("organizations", {
   id: id(),
   name: varchar("name", { length: 255 }).notNull(),
   document: varchar("document", { length: 20 }),
+  smtpSettings: jsonb("smtp_settings"),
   ...timestamps(),
 });
 
@@ -42,6 +43,14 @@ export const properties = pgTable("properties", {
   areaSqm: numeric("area_sqm", { precision: 10, scale: 2 }),
   bedrooms: integer("bedrooms"),
   registryReference: varchar("registry_reference", { length: 100 }),
+  municipalRegistration: varchar("municipal_registration", { length: 100 }),
+  condoAdmin: jsonb("condo_admin").$type<{
+    name: string;
+    cnpj: string;
+    phone: string;
+    email: string;
+    condoFee: string;
+  }>(),
   status: varchar("status", { length: 20 }).default("active").notNull(),
   ...timestamps(),
 }, (t) => [
@@ -103,6 +112,19 @@ export const leaseContracts = pgTable("lease_contracts", {
   operationalStatus: varchar("operational_status", { length: 30 })
     .default("pending_onboarding")
     .notNull(),
+  closingDay: integer("closing_day").default(27),     // dia que fecha a fatura e gera o boleto
+  dueDateDay: integer("due_date_day").default(1),     // dia do vencimento do boleto
+  payoutDay: integer("payout_day").default(4),        // dia do repasse ao proprietário
+  adminFeePercent: numeric("admin_fee_percent", { precision: 5, scale: 2 }).default("10.00"),
+  adminFeeMinimum: numeric("admin_fee_minimum", { precision: 12, scale: 2 }).default("180.00"),
+  readjustmentRule: jsonb("readjustment_rule").$type<{
+    index: string;             // "IGPM" | "IPCA" | "INPC" | "fixed"
+    frequency: number;         // meses (12 = anual)
+    lastReadjustment?: string; // ISO date
+    nextReadjustment?: string; // ISO date
+    fixedPercent?: string;     // usado quando index = "fixed"
+  }>(),
+  agentInstructions: text("agent_instructions"),
   ...timestamps(),
 }, (t) => [
   index("lease_contracts_org_id_idx").on(t.orgId),
@@ -157,6 +179,9 @@ export const charges = pgTable("charges", {
   digitableLine: varchar("digitavel_line", { length: 60 }),
   boletoStatus: varchar("boleto_status", { length: 20 }).default("pending"), // pending | generated | failed
   boletoError: text("boleto_error"),
+  // ─── PIX fields (populated on issue) ───
+  pixEmv: text("pix_emv"),
+  pixTxId: varchar("pix_tx_id", { length: 100 }),
   ...timestamps(),
 }, (t) => [
   index("charges_org_id_idx").on(t.orgId),
@@ -464,4 +489,29 @@ export const agentConfigs = pgTable("agent_configs", {
   ...timestamps(),
 }, (t) => [
   uniqueIndex("agent_configs_org_task_type_idx").on(t.orgId, t.taskType),
+]);
+
+// ─── Property Expenses (boletos de condomínio/IPTU/taxas) ───
+export const propertyExpenses = pgTable("property_expenses", {
+  id: id(),
+  orgId: orgId(),
+  propertyId: uuid("property_id").notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // "condo" | "iptu" | "taxa"
+  issuer: varchar("issuer", { length: 255 }),
+  value: numeric("value", { precision: 12, scale: 2 }).notNull(),
+  dueDate: date("due_date").notNull(),
+  barcode: varchar("barcode", { length: 60 }),
+  digitableLine: varchar("digitable_line", { length: 60 }),
+  referenceMonth: varchar("reference_month", { length: 7 }).notNull(), // "2026-04"
+  sourceType: varchar("source_type", { length: 20 }).notNull(), // "email" | "whatsapp" | "manual"
+  sourceReference: varchar("source_reference", { length: 500 }),
+  captureConfidence: numeric("capture_confidence", { precision: 5, scale: 4 }),
+  status: varchar("status", { length: 20 }).default("captured").notNull(), // "captured" | "approved" | "paid" | "rejected"
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  agentTaskId: uuid("agent_task_id"),
+  ...timestamps(),
+}, (t) => [
+  index("property_expenses_org_id_idx").on(t.orgId),
+  index("property_expenses_property_idx").on(t.propertyId),
+  uniqueIndex("property_expenses_idempotency_idx").on(t.propertyId, t.type, t.referenceMonth),
 ]);
